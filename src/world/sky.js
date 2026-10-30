@@ -1,3 +1,4 @@
+// Drifting clouds: built once from the shared random sequence, then they slide along +x.
 import * as THREE from 'three';
 import { rand } from '../core/util.js';
 import { scene } from '../core/renderer.js';
@@ -8,23 +9,23 @@ const clouds = [];
 export function buildSky() {
   for (let i = 0; i < 26; i++) {
     const g = new THREE.Group();
-    const n = 3 + Math.floor(rand() * 3);
-    for (let k = 0; k < n; k++) {
-      const s = mesh(new THREE.IcosahedronGeometry(1.4 + rand() * 1.2, 0), material(0xffffff), {
+    const puffCount = 3 + Math.floor(rand() * 3);
+    for (let k = 0; k < puffCount; k++) {
+      const puff = mesh(new THREE.IcosahedronGeometry(1.4 + rand() * 1.2, 0), material(0xffffff), {
         castShadow: false,
       });
-      s.position.set(k * 1.6 - n * 0.8, rand() * 0.6, rand() * 1.2);
-      g.add(s);
+      puff.position.set(k * 1.6 - puffCount * 0.8, rand() * 0.6, rand() * 1.2);
+      g.add(puff);
     }
     g.position.set(-110 + rand() * 220, 18 + rand() * 10, -390 + rand() * 450);
-    g.userData.s = 0.4 + rand() * 0.6;
+    g.userData.speed = 0.4 + rand() * 0.6;
     scene.add(g);
     clouds.push(g);
   }
 }
 export function updateSky(dt) {
-  for (const c of clouds) {
-    c.position.x += c.userData.s * dt;
-    if (c.position.x > 115) c.position.x = -115;
+  for (const cloud of clouds) {
+    cloud.position.x += cloud.userData.speed * dt;
+    if (cloud.position.x > 115) cloud.position.x = -115; // wrap around to the far side
   }
 }

@@ -1,3 +1,5 @@
+// Reusable scenery. Each one sits on the terrain and adds its own collider.
+// Several use the shared seeded rand(), so call them in a fixed order inside build().
 import * as THREE from 'three';
 import { rand } from '../core/util.js';
 import { scene } from '../core/renderer.js';
@@ -5,126 +7,136 @@ import { material, mesh } from '../core/materials.js';
 import { addCylinder, addBox } from '../core/colliders.js';
 import { terrainHeight } from './terrain.js';
 
-// Reusable scenery. Each one sits on the terrain and adds its own collider.
-
+// a leaning palm: six trunk segments, seven fronds and three coconuts
 export function palm(x, z) {
-  const gh = terrainHeight(x, z),
-    g = new THREE.Group();
-  g.position.set(x, gh, z);
+  const ground = terrainHeight(x, z);
+  const g = new THREE.Group();
+  g.position.set(x, ground, z);
   g.rotation.y = rand() * 6.28;
   const lean = 0.15 + rand() * 0.2;
-  let px = 0;
+  let offsetX = 0; // each segment shifts a bit further sideways, so the trunk curves
   for (let i = 0; i < 6; i++) {
-    const s = mesh(
+    const segment = mesh(
       new THREE.CylinderGeometry(0.2 - i * 0.012, 0.24 - i * 0.012, 0.82, 6),
       material(i % 2 ? 0xb98250 : 0xa8723f),
     );
-    px += lean * i * 0.04;
-    s.position.set(px, 0.41 + i * 0.78, 0);
-    s.rotation.z = -lean * 0.25;
-    g.add(s);
+    offsetX += lean * i * 0.04;
+    segment.position.set(offsetX, 0.41 + i * 0.78, 0);
+    segment.rotation.z = -lean * 0.25;
+    g.add(segment);
   }
   const crown = new THREE.Group();
-  crown.position.set(px, 4.7, 0);
+  crown.position.set(offsetX, 4.7, 0);
   g.add(crown);
-  const lg = new THREE.ConeGeometry(0.5, 2.6, 4);
-  lg.scale(1, 1, 0.25);
+  const frondGeo = new THREE.ConeGeometry(0.5, 2.6, 4);
+  frondGeo.scale(1, 1, 0.25);
   for (let k = 0; k < 7; k++) {
-    const piv = new THREE.Group();
-    piv.rotation.y = (k * Math.PI * 2) / 7;
-    const l = mesh(lg, material(k % 2 ? 0x3fae4f : 0x4cc05a));
-    l.rotation.z = -Math.PI / 2 - 0.45;
-    l.position.set(1.15, -0.35, 0);
-    piv.add(l);
-    crown.add(piv);
+    const pivot = new THREE.Group();
+    pivot.rotation.y = (k * Math.PI * 2) / 7;
+    const frond = mesh(frondGeo, material(k % 2 ? 0x3fae4f : 0x4cc05a));
+    frond.rotation.z = -Math.PI / 2 - 0.45;
+    frond.position.set(1.15, -0.35, 0);
+    pivot.add(frond);
+    crown.add(pivot);
   }
   for (let k = 0; k < 3; k++) {
-    const c = mesh(new THREE.IcosahedronGeometry(0.17, 0), material(0x7a4a2a));
-    c.position.set(Math.cos(k * 2.1) * 0.25, -0.2, Math.sin(k * 2.1) * 0.25);
-    crown.add(c);
+    const coconut = mesh(new THREE.IcosahedronGeometry(0.17, 0), material(0x7a4a2a));
+    coconut.position.set(Math.cos(k * 2.1) * 0.25, -0.2, Math.sin(k * 2.1) * 0.25);
+    crown.add(coconut);
   }
   scene.add(g);
-  addCylinder(x, z, { r: 0.35, bottom: gh - 1, top: gh + 4.8 });
+  addCylinder(x, z, { r: 0.35, bottom: ground - 1, top: ground + 4.8 });
 }
 // a mossy rock; returns its top height (something to stand on)
-export function rock(x, z, { radius: r, height: h, color: col = 0xa3acb8 }) {
-  const gh = terrainHeight(x, z);
-  const m = mesh(new THREE.CylinderGeometry(r * 0.88, r * 1.12, h, 7), material(col), {
-    receiveShadow: true,
-  });
-  m.position.set(x, gh + h / 2, z);
+export function rock(x, z, { radius, height, color = 0xa3acb8 }) {
+  const ground = terrainHeight(x, z);
+  const m = mesh(
+    new THREE.CylinderGeometry(radius * 0.88, radius * 1.12, height, 7),
+    material(color),
+    { receiveShadow: true },
+  );
+  m.position.set(x, ground + height / 2, z);
   m.rotation.y = rand() * 3;
   scene.add(m);
-  const moss = mesh(new THREE.CylinderGeometry(r * 0.9, r * 0.9, 0.14, 7), material(0x7cc86a), {
-    castShadow: false,
-    receiveShadow: true,
-  });
-  moss.position.set(x, gh + h + 0.03, z);
+  const moss = mesh(
+    new THREE.CylinderGeometry(radius * 0.9, radius * 0.9, 0.14, 7),
+    material(0x7cc86a),
+    { castShadow: false, receiveShadow: true },
+  );
+  moss.position.set(x, ground + height + 0.03, z);
   moss.rotation.y = m.rotation.y;
   scene.add(moss);
-  addCylinder(x, z, { r: r * 0.95, bottom: gh - 1, top: gh + h + 0.1 });
-  return gh + h + 0.1;
+  addCylinder(x, z, { r: radius * 0.95, bottom: ground - 1, top: ground + height + 0.1 });
+  return ground + height + 0.1;
 }
 // a rock whose top is at an absolute height
 export const rockTop = (x, z, { radius, top, color }) =>
   rock(x, z, { radius, height: top - terrainHeight(x, z) - 0.1, color });
-export function crate(x, z, { size: s = 1.1 } = {}) {
-  const gh = terrainHeight(x, z);
-  const m = mesh(new THREE.BoxGeometry(s, s, s), material(0xd4955a), { receiveShadow: true });
-  m.position.set(x, gh + s / 2, z);
+// a wooden crate with two darker bands; returns its top height
+export function crate(x, z, { size = 1.1 } = {}) {
+  const ground = terrainHeight(x, z);
+  const m = mesh(new THREE.BoxGeometry(size, size, size), material(0xd4955a), {
+    receiveShadow: true,
+  });
+  m.position.set(x, ground + size / 2, z);
   scene.add(m);
   for (const k of [-1, 1]) {
-    const sl = mesh(new THREE.BoxGeometry(s * 1.03, 0.14, s * 1.03), material(0x9c6436));
-    sl.position.set(x, gh + s / 2 + k * s * 0.36, z);
-    scene.add(sl);
+    const band = mesh(new THREE.BoxGeometry(size * 1.03, 0.14, size * 1.03), material(0x9c6436));
+    band.position.set(x, ground + size / 2 + k * size * 0.36, z);
+    scene.add(band);
   }
-  addBox(x, z, { hw: s / 2, hd: s / 2, bottom: gh - 1, top: gh + s });
-  return gh + s;
+  addBox(x, z, { hw: size / 2, hd: size / 2, bottom: ground - 1, top: ground + size });
+  return ground + size;
 }
-// bushes and flowers around (cx,cz); allowed(x,z) keeps them off paths and puzzles
-export function scatter(cx, cz, { radius: maxR, allowed: ok, bushes: nBush, flowers: nFlower }) {
-  for (let i = 0, n = 0; i < nBush * 4 && n < nBush; i++) {
-    const a = rand() * 6.28,
-      r = 3 + rand() * maxR,
-      x = cx + Math.cos(a) * r,
-      z = cz + Math.sin(a) * r;
-    if (!ok(x, z) || terrainHeight(x, z) < 0.6) continue;
-    n++;
-    const b = mesh(new THREE.IcosahedronGeometry(0.5 + rand() * 0.4, 0), material(0x54b84f));
-    b.position.set(x, terrainHeight(x, z) + 0.3, z);
-    b.scale.y = 0.75;
-    scene.add(b);
+const FLOWER_COLORS = [0xff9fb2, 0xffd84d, 0xffffff, 0xb59cff];
+// bushes and flowers around (cx,cz); allowed(x,z) keeps them off paths and puzzles.
+// Blocked spots and ones below grass level are skipped, with a cap on attempts.
+export function scatter(cx, cz, { radius, allowed, bushes, flowers }) {
+  for (let tries = 0, placed = 0; tries < bushes * 4 && placed < bushes; tries++) {
+    const angle = rand() * 6.28;
+    const dist = 3 + rand() * radius;
+    const x = cx + Math.cos(angle) * dist;
+    const z = cz + Math.sin(angle) * dist;
+    if (!allowed(x, z) || terrainHeight(x, z) < 0.6) continue;
+    placed++;
+    const bush = mesh(new THREE.IcosahedronGeometry(0.5 + rand() * 0.4, 0), material(0x54b84f));
+    bush.position.set(x, terrainHeight(x, z) + 0.3, z);
+    bush.scale.y = 0.75;
+    scene.add(bush);
   }
-  const fcols = [0xff9fb2, 0xffd84d, 0xffffff, 0xb59cff];
-  for (let i = 0, n = 0; i < nFlower * 3 && n < nFlower; i++) {
-    const a = rand() * 6.28,
-      r = 2 + rand() * maxR,
-      x = cx + Math.cos(a) * r,
-      z = cz + Math.sin(a) * r;
-    if (!ok(x, z) || terrainHeight(x, z) < 0.6) continue;
-    n++;
-    const f = mesh(new THREE.IcosahedronGeometry(0.11, 0), material(fcols[n % 4]), {
-      castShadow: false,
-    });
-    f.position.set(x, terrainHeight(x, z) + 0.12, z);
-    scene.add(f);
+  for (let tries = 0, placed = 0; tries < flowers * 3 && placed < flowers; tries++) {
+    const angle = rand() * 6.28;
+    const dist = 2 + rand() * radius;
+    const x = cx + Math.cos(angle) * dist;
+    const z = cz + Math.sin(angle) * dist;
+    if (!allowed(x, z) || terrainHeight(x, z) < 0.6) continue;
+    placed++;
+    const flower = mesh(
+      new THREE.IcosahedronGeometry(0.11, 0),
+      material(FLOWER_COLORS[placed % 4]),
+      { castShadow: false },
+    );
+    flower.position.set(x, terrainHeight(x, z) + 0.12, z);
+    scene.add(flower);
   }
 }
 // a wooden dock running along +z from zFrom to zTo at x=cx, deck height .78
-export function dock(cx, { zFrom: z0, zTo: z1 }) {
+export function dock(cx, { zFrom, zTo }) {
   const top = 0.78;
-  for (let z = z0, i = 0; z < z1; z += 0.9, i++) {
-    const p = mesh(new THREE.BoxGeometry(2.4, 0.14, 0.82), material(i % 2 ? 0xc48a54 : 0xb57b46), {
-      receiveShadow: true,
-    });
-    p.position.set(cx, top - 0.07, z + 0.45);
-    scene.add(p);
+  for (let z = zFrom, i = 0; z < zTo; z += 0.9, i++) {
+    const plank = mesh(
+      new THREE.BoxGeometry(2.4, 0.14, 0.82),
+      material(i % 2 ? 0xc48a54 : 0xb57b46),
+      { receiveShadow: true },
+    );
+    plank.position.set(cx, top - 0.07, z + 0.45);
+    scene.add(plank);
   }
-  for (let z = z0 + 1; z <= z1; z += 2.5)
+  for (let z = zFrom + 1; z <= zTo; z += 2.5)
     for (const x of [-1.15, 1.15]) {
-      const p = mesh(new THREE.CylinderGeometry(0.13, 0.13, 3.2, 6), material(0x7a4a2a));
-      p.position.set(cx + x, -0.75, z);
-      scene.add(p);
+      const post = mesh(new THREE.CylinderGeometry(0.13, 0.13, 3.2, 6), material(0x7a4a2a));
+      post.position.set(cx + x, -0.75, z);
+      scene.add(post);
     }
-  addBox(cx, (z0 + z1) / 2, { hw: 1.2, hd: (z1 - z0) / 2, bottom: -3, top });
+  addBox(cx, (zFrom + zTo) / 2, { hw: 1.2, hd: (zTo - zFrom) / 2, bottom: -3, top });
 }

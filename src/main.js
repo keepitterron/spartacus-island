@@ -40,38 +40,38 @@ import island4 from './islands/island4/index.js';
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
 const ISLANDS = [island1, island2, island3, island4];
-for (const I of ISLANDS) {
-  game.islands[I.id] = I;
-  initTasks(I);
-  addTerrain(I.zMax, I.height);
+for (const island of ISLANDS) {
+  game.islands[island.id] = island;
+  initTasks(island);
+  addTerrain(island.zMax, island.height);
 }
 // Build order matters: all scenery shares one seeded random sequence (see core/util.js rand).
-for (const I of ISLANDS) I.build();
+for (const island of ISLANDS) island.build();
 buildSky();
-for (const I of ISLANDS) I.buildLate?.();
+for (const island of ISLANDS) island.buildLate?.();
 player.pos.copy(island1.spawn);
 SPAWN.copy(island1.spawn);
 
 /* ---------- HUD + menus ---------- */
 renderTasks();
 $('#listToggle').addEventListener('click', () => {
-  const l = $('#list');
-  l.classList.toggle('closed');
-  $('#listToggle').setAttribute('aria-expanded', !l.classList.contains('closed'));
+  const list = $('#list');
+  list.classList.toggle('closed');
+  $('#listToggle').setAttribute('aria-expanded', !list.classList.contains('closed'));
 });
-if (innerWidth < 500) $('#list').classList.add('closed');
+if (innerWidth < 500) $('#list').classList.add('closed'); // task list starts folded on phones
 armButton($('#restartLink'), 'Tap again to restart from island 1', restartFromBeginning);
 
-const contIsland = continueIsland(ISLANDS.length);
-if (contIsland >= 2) {
-  $('#cont').textContent = `Continue: Island ${contIsland}`;
+const continueTo = continueIsland(ISLANDS.length);
+if (continueTo >= 2) {
+  $('#cont').textContent = `Continue: Island ${continueTo}`;
   $('#cont').classList.remove('hidden');
 }
 // with a save to lose, starting over needs a second tap
-if (contIsland >= 2 && loadSave().island >= 2)
+if (continueTo >= 2 && loadSave().island >= 2)
   armButton($('#play'), 'Tap again to start over', () => startGame(1));
 else $('#play').addEventListener('click', () => startGame(1));
-$('#cont').addEventListener('click', () => startGame(contIsland));
+$('#cont').addEventListener('click', () => startGame(continueTo));
 $('#winExplore').addEventListener('click', () => {
   hideWin();
   canvas.focus();
@@ -79,24 +79,25 @@ $('#winExplore').addEventListener('click', () => {
 $('#winGo').addEventListener('click', () => currentIsland().exit.run());
 $('#restart').addEventListener('click', restartFromBeginning);
 
+const JUMP_BUFFER = 0.15; // s a jump press is remembered, so pressing just before landing still jumps
 bindInput({
   onKey(k) {
     if (game.state === 'start') {
-      if (k === 'enter' || k === ' ') startGame(contIsland);
+      if (k === 'enter' || k === ' ') startGame(continueTo);
       return;
     }
-    const cs = game.cutscenes[game.state];
-    if (cs) {
-      if (k === 'enter' || k === ' ' || k === 'escape') cs.skip?.();
+    const cutscene = game.cutscenes[game.state];
+    if (cutscene) {
+      if (k === 'enter' || k === ' ' || k === 'escape') cutscene.skip?.();
       return;
     }
     if (overlayOpen()) return; // let Enter/Space press the focused panel button
-    if (k === ' ') player.jumpBuffer = 0.15;
+    if (k === ' ') player.jumpBuffer = JUMP_BUFFER;
     if (k === 'b') bark();
     if (k === 'f' || k === 'enter') doAction();
   },
   onJump() {
-    player.jumpBuffer = 0.15;
+    player.jumpBuffer = JUMP_BUFFER;
   },
   onBark: bark,
   onAct: doAction,
@@ -106,12 +107,45 @@ bindInput({
 const clock = new THREE.Clock();
 function frame() {
   requestAnimationFrame(frame);
-  const dt = Math.min(clock.getDelta(), 1 / 30);
+  const dt = Math.min(clock.getDelta(), 1 / 30); // cap the step so a slow frame can't tunnel through things
   game.time += dt;
   update(dt);
   renderer.render(scene, camera);
 }
+
+// One frame of the game: the world always animates; then either the title-screen orbit,
+// a cutscene, or normal play (move the player, effects, prompt, camera).
 function update(dt) {
+  updateWorld(dt);
+  followSun(game.state === 'start' ? vec3(0, 0, 0) : player.pos);
+  if (game.state === 'start') {
+    orbitCamera();
+    animateDog(dt, 0);
+    return;
+  }
+  const cutscene = game.cutscenes[game.state];
+  if (cutscene) {
+    cutscene.update(dt);
+    animateDog(dt, 0);
+    updatePrompt();
+    return;
+  }
+
+  player.barkCooldown -= dt;
+  player.barkTimer -= dt;
+  stepPlayerForState(dt);
+  const speed = groundSpeed();
+  turnToFaceMovement(dt, speed);
+  updatePowerSparkles(dt, speed);
+  updateCelebration(dt);
+  updatePrompt();
+  animateDog(dt, game.state === 'rescue' ? 3 : speed);
+  updateSwingLine();
+  updateCamera(dt);
+}
+
+// scenery, pickups, NPCs and effects that move whatever the player is doing
+function updateWorld(dt) {
   updateOcean();
   updateSky(dt);
   updateShip(dt, game.state === 'bubble');
@@ -128,89 +162,75 @@ function update(dt) {
   updateFloaters(dt);
   updateParticles(dt);
   updateWoof(dt);
-  followSun(game.state === 'start' ? vec3(0, 0, 0) : player.pos);
-  if (game.state === 'start') {
-    orbitCamera();
-    animateDog(dt, 0);
-    return;
-  }
-  const cs = game.cutscenes[game.state];
-  if (cs) {
-    cs.update(dt);
-    animateDog(dt, 0);
-    updatePrompt();
-    return;
-  }
+}
 
-  player.barkCooldown -= dt;
-  player.barkTimer -= dt;
-  if (game.state === 'rescue') updateRescue(dt);
-  else if (player.swing) {
-    updateSwing(dt);
-    checkTriggers(dt);
-  } else if (player.climb) {
-    updateClimb(dt);
-    checkTriggers(dt);
-  } else if (player.zip) {
-    updateZip(dt);
-    checkTriggers(dt);
-  } else {
-    stepPlayer(dt);
-    checkTriggers(dt);
-    updateDigging(dt);
-    updatePlacing(dt);
+// move the player the way their current mode moves them (rescue, swinging, climbing,
+// zip line, or ordinary walking, which is the only mode that can dig or place items)
+function stepPlayerForState(dt) {
+  if (game.state === 'rescue') {
+    updateRescue(dt);
+    return;
   }
-  const sp =
-    game.state === 'play' && !player.swing && !player.climb && !player.zip
-      ? Math.hypot(player.vel.x, player.vel.z)
-      : 0;
-  if (sp > 0.6 && player.digTimer <= 0)
-    player.yaw = lerpAngle(
-      player.yaw,
-      Math.atan2(player.vel.x, player.vel.z),
-      Math.min(1, dt * 12),
-    );
-  if (player.power && sp > 2 && player.grounded) {
-    player.sparkTimer -= dt;
-    if (player.sparkTimer < 0) {
-      player.sparkTimer = 0.12;
-      burst(player.pos.clone().add(vec3(0, 0.3, 0)), {
-        count: 2,
-        color: POWERS[player.power].col.slice(1),
-        speed: 1,
-        up: 1.5,
-        life: 0.6,
-        size: 0.7,
-        gravity: 0.2,
-      });
-    }
+  const onRopeOrVine = player.swing || player.climb || player.zip; // before this step changes it
+  if (player.swing) updateSwing(dt);
+  else if (player.climb) updateClimb(dt);
+  else if (player.zip) updateZip(dt);
+  else stepPlayer(dt);
+  checkTriggers(dt);
+  if (onRopeOrVine) return;
+  updateDigging(dt);
+  updatePlacing(dt);
+}
+
+// horizontal speed while walking freely in play; 0 during rescue, swing, climb or zip
+function groundSpeed() {
+  const walking = game.state === 'play' && !player.swing && !player.climb && !player.zip;
+  return walking ? Math.hypot(player.vel.x, player.vel.z) : 0;
+}
+
+function turnToFaceMovement(dt, speed) {
+  if (speed <= 0.6 || player.digTimer > 0) return;
+  player.yaw = lerpAngle(player.yaw, Math.atan2(player.vel.x, player.vel.z), Math.min(1, dt * 12));
+}
+
+// while a fruit power is active, running leaves a trail of sparkles in its light + accent colours
+function updatePowerSparkles(dt, speed) {
+  if (!player.power || speed <= 2 || !player.grounded) return;
+  player.sparkTimer -= dt;
+  if (player.sparkTimer >= 0) return;
+  player.sparkTimer = 0.12;
+  burst(player.pos.clone().add(vec3(0, 0.3, 0)), {
+    count: 2,
+    color: POWERS[player.power].col.slice(1),
+    speed: 1,
+    up: 1.5,
+    life: 0.6,
+    size: 0.7,
+    gravity: 0.2,
+  });
+}
+
+// island complete: confetti four times a second for ~2.4 s, then the island's win panel
+function updateCelebration(dt) {
+  if (game.celebrateTime < 0) return;
+  game.celebrateTime += dt;
+  const crossedQuarterSecond =
+    Math.floor(game.celebrateTime * 4) !== Math.floor((game.celebrateTime - dt) * 4);
+  if (game.celebrateTime < 2.4 && crossedQuarterSecond)
+    burst(player.pos.clone().add(vec3(0, 3, 0)), {
+      count: 26,
+      color: [0xff9fb2, 0xffd84d, 0x7fd8ee, 0x8a5cf6, 0x6ccb5f],
+      speed: 7,
+      up: 5,
+      life: 2.2,
+      size: 1.4,
+      gravity: 0.25,
+      confetti: true,
+    });
+  if (game.celebrateTime > 2.8) {
+    showWin(game.celebrateIsland);
+    game.celebrateTime = -1;
   }
-  // celebration: confetti for ~2.4 s, then the island's win panel
-  if (game.celebrateTime >= 0) {
-    game.celebrateTime += dt;
-    if (
-      game.celebrateTime < 2.4 &&
-      Math.floor(game.celebrateTime * 4) !== Math.floor((game.celebrateTime - dt) * 4)
-    )
-      burst(player.pos.clone().add(vec3(0, 3, 0)), {
-        count: 26,
-        color: [0xff9fb2, 0xffd84d, 0x7fd8ee, 0x8a5cf6, 0x6ccb5f],
-        speed: 7,
-        up: 5,
-        life: 2.2,
-        size: 1.4,
-        gravity: 0.25,
-        confetti: true,
-      });
-    if (game.celebrateTime > 2.8) {
-      showWin(game.celebrateIsland);
-      game.celebrateTime = -1;
-    }
-  }
-  updatePrompt();
-  animateDog(dt, game.state === 'rescue' ? 3 : sp);
-  updateSwingLine();
-  updateCamera(dt);
 }
 frame();
 

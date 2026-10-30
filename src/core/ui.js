@@ -1,6 +1,5 @@
-import { $ } from './util.js';
-
 // HUD helpers: toast messages, one-time hints, island title card, overlays.
+import { $ } from './util.js';
 
 export const isTouch = () => document.body.classList.contains('touch');
 // how to name the action button in messages
@@ -15,10 +14,10 @@ export function toast(msg, ms = 2600) {
   toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 }
 // every new thing gets a hint the first time the player meets it
-const seen = {};
+const seenHints = {};
 export function hintOnce(id, msg, ms) {
-  if (seen[id]) return;
-  seen[id] = 1;
+  if (seenHints[id]) return;
+  seenHints[id] = 1;
   toast(msg, ms);
 }
 export function showTitleCard(small, big) {
@@ -34,7 +33,7 @@ export const overlayOpen = () => !!document.querySelector('.overlay:not(.hidden)
 // a button that needs a second tap within 3 s before it does something destructive
 export function armButton(btn, armedText, fn) {
   const text = btn.textContent;
-  let armT = null;
+  let disarmTimer = null;
   btn.addEventListener('click', () => {
     if (btn.dataset.armed) {
       fn();
@@ -42,8 +41,8 @@ export function armButton(btn, armedText, fn) {
     }
     btn.dataset.armed = '1';
     btn.textContent = armedText;
-    clearTimeout(armT);
-    armT = setTimeout(() => {
+    clearTimeout(disarmTimer);
+    disarmTimer = setTimeout(() => {
       delete btn.dataset.armed;
       btn.textContent = text;
     }, 3000);

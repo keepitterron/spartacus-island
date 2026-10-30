@@ -1,3 +1,4 @@
+// The WebGL renderer, scene, camera and lights, plus the surface/underwater look.
 import * as THREE from 'three';
 import { $ } from './util.js';
 
@@ -30,11 +31,11 @@ scene.background = new THREE.Color(0xa8e6f7);
 scene.fog = new THREE.Fog(0xa8e6f7, 60, 170);
 export const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
 function resize() {
-  const w = innerWidth,
-    h = innerHeight;
+  const w = innerWidth;
+  const h = innerHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
-  camera.fov = w < h ? 68 : 55;
+  camera.fov = w < h ? 68 : 55; // wider view in portrait
   camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
@@ -49,16 +50,17 @@ sun.shadow.bias = -0.0005;
 scene.add(sun);
 scene.add(sun.target);
 // the shadow camera is small, so it follows whatever we're looking at
-export function followSun(p) {
-  sun.position.set(p.x + 18, p.y + 34, p.z + 14);
-  sun.target.position.copy(p);
+export function followSun(target) {
+  sun.position.set(target.x + 18, target.y + 34, target.z + 14);
+  sun.target.position.copy(target);
 }
 
-export const ambience = { under: false };
-export function setUnderwater(u) {
-  ambience.under = u;
-  scene.background.set(u ? 0x1a6f9e : 0xa8e6f7);
-  scene.fog.color.set(u ? 0x1a6f9e : 0xa8e6f7);
-  scene.fog.near = u ? 16 : 60;
-  scene.fog.far = u ? 85 : 170;
+export const ambience = { under: false }; // under: we're on the sea floor
+// underwater: deep blue and much thicker fog
+export function setUnderwater(underwater) {
+  ambience.under = underwater;
+  scene.background.set(underwater ? 0x1a6f9e : 0xa8e6f7);
+  scene.fog.color.set(underwater ? 0x1a6f9e : 0xa8e6f7);
+  scene.fog.near = underwater ? 16 : 60;
+  scene.fog.far = underwater ? 85 : 170;
 }

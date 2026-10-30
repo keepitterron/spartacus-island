@@ -1,3 +1,11 @@
+// window.__g console helpers, loaded with ?debug (and always in `npm run dev`):
+//   __g.go(3)               jump to island 3
+//   __g.tp(x, z)            teleport (island-local coordinates of the current island)
+//   __g.power('boing')      give a power
+//   __g.done('bones')       tick a task; __g.doneAll() ticks the whole list
+//   __g.act()               press the action button; __g.action() shows what it would do
+//   __g.where()             current island-local position
+// Raw state is there too: __g.game, __g.player, __g.followCam, __g.colliders.
 import { game, followCam, currentIsland } from '../core/state.js';
 import { colliders } from '../core/colliders.js';
 import { terrainHeight } from '../world/terrain.js';
@@ -7,18 +15,13 @@ import { completeTask, renderTasks } from './tasks.js';
 import { currentAction, doAction } from './actions.js';
 import { startGame, enterIsland } from './flow.js';
 
-// Loaded with ?debug (and always in `npm run dev`). Use from the browser console:
-//   __g.go(3)               jump to island 3
-//   __g.tp(x, z)            teleport (island-local coordinates of the current island)
-//   __g.power('boing')      give a power
-//   __g.done('bones')       tick a task; __g.doneAll() ticks the whole list
-//   __g.act()               press the action button; __g.action() shows what it would do
-//   __g.where()             current island-local position
+// the current island's centre, which island-local coordinates are relative to
+const islandOrigin = () => {
+  const center = currentIsland().center;
+  return { ox: center.x, oz: center.z };
+};
+
 export function installDebug() {
-  const local = () => {
-    const c = currentIsland().center;
-    return { ox: c.x, oz: c.z };
-  };
   window.__g = {
     game,
     player,
@@ -29,12 +32,12 @@ export function installDebug() {
       else enterIsland(n, false);
     },
     tp(x, z, y) {
-      const { ox, oz } = local();
+      const { ox, oz } = islandOrigin();
       player.pos.set(ox + x, y ?? terrainHeight(ox + x, oz + z) + 0.05, oz + z);
       player.vel.set(0, 0, 0);
     },
     where() {
-      const { ox, oz } = local();
+      const { ox, oz } = islandOrigin();
       return {
         x: +(player.pos.x - ox).toFixed(2),
         y: +player.pos.y.toFixed(2),
@@ -46,12 +49,12 @@ export function installDebug() {
     power: setPower,
     done: completeTask,
     doneAll() {
-      for (const k of currentIsland().tasks.list) completeTask(k.id);
+      for (const task of currentIsland().tasks.list) completeTask(task.id);
       renderTasks();
     },
     action() {
-      const a = currentAction();
-      return a && a.label;
+      const action = currentAction();
+      return action && action.label;
     },
     act: doAction,
   };

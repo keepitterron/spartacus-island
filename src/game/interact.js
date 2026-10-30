@@ -1,17 +1,17 @@
+// Things that happen just by walking somewhere (no button): pickups, fruits, then the
+// island's own interact(p, dt) for triggers and hints.
 import { game, currentIsland } from '../core/state.js';
 import { toast } from '../core/ui.js';
 import { player } from '../player/player.js';
 import { grabPickups } from '../systems/collect.js';
 import { eatFruits } from '../systems/powers.js';
 
-// Things that happen just by walking somewhere (no button): pickups, fruits, then the
-// island's own interact(p, dt) for triggers and hints.
 export function checkTriggers(dt) {
-  const p = player.pos;
-  grabPickups(p);
-  eatFruits(p);
+  const pos = player.pos;
+  grabPickups(pos);
+  eatFruits(pos);
   game.hintCooldown -= dt;
-  currentIsland().interact?.(p, dt);
+  currentIsland().interact?.(pos, dt);
 }
 // a repeating "too high" hint (at most every 10 s) while Spartacus stands near something
 // he can't jump onto without Boing-Boing

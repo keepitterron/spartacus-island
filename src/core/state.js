@@ -1,4 +1,4 @@
-// Shared, mutable game state. Modules read and write G.x instead of exporting `let`s,
+// Shared, mutable game state. Modules read and write game.x instead of exporting `let`s,
 // because ES module bindings can't be reassigned from outside.
 export const game = {
   state: 'start', // start | play | rescue | or the name of a cutscene (sail, bubble, whale)
@@ -8,8 +8,8 @@ export const game = {
   time: 0, // seconds since boot (drives all idle animations)
   flagUp: false, // ship flag raised
   spinLeft: 0, // celebration spin left (radians)
-  celebrateTime: -1,
-  celebrateIsland: null,
+  celebrateTime: -1, // seconds into the island-complete celebration, -1 when none
+  celebrateIsland: null, // island whose win panel shows when the celebration ends
   hintCooldown: 0, // cooldown for repeating "too high" hints
   debug: false,
 };

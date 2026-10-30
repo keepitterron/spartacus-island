@@ -16,7 +16,7 @@ export const addBox = (x, z, { hw, hd, bottom, top }) => {
   return c;
 };
 
-// is point p (x,z) inside collider c's footprint, grown by pad?
+// is point p ({x, z}) inside collider c's footprint, grown by pad?
 export function inFootprint(c, p, pad = 0) {
   return c.type === 'cyl'
     ? Math.hypot(p.x - c.x, p.z - c.z) < c.r + pad
@@ -24,43 +24,46 @@ export function inFootprint(c, p, pad = 0) {
 }
 // highest surface under (x,z) that is not above maxY
 export function supportHeight(x, z, maxY) {
-  let s = terrainHeight(x, z);
-  for (const c of colliders) if (c.top <= maxY && inFootprint(c, { x, z })) s = Math.max(s, c.top);
-  return s;
+  let height = terrainHeight(x, z);
+  for (const c of colliders)
+    if (c.top <= maxY && inFootprint(c, { x, z })) height = Math.max(height, c.top);
+  return height;
 }
 // push a round body out of collider c, cancelling the velocity that points into it
-export function pushOut(c, { pos: p, vel: v, radius: R }) {
-  if (c.type === 'cyl') {
-    const dx = p.x - c.x,
-      dz = p.z - c.z,
-      d = Math.hypot(dx, dz) || 1e-4,
-      m = c.r + R;
-    if (d < m) {
-      const nx = dx / d,
-        nz = dz / d;
-      p.x = c.x + nx * m;
-      p.z = c.z + nz * m;
-      const vn = v.x * nx + v.z * nz;
-      if (vn < 0) {
-        v.x -= vn * nx;
-        v.z -= vn * nz;
-      }
-    }
+export function pushOut(c, { pos, vel, radius }) {
+  if (c.type === 'cyl') pushOutOfCylinder(c, { pos, vel, radius });
+  else pushOutOfBox(c, { pos, vel, radius });
+}
+function pushOutOfCylinder(c, { pos, vel, radius }) {
+  const dx = pos.x - c.x;
+  const dz = pos.z - c.z;
+  const dist = Math.hypot(dx, dz) || 1e-4;
+  const minDist = c.r + radius;
+  if (dist >= minDist) return;
+  const nx = dx / dist;
+  const nz = dz / dist;
+  pos.x = c.x + nx * minDist;
+  pos.z = c.z + nz * minDist;
+  const inward = vel.x * nx + vel.z * nz;
+  if (inward < 0) {
+    vel.x -= inward * nx;
+    vel.z -= inward * nz;
+  }
+}
+// leave the box along whichever axis needs the smaller push
+function pushOutOfBox(c, { pos, vel, radius }) {
+  const extentX = c.hw + radius;
+  const extentZ = c.hd + radius;
+  const dx = pos.x - c.x;
+  const dz = pos.z - c.z;
+  if (Math.abs(dx) >= extentX || Math.abs(dz) >= extentZ) return;
+  if (extentX - Math.abs(dx) < extentZ - Math.abs(dz)) {
+    const side = Math.sign(dx) || 1;
+    pos.x = c.x + side * extentX;
+    if (vel.x * side < 0) vel.x = 0;
   } else {
-    const ex = c.hw + R,
-      ez = c.hd + R,
-      dx = p.x - c.x,
-      dz = p.z - c.z;
-    if (Math.abs(dx) < ex && Math.abs(dz) < ez) {
-      if (ex - Math.abs(dx) < ez - Math.abs(dz)) {
-        const s = Math.sign(dx) || 1;
-        p.x = c.x + s * ex;
-        if (v.x * s < 0) v.x = 0;
-      } else {
-        const s = Math.sign(dz) || 1;
-        p.z = c.z + s * ez;
-        if (v.z * s < 0) v.z = 0;
-      }
-    }
+    const side = Math.sign(dz) || 1;
+    pos.z = c.z + side * extentZ;
+    if (vel.z * side < 0) vel.z = 0;
   }
 }
