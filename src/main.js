@@ -28,6 +28,8 @@ import { updateHat } from './systems/hat.js';
 import { loadOutfit, updateOutfit } from './systems/outfits.js';
 import { buildSecrets, updateSecrets } from './systems/secrets.js';
 import { updateReactions } from './systems/reactions.js';
+import { buildBalls, updateBalls } from './systems/balls.js';
+import { buildCritters, updateCritters } from './systems/critters.js';
 import { updateGull } from './npcs/gull.js';
 import { updateMango } from './npcs/mango.js';
 import { updateWasabi } from './npcs/wasabi.js';
@@ -54,7 +56,10 @@ for (const island of ISLANDS) {
 for (const island of ISLANDS) island.build();
 buildSky();
 for (const island of ISLANDS) island.buildLate?.();
-buildSecrets(); // last, so presents can sit on top of everything built above
+// last, so presents, balls and critters can sit on top of everything built above
+buildSecrets();
+buildBalls();
+buildCritters();
 loadOutfit();
 player.pos.copy(island1.spawn);
 SPAWN.copy(island1.spawn);
@@ -181,6 +186,8 @@ function updateWorld(dt) {
   updateOutfit();
   updateSecrets(dt);
   updateReactions(dt);
+  updateBalls(dt);
+  updateCritters(dt);
   updateGull(dt);
   updateMango(dt);
   updateWasabi(dt);

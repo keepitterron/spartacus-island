@@ -563,6 +563,24 @@ const island = {
     { id: 'i1-hill', x: -13.6, z: -16.6, reward: 'tricorn' }, // next to the treasure chest
     { id: 'i1-dig', x: 22, z: -4, reward: 'feather-bow', dig: true },
   ],
+  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
+  balls: [
+    [4, 15],
+    [-5, 15],
+  ],
+  critters: {
+    birds: [
+      [-12, 24],
+      [20, -18],
+      [26, 12],
+    ],
+    butterflies: [
+      [-8, 10],
+      [12, 10],
+      [-16, -4],
+      [-22, 14],
+    ],
+  },
   intro: [[400, 'Check the list. Let’s go, Spartacus!', 2600]],
   win: {
     title: 'Ready to sail!',

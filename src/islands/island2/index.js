@@ -241,6 +241,23 @@ const island = {
     { id: 'i2-west-beach', x: -19, z: 2, reward: 'backpack' },
     { id: 'i2-dig', x: 13, z: -13, reward: 'rope-collar', dig: true },
   ],
+  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
+  balls: [
+    [3, 9],
+    [-6, 12],
+  ],
+  critters: {
+    birds: [
+      [-14, 16],
+      [16, -12],
+      [12, 17],
+    ],
+    butterflies: [
+      [-4, 6],
+      [8, 12],
+      [-18, -6],
+    ],
+  },
   intro: [[3400, 'Mango the parrot is stuck on the tallest rock!', 3400]],
   win: {
     title: 'New crew mate!',

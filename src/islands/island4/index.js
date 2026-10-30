@@ -784,6 +784,16 @@ const island = {
     { id: 'i4-kelp', x: -18, z: -4, reward: 'pearl-collar' },
     { id: 'i4-dig', x: 6, z: 14, reward: 'ink-mustache', dig: true },
   ],
+  // fish schools [x, z, height above the sea bed] (systems/critters.js), island-local
+  critters: {
+    fish: [
+      [-6, 0, 3],
+      [8, 10, 3],
+      [-12, -10, 4],
+      [12, -6, 3],
+      [0, 14, 2.5],
+    ],
+  },
   intro: [
     [3400, 'The red hermit crabs lost their friend Eduardo!', 3400],
     [7200, 'Mango: “I’ll guard the ship!” Wasabi’s bubble lets Spartacus breathe.', 3800],

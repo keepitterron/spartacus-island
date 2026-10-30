@@ -713,6 +713,19 @@ const island = {
     { id: 'i3-spring', x: -16, z: -1, reward: 'vine-scarf' }, // by Wasabi's spring
     { id: 'i3-dig', x: 12, z: 14, reward: 'leaf-cape', dig: true },
   ],
+  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
+  balls: [[3, 12]],
+  critters: {
+    birds: [[8, 22]],
+    butterflies: [
+      [5, 9],
+      [-8, 12],
+      [12, 0],
+      [-6, -6],
+      [-20, 4],
+      [18, 10],
+    ],
+  },
   intro: [[3400, 'Wasabi the axolotl’s spring has dried up!', 3400]],
   win: {
     title: 'Wasabi is home!',

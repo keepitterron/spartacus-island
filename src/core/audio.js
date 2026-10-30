@@ -126,6 +126,11 @@ export const sfx = {
     tone(300, { to: 180, duration: 0.1, type: 'triangle', volume: 0.1 });
     noise(0.06, { freq: 700, volume: 0.15 });
   },
+  // a flock of birds taking off: a quick flurry of soft wing flaps
+  flutter() {
+    for (let i = 0; i < 6; i++)
+      noise(0.05, { freq: 1200 + i * 150, volume: 0.12, delay: i * 0.04 });
+  },
   // ground pound landing: a deep thump
   pound() {
     tone(130, { to: 45, duration: 0.3, type: 'sine', volume: 0.45 });
