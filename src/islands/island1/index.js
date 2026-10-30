@@ -581,6 +581,14 @@ const island = {
       [-22, 14],
     ],
   },
+  // a sunny, bouncy tune (core/music.js)
+  music: {
+    tempo: 100,
+    root: 60,
+    wave: 'triangle',
+    melody: [0, 2, 4, null, 4, 5, 4, 2, 3, null, 2, 0, 1, null, 0, null],
+    bass: [-5, null, null, null, -2, null, null, null, -1, null, null, null, -2, null, null, null],
+  },
   intro: [[400, 'Check the list. Let’s go, Spartacus!', 2600]],
   win: {
     title: 'Ready to sail!',

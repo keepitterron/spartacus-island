@@ -3,7 +3,9 @@ import * as THREE from 'three';
 import { clamp, lerp } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { material, mesh } from '../core/materials.js';
-import { game } from '../core/state.js';
+import { game, currentIsland } from '../core/state.js';
+import { sfx } from '../core/audio.js';
+import { terrainHeight } from '../world/terrain.js';
 import { player, SPEED } from './player.js';
 import { POUND_HANG } from './pound.js';
 
@@ -167,7 +169,15 @@ export function animateDog(dt, speed) {
   }
   dog.root.rotation.y = player.yaw;
   const moving = clamp(speed / SPEED, 0, 1);
+  const prevPhase = player.gaitPhase;
   player.gaitPhase += dt * (4 + speed * 1.9);
+  // a footstep each time a pair of paws comes down
+  if (
+    moving > 0.3 &&
+    player.grounded &&
+    Math.floor(player.gaitPhase / Math.PI) !== Math.floor(prevPhase / Math.PI)
+  )
+    sfx.step(surfaceUnderfoot());
   const digging = player.digTimer > 0;
   poseLegs({ time, moving, digging });
   dog.body.rotation.x = lerp(dog.body.rotation.x, bodyPitch(digging), Math.min(1, dt * 10));
@@ -197,6 +207,15 @@ export function animateDog(dt, speed) {
   dog.tongue.visible = barking && !player.carrying;
   dog.head.rotation.x = headPitch(barking, time);
   dog.head.rotation.z = Math.sin(time * 0.9) * 0.05;
+}
+
+// what the footsteps sound like: shallow water, wood (docks, bridges, anything built), sand
+// near the shore and on the sea floor, grass everywhere else
+function surfaceUnderfoot() {
+  const pos = player.pos;
+  if (player.wading) return 'water';
+  if (pos.y > terrainHeight(pos.x, pos.z) + 0.1) return 'wood';
+  return currentIsland().underwater || pos.y < 0.6 ? 'sand' : 'grass';
 }
 
 // legs 0-1 are the front pair, 2-3 the back pair; rotation.x swings them

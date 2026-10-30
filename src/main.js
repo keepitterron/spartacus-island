@@ -12,6 +12,7 @@ import { overlayOpen, armButton } from './core/ui.js';
 import { bindInput } from './core/input.js';
 import { continueIsland, loadSave, writeSave } from './core/save.js';
 import { isMuted, setMuted } from './core/audio.js';
+import { isMusicOn, setMusicOn } from './core/music.js';
 import { addTerrain } from './world/terrain.js';
 import { updateOcean } from './world/ocean.js';
 import { buildSky, updateSky } from './world/sky.js';
@@ -88,6 +89,19 @@ setMuted(!!loadSave().muted);
 showSoundButton();
 $('#btnSound').addEventListener('click', toggleSound);
 
+// music on/off (sound effects stay), also remembered; a crossed-out note when off
+function showMusicButton() {
+  $('#btnMusic').classList.toggle('off', !isMusicOn());
+}
+function toggleMusic() {
+  setMusicOn(!isMusicOn());
+  writeSave({ music: isMusicOn() });
+  showMusicButton();
+}
+setMusicOn(loadSave().music !== false);
+showMusicButton();
+$('#btnMusic').addEventListener('click', toggleMusic);
+
 const continueTo = continueIsland(ISLANDS.length);
 if (continueTo >= 2) {
   $('#cont').textContent = `Continue: Island ${continueTo}`;
@@ -123,6 +137,7 @@ bindInput({
     if (k === 'f' || k === 'enter') doAction();
     if (k === 'o') openWardrobe();
     if (k === 'm') toggleSound();
+    if (k === 'n') toggleMusic();
   },
   onJump() {
     player.jumpBuffer = JUMP_BUFFER;

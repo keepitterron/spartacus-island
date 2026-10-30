@@ -258,6 +258,14 @@ const island = {
       [-18, -6],
     ],
   },
+  // a skippy pirate jig (core/music.js)
+  music: {
+    tempo: 116,
+    root: 65,
+    wave: 'square',
+    melody: [5, null, 4, 3, 4, null, 2, null, 3, 4, 5, null, 4, 3, 2, null],
+    bass: [-5, null, -2, null, -5, null, -2, null, -4, null, -1, null, -3, null, -2, null],
+  },
   intro: [[3400, 'Mango the parrot is stuck on the tallest rock!', 3400]],
   win: {
     title: 'New crew mate!',

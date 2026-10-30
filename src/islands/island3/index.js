@@ -726,6 +726,14 @@ const island = {
       [18, 10],
     ],
   },
+  // a slow walk in the woods (core/music.js)
+  music: {
+    tempo: 84,
+    root: 62,
+    wave: 'triangle',
+    melody: [2, null, null, 3, 4, null, 3, null, 2, null, 1, null, 0, null, null, null],
+    bass: [-5, null, null, null, -3, null, null, null, -4, null, null, null, -2, null, null, null],
+  },
   intro: [[3400, 'Wasabi the axolotl’s spring has dried up!', 3400]],
   win: {
     title: 'Wasabi is home!',

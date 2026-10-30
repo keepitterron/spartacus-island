@@ -566,6 +566,10 @@ button:focus-visible {
   padding: 0;
   line-height: 1;
 }
+.tool.off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
 .tool:active {
   transform: translateY(3px);
   box-shadow: 0 1px 0 var(--edge);
