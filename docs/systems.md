@@ -107,6 +107,10 @@ Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'na
 
 Each island has a tune as data: `music: {tempo, root, wave, melody, bass}`. `melody` and `bass` are 16 half-beat steps counting up the major pentatonic scale from `root` (a MIDI note): 0 is the root, 5 an octave up, -5 an octave down, `null` a rest. Any steps sound fine together, so Zoë can make up tunes as lists of numbers. A look-ahead scheduler plays it from `startMusic()` (called when the game starts), switching tune when the island changes. Underneath, a looping filtered noise swells like waves (a low hum underwater). 🎵 / `N` turns the music off (saved as `music`); 🔊 / `M` mutes everything. Footsteps (`sfx.step`) sound different on sand, grass, wood and in shallow water.
 
+## Day and night (`world/daylight.js`)
+
+The 🌙 button (or `L`, saved as `night`) fades to night over 2.5 s: sky, fog, sun and hemisphere light lerp to moonlit colours (a darker blue underwater), stars appear, butterflies sleep and fireflies come out (`systems/critters.js`), and the island tune plays slower and softer. Presents with `night: true` are invisible (and can't be opened) by day, with a one-time "come back at night" hint nearby. It's a toggle rather than a timed cycle; ask Zoë which she prefers. `daylight.night` (0..1) is what other systems read.
+
 ## Save (`core/save.js`)
 
-`{v:4, island, owned, equipped, secrets}` in `localStorage['spartacus-save']`. `writeSave(data)` merges, so each system writes only its own fields: the island on arrival, outfits and secrets as they change. Starting over keeps outfits and found secrets. When the shape changes, bump `VERSION` and add a step to `migrate()` (v3 saves keep their island). `#islandN` in the URL overrides it for testing. Mid-island progress is not saved yet.
+`{v:4, island, owned, equipped, secrets, muted, music, night}` in `localStorage['spartacus-save']`. `writeSave(data)` merges, so each system writes only its own fields: the island on arrival, outfits and secrets as they change. Starting over keeps outfits and found secrets. When the shape changes, bump `VERSION` and add a step to `migrate()` (v3 saves keep their island). `#islandN` in the URL overrides it for testing. Mid-island progress is not saved yet.

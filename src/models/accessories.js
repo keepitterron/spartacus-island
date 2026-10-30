@@ -461,6 +461,51 @@ export const ACCESSORIES = [
     },
   },
 
+  /* ---------- night-only presents ---------- */
+  {
+    id: 'nightcap',
+    name: 'Sleepy nightcap',
+    icon: '🌙',
+    slot: 'head',
+    build() {
+      const g = new THREE.Group();
+      part(g, cylinder(0.36, 0.36, 0.1, 14), { color: 0xfffaf0, pos: [0, 0.03, 0] });
+      // a floppy cone that droops to one side, with a pompom on the tip
+      part(g, new THREE.ConeGeometry(0.34, 0.75, 12), {
+        color: 0x5a6fd6,
+        pos: [0.12, 0.38, 0],
+        rot: [0, 0, -0.55],
+      });
+      for (const [x, y] of [
+        [-0.12, 0.25],
+        [0.08, 0.4],
+        [0.22, 0.6],
+      ])
+        part(g, ball(0.04, 5), { color: 0xffd84d, pos: [x, y, 0.22] });
+      part(g, ball(0.1, 8), { color: 0xfffaf0, pos: [0.45, 0.58, 0] });
+      return g;
+    },
+  },
+  {
+    id: 'star-glasses',
+    name: 'Star glasses',
+    icon: '🌟',
+    slot: 'face',
+    build() {
+      const g = new THREE.Group();
+      for (const side of [-1, 1]) {
+        const star = makeStar(0xffd84d);
+        star.scale.setScalar(0.85);
+        star.position.set(side * 0.17, 0.08, 0.45);
+        g.add(star);
+      }
+      part(g, box(0.12, 0.03, 0.03), { color: 0xffd84d, pos: [0, 0.11, 0.5] });
+      for (const side of [-1, 1])
+        part(g, box(0.03, 0.03, 0.4), { color: 0xffd84d, pos: [side * 0.33, 0.1, 0.3] });
+      return g;
+    },
+  },
+
   /* ---------- island 4 ---------- */
   {
     id: 'goggles',

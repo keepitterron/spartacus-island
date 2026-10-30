@@ -562,6 +562,7 @@ const island = {
     { id: 'i1-shore-rock', x: -6, z: -26, reward: 'flower-crown' }, // on the rock by the sea
     { id: 'i1-hill', x: -13.6, z: -16.6, reward: 'tricorn' }, // next to the treasure chest
     { id: 'i1-dig', x: 22, z: -4, reward: 'feather-bow', dig: true },
+    { id: 'i1-night-crates', x: 3, z: 20.3, reward: 'nightcap', night: true }, // on the crates by the start
   ],
   // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
   balls: [

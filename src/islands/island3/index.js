@@ -712,6 +712,7 @@ const island = {
     { id: 'i3-acorn-tree', x: 16.3, z: -11, reward: 'butterfly-wings' }, // Stretchy hook
     { id: 'i3-spring', x: -16, z: -1, reward: 'vine-scarf' }, // by Wasabi's spring
     { id: 'i3-dig', x: 12, z: 14, reward: 'leaf-cape', dig: true },
+    { id: 'i3-night-meadow', x: 4, z: 13, reward: 'star-glasses', night: true }, // in the meadow by the dock
   ],
   // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
   balls: [[3, 12]],

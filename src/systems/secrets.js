@@ -6,6 +6,7 @@
 //   reward: an accessory id from models/accessories.js
 //   y:      height it sits at; default is the highest surface there (e.g. the top of a rock)
 //   dig:    buried in an unmarked sand mound instead of lying in the open
+//   night:  only there at night (world/daylight.js)
 import { distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { game, isPlaying } from '../core/state.js';
@@ -20,6 +21,7 @@ import { player } from '../player/player.js';
 import { addDig } from './digs.js';
 import { giveAccessory, wear } from './outfits.js';
 import { renderTasks } from '../game/tasks.js';
+import { isNight } from '../world/daylight.js';
 
 const GIFT_COLORS = [0xff9fb2, 0xb59cff, 0x7fd8ee, 0x9be38a, 0xffa53d];
 const SPARKLE_RANGE = 12; // close enough to see it glitter: findable, but not obvious
@@ -63,6 +65,7 @@ export function updateSecrets(dt) {
   for (const secret of secrets) {
     if (secret.found || !secret.model) continue;
     const dist = distXZ(player.pos, secret.x, secret.z);
+    if (secret.night && !showsAtNight(secret, dist)) continue;
     if (secret.pop > 0) secret.pop -= dt;
     secret.model.rotation.y += dt * 0.8;
     secret.model.position.y =
@@ -74,6 +77,14 @@ export function updateSecrets(dt) {
     if (touching && isPlaying()) openGift(secret);
   }
   updateShowcase(dt);
+}
+
+// night presents are invisible by day, with a hint the first time you walk past one
+function showsAtNight(secret, dist) {
+  secret.model.visible = isNight();
+  if (!isNight() && dist < 6)
+    hintOnce('night-secret', 'Something twinkles here… come back at night 🌙', 3200);
+  return isNight();
 }
 
 function sparkle(secret, dt) {

@@ -1,6 +1,6 @@
 // Ambient life: bird flocks on the beaches that scatter when Spartacus runs at them or barks
-// and land again later, butterflies dancing over the flowers, and fish schools underwater that
-// dart away from a bark. No puzzles, just a world that notices you.
+// and land again later, butterflies dancing over the flowers (fireflies there at night), and
+// fish schools underwater that dart away from a bark. No puzzles, just a world that notices you.
 // Islands list spots as data, island-local:
 //   critters: { birds: [[x, z], …], butterflies: [[x, z], …], fish: [[x, z, height], …] }
 // Every kind is drawn with a few InstancedMeshes, so they cost a handful of draw calls in total.
@@ -11,11 +11,13 @@ import { game } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { supportHeight } from '../core/colliders.js';
 import { player } from '../player/player.js';
+import { daylight } from '../world/daylight.js';
 
 const ACTIVE_RANGE = 80; // flocks further away than this aren't animated
 const BIRDS_PER_FLOCK = 6;
 const BUTTERFLIES_PER_SPOT = 3;
 const FISH_PER_SCHOOL = 8;
+const FIREFLIES_PER_SPOT = 5;
 const FLY_TIME = 7; // seconds a scared flock stays up before landing again
 const BUTTERFLY_COLORS = [0xffa53d, 0xb59cff, 0xff9fb2, 0xffd84d, 0x7fd8ee];
 const FISH_COLORS = [0xffa53d, 0xffd84d, 0x7fd8ee, 0xff8fb1];
@@ -63,6 +65,7 @@ const kinds = {
   birds: { flocks: [], meshes: null, rig: makeRig(1.8) },
   butterflies: { spots: [], meshes: null, rig: makeRig(1.3) },
   fish: { schools: [], mesh: null, dummy: new THREE.Object3D() },
+  fireflies: { mesh: null, dummy: new THREE.Object3D() },
 };
 
 export function buildCritters() {
@@ -76,6 +79,7 @@ export function buildCritters() {
   buildBirdMeshes();
   buildButterflyMeshes();
   buildFishMesh();
+  buildFireflyMesh();
 }
 
 /* ---------- birds ---------- */
@@ -202,6 +206,11 @@ function buildButterflyMeshes() {
 function updateButterflies() {
   const { spots, meshes, rig } = kinds.butterflies,
     time = game.time;
+  // butterflies go to sleep at night; the fireflies come out instead
+  const awake = daylight.night < 0.5;
+  meshes.left.visible = awake;
+  meshes.right.visible = awake;
+  if (!awake) return;
   spots.forEach((spot, s) => {
     if (distXZ(player.pos, spot.x, spot.z) > ACTIVE_RANGE) return;
     spot.flies.forEach((fly, i) => {
@@ -283,8 +292,47 @@ function updateFish(dt) {
   mesh.instanceMatrix.needsUpdate = true;
 }
 
+/* ---------- fireflies (at night, over the butterfly spots) ---------- */
+function buildFireflyMesh() {
+  const count = Math.max(1, kinds.butterflies.spots.length * FIREFLIES_PER_SPOT);
+  const mesh = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.07, 6, 4),
+    new THREE.MeshBasicMaterial({ color: 0xeaff7a, fog: false }), // unlit, so they glow
+    count,
+  );
+  mesh.frustumCulled = false;
+  mesh.visible = false;
+  scene.add(mesh);
+  kinds.fireflies.mesh = mesh;
+}
+
+// slow wandering glows that blink on and off
+function updateFireflies() {
+  const { mesh, dummy } = kinds.fireflies,
+    time = game.time;
+  mesh.visible = daylight.night > 0.05;
+  if (!mesh.visible) return;
+  kinds.butterflies.spots.forEach((spot, s) => {
+    if (distXZ(player.pos, spot.x, spot.z) > ACTIVE_RANGE) return;
+    for (let i = 0; i < FIREFLIES_PER_SPOT; i++) {
+      const p = i * 1.7 + s;
+      dummy.position.set(
+        spot.x + Math.sin(time * 0.3 + p) * 2.6,
+        spot.y + 1 + Math.sin(time * 0.7 + p * 2) * 0.7,
+        spot.z + Math.cos(time * 0.25 + p * 1.3) * 2.6,
+      );
+      const blink = Math.max(0, Math.sin(time * 2 + p * 3));
+      dummy.scale.setScalar((0.3 + blink * 0.9) * daylight.night);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(s * FIREFLIES_PER_SPOT + i, dummy.matrix);
+    }
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+}
+
 export function updateCritters(dt) {
   updateBirds(dt);
   updateButterflies();
+  updateFireflies();
   updateFish(dt);
 }

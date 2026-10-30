@@ -4,8 +4,9 @@
 //   tempo in beats per minute (each step is half a beat); root is a MIDI note; steps count up
 //   the major pentatonic scale from the root (0, 1, 2 … 5 is an octave up, -5 an octave down),
 //   null is a rest. Pentatonic means any notes sound nice together.
-// Under the music there's a soft ambience: waves on land, a low hum underwater.
+// At night the tune plays slower and softer. Under the music there's a soft ambience: waves on land, a low hum underwater.
 import { currentIsland } from './state.js';
+import { daylight } from '../world/daylight.js';
 import { audioContext, masterOut } from './audio.js';
 
 const PENTATONIC = [0, 2, 4, 7, 9]; // semitones above the root
@@ -48,7 +49,9 @@ function scheduleNotes() {
   // after the tab was hidden the timer falls behind: skip ahead rather than play a pile of notes
   if (music.nextTime < ac.currentTime) music.nextTime = ac.currentTime + 0.05;
   if (!tune) return;
-  const stepTime = 30 / tune.tempo;
+  // at night: slower and quieter, a lullaby version
+  const stepTime = (30 / tune.tempo) * (1 + daylight.night * 0.25),
+    hush = 1 - daylight.night * 0.45;
   while (music.nextTime < ac.currentTime + LOOKAHEAD) {
     const i = music.step % 16;
     if (tune.melody[i] != null)
@@ -56,14 +59,14 @@ function scheduleNotes() {
         time: music.nextTime,
         duration: stepTime * 1.8,
         type: tune.wave,
-        volume: 0.16,
+        volume: 0.16 * hush,
       });
     if (tune.bass[i] != null)
       pluck(ac, noteHz(tune.root, tune.bass[i]), {
         time: music.nextTime,
         duration: stepTime * 3.5,
         type: 'sine',
-        volume: 0.22,
+        volume: 0.22 * hush,
       });
     music.nextTime += stepTime;
     music.step++;

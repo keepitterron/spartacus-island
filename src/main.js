@@ -8,7 +8,7 @@ import { $, lerpAngle, vec3 } from './core/util.js';
 import { renderer, scene, camera, canvas, followSun } from './core/renderer.js';
 import { game, currentIsland } from './core/state.js';
 import { burst, updateParticles } from './core/fx.js';
-import { overlayOpen, armButton } from './core/ui.js';
+import { overlayOpen, armButton, hintOnce } from './core/ui.js';
 import { bindInput } from './core/input.js';
 import { continueIsland, loadSave, writeSave } from './core/save.js';
 import { isMuted, setMuted } from './core/audio.js';
@@ -16,6 +16,7 @@ import { isMusicOn, setMusicOn } from './core/music.js';
 import { addTerrain } from './world/terrain.js';
 import { updateOcean } from './world/ocean.js';
 import { buildSky, updateSky } from './world/sky.js';
+import { buildStars, setNight, updateDaylight, daylight } from './world/daylight.js';
 import { updateShip } from './world/ship.js';
 import { player, SPAWN, stepPlayer, updateRescue } from './player/player.js';
 import { animateDog } from './player/dog.js';
@@ -56,6 +57,7 @@ for (const island of ISLANDS) {
 // Build order matters: all scenery shares one seeded random sequence (see core/util.js rand).
 for (const island of ISLANDS) island.build();
 buildSky();
+buildStars();
 for (const island of ISLANDS) island.buildLate?.();
 // last, so presents, balls and critters can sit on top of everything built above
 buildSecrets();
@@ -102,6 +104,24 @@ setMusicOn(loadSave().music !== false);
 showMusicButton();
 $('#btnMusic').addEventListener('click', toggleMusic);
 
+// day or night, also remembered; the button shows what you'd switch to
+function showNightButton() {
+  $('#btnNight').textContent = daylight.target ? '☀️' : '🌙';
+}
+function toggleNight() {
+  setNight(!daylight.target);
+  writeSave({ night: !!daylight.target });
+  showNightButton();
+  if (daylight.target)
+    hintOnce('night', 'Night time! Some presents only come out at night ✨', 3200);
+}
+if (loadSave().night) {
+  setNight(true);
+  daylight.night = 1;
+}
+showNightButton();
+$('#btnNight').addEventListener('click', toggleNight);
+
 const continueTo = continueIsland(ISLANDS.length);
 if (continueTo >= 2) {
   $('#cont').textContent = `Continue: Island ${continueTo}`;
@@ -138,6 +158,7 @@ bindInput({
     if (k === 'o') openWardrobe();
     if (k === 'm') toggleSound();
     if (k === 'n') toggleMusic();
+    if (k === 'l') toggleNight();
   },
   onJump() {
     player.jumpBuffer = JUMP_BUFFER;
@@ -191,6 +212,7 @@ function update(dt) {
 function updateWorld(dt) {
   updateOcean();
   updateSky(dt);
+  updateDaylight(dt);
   updateShip(dt, game.state === 'bubble');
   updatePickups(dt);
   updateFruits(dt);

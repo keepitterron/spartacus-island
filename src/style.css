@@ -566,6 +566,18 @@ button:focus-visible {
   padding: 0;
   line-height: 1;
 }
+/* landscape phones: a row, so the column doesn't reach the touch buttons */
+@media (max-height: 520px) {
+  .tools {
+    flex-direction: row;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
+  }
+  .tool {
+    width: 48px;
+    height: 48px;
+    font-size: 1.35rem;
+  }
+}
 .tool.off {
   opacity: 0.45;
   text-decoration: line-through;
