@@ -1,21 +1,29 @@
 import { clamp } from './util.js';
 
-// Island-level save: {v, island}. Bump VERSION when old saves could strand a player
-// (e.g. islands reordered); older saves are then ignored and the game starts at island 1.
+// The save: {v, island, owned: [accessory ids], equipped: {slot: id}, secrets: [secret ids], muted}.
+// Bump VERSION when the shape changes and add a step to migrate() so older saves keep working.
 const STORAGE_KEY = 'spartacus-save';
-const VERSION = 3;
+const VERSION = 4;
+
+// v3 was island-only; everything else starts empty
+function migrate(save) {
+  if (save.v === VERSION) return save;
+  if (save.v === 3) return { v: VERSION, island: save.island };
+  return {};
+}
+
 // storage can be missing or blocked (private mode), so failures just mean "no save"
 export function loadSave() {
   try {
-    const save = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {};
-    return save.v === VERSION ? save : {};
+    return migrate(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {});
   } catch (e) {
     return {};
   }
 }
+// merges `data` into the save, so each system only writes its own fields
 export function writeSave(data) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: VERSION, ...data }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loadSave(), ...data, v: VERSION }));
   } catch (e) {}
 }
 

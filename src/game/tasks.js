@@ -2,6 +2,7 @@
 import { $ } from '../core/util.js';
 import { game, currentIsland } from '../core/state.js';
 import { sfx } from '../core/audio.js';
+import { secretProgress } from '../systems/secrets.js';
 
 // Each island has tasks:{title, list:[{id, ic, t:()=>text, power?}]} and a matching
 // done:{id:bool}. Task ids are unique across the whole game, so completeTask(id) finds its island.
@@ -16,7 +17,8 @@ export function renderTasks(popId) {
   const island = currentIsland(),
     tasks = island.tasks;
   $('#listTitle').textContent = tasks.title;
-  $('#tasks').innerHTML = tasks.list.map((task) => taskHtml(task, { island, popId })).join('');
+  $('#tasks').innerHTML =
+    tasks.list.map((task) => taskHtml(task, { island, popId })).join('') + secretsHtml(island);
   $('#count').textContent =
     `${Object.values(island.done).filter(Boolean).length}/${tasks.list.length}`;
 }
@@ -24,6 +26,14 @@ export function renderTasks(popId) {
 function taskHtml(task, { island, popId }) {
   const done = island.done[task.id];
   return `<li class="task${done ? ' done' : ''}${task.id === popId ? ' pop' : ''}"><span class="ic">${task.ic}</span><span class="t">${task.t()}</span><span class="ck">${done ? '🐾' : ''}</span></li>`;
+}
+
+// an extra line for the island's hidden presents; it never blocks finishing the island
+function secretsHtml(island) {
+  const { found, total } = secretProgress(island.id);
+  if (!total) return '';
+  const all = found === total;
+  return `<li class="task secrets${all ? ' done' : ''}"><span class="ic">🎁</span><span class="t">Secrets ${found}/${total}</span><span class="ck">${all ? '🐾' : ''}</span></li>`;
 }
 
 export function completeTask(id) {

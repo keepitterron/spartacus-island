@@ -30,6 +30,9 @@
     <div id="power" class="hidden">
       <span><small>Power</small><b id="powerName"></b></span>
     </div>
+    <div class="tools">
+      <button class="tool" id="btnWardrobe" aria-label="Dress up" title="Dress up (O)">👕</button>
+    </div>
     <div id="toast" role="status" aria-live="polite"><span></span></div>
     <div id="prompt"><span></span></div>
     <div id="card">
@@ -95,6 +98,18 @@
         <div class="row">
           <button class="cta ghost" id="winExplore">Keep exploring</button>
           <button class="cta" id="winGo"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- dress-up panel; the camera shows Spartacus above it (game/wardrobe.js) -->
+    <div class="overlay hidden" id="wardrobe">
+      <div class="panel">
+        <div class="tabs" id="wardrobeTabs"></div>
+        <div class="grid" id="wardrobeGrid"></div>
+        <div class="row">
+          <button class="cta ghost" id="wardrobeRandom" aria-label="Random outfit">🎲</button>
+          <button class="cta" id="wardrobeDone">Done ✔</button>
         </div>
       </div>
     </div>

@@ -232,6 +232,15 @@ const island = {
     all: 'All the bones! Good boy, Spartacus!',
     model: makeBone,
   },
+  // hidden presents with accessories inside (systems/secrets.js), island-local coordinates
+  secrets: [
+    { id: 'i2-east-pad', x: 17.4, z: -3.6, reward: 'cowboy-hat' }, // swing all the way across
+    { id: 'i2-mango-pillar', x: 10.9, z: -8.5, reward: 'eye-patch' }, // by Mango's nest
+    { id: 'i2-mesa', x: -13.6, z: 8.6, reward: 'lily-hat' }, // Boing-Boing up the mesa
+    { id: 'i2-first-pillar', x: -2.5, z: -4.6, reward: 'gold-earring' },
+    { id: 'i2-west-beach', x: -19, z: 2, reward: 'backpack' },
+    { id: 'i2-dig', x: 13, z: -13, reward: 'rope-collar', dig: true },
+  ],
   intro: [[3400, 'Mango the parrot is stuck on the tallest rock!', 3400]],
   win: {
     title: 'New crew mate!',

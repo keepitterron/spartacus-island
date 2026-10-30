@@ -48,6 +48,13 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 
 `addChoppable({x,y,z,onChop(c)})` registers something the hat can cut. `chopAction(p)` throws the hat at the nearest one; everything within 1.9 of the target is cut too.
 
+## Outfits and secrets (`systems/outfits.js`, `systems/secrets.js`, `game/wardrobe.js`)
+
+- **Catalog:** `models/accessories.js` is a data list `{id, name, icon, slot, anchor?, build()}`. Slots: `head` (swaps out the straw hat, which is always owned), `face`, `neck`, `back`, `tail`. `build()` returns a group in the anchor's local space; the comment at the top of the file says where each anchor's origin is. Add `group.userData.animate = (group, time) => …` for things that move (wings, capes).
+- **Wearing:** `wear(id)`, `takeOff(slot)`, `giveAccessory(id)`, `randomOutfit()`. The head slot lives in `dog.hat`, so Chop-Chop throws whatever hat is worn.
+- **Secrets:** each island lists `secrets: [{id, x, z, reward, y?, dig?}]` in island-local coordinates. A present sits on the highest surface at that spot (rock tops, pillars, tree decks) unless `y` is given; `dig: true` buries it in an unmarked mound. Walking into one opens it, gives and wears the accessory, and shows it spinning above Spartacus. Presents only glitter within 12 units. The to-do list shows `🎁 Secrets n/m`, which never blocks finishing an island.
+- **Wardrobe:** the 👕 button (or `O`) opens the dress-up panel as the `wardrobe` cutscene, so the camera can circle Spartacus while the player is frozen. Back and tail tabs look from behind.
+
 ## NPCs
 
 Crew members who travel live in `src/npcs/`; island-only characters live in their island folder (`island4/octopus.js`, `crabs.js`, `eduardo.js`).
@@ -78,4 +85,4 @@ Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'na
 
 ## Save (`core/save.js`)
 
-`{v:3, island:n}` in `localStorage['spartacus-save']`, written on arriving at an island. Bump `VERSION` when an old save could strand someone. `#islandN` in the URL overrides it for testing. Mid-island progress is not saved yet.
+`{v:4, island, owned, equipped, secrets}` in `localStorage['spartacus-save']`. `writeSave(data)` merges, so each system writes only its own fields: the island on arrival, outfits and secrets as they change. Starting over keeps outfits and found secrets. When the shape changes, bump `VERSION` and add a step to `migrate()` (v3 saves keep their island). `#islandN` in the URL overrides it for testing. Mid-island progress is not saved yet.

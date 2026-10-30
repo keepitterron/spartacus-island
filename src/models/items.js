@@ -158,3 +158,22 @@ export function makeSeed() {
   g.add(mound);
   return g;
 }
+
+// a wrapped present (a secret accessory inside): box, ribbon cross and a bow on top
+export function makeGift(color) {
+  const g = new THREE.Group(),
+    ribbon = material(0xffd84d);
+  g.add(mesh(new THREE.BoxGeometry(0.55, 0.45, 0.55), material(color)));
+  for (const turn of [0, Math.PI / 2]) {
+    const band = mesh(new THREE.BoxGeometry(0.12, 0.47, 0.57), ribbon, { castShadow: false });
+    band.rotation.y = turn;
+    g.add(band);
+  }
+  for (const side of [-1, 1]) {
+    const loop = mesh(new THREE.TorusGeometry(0.1, 0.035, 5, 10), ribbon, { castShadow: false });
+    loop.position.set(side * 0.09, 0.3, 0);
+    loop.rotation.set(0, 0, side * 0.5);
+    g.add(loop);
+  }
+  return g;
+}
