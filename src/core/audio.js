@@ -7,7 +7,8 @@ function tone(f0,f1,dur,type='sine',vol=.2,delay=0){const a=ac();if(!a)return;co
 function noise(dur,freq,vol,delay=0){const a=ac();if(!a)return;const t=a.currentTime+delay,n=Math.floor(a.sampleRate*dur),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
   const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;const g=a.createGain();g.gain.value=vol;s.connect(f).connect(g).connect(a.destination);s.start(t);}
 export const sfx={
-  bark(){tone(640,300,.11,'sawtooth',.09);noise(.07,1400,.25);tone(720,340,.12,'sawtooth',.08,.15);noise(.07,1500,.2,.15);},
+  // a big dog's WOOF-WOOF: low growly body + chesty sub + breathy burst, second one a bit lower
+  bark(){for(const [d,k] of [[0,1],[.24,.9]]){tone(240*k,120*k,.22,'sawtooth',.26,d);tone(120*k,70*k,.26,'sine',.4,d);tone(480*k,260*k,.12,'square',.05,d);noise(.14,800*k,.6,d);noise(.06,2200,.18,d);}},
   jump(){tone(300,560,.12,'triangle',.08);},
   boing(){tone(180,900,.28,'sine',.18);tone(360,1400,.2,'triangle',.05,.05);},
   bone(){[880,1175,1568].forEach((f,i)=>tone(f,f*1.01,.16,'triangle',.12,i*.07));},

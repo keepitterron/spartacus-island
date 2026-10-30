@@ -9,7 +9,7 @@ import {P,SPEED} from './player.js';
 // muzzle, white chest patch and paw tips, floppy ears, straw hat with a red band.
 // Friends who ride along are added to dog.head; carried items go in dog.mouth.
 function makeDog(){
-  const fur=mat(0x2a2a33),cream=mat(0xffffff),brown=mat(0x1f1f27),ink=mat(0x0c0c10,{roughness:.35}),pink=mat(0xff8fa3),straw=mat(0xf2d27a),ribbon=mat(0xd9343f),iris=mat(0x7a4a22,{roughness:.3});
+  const fur=mat(0x2a2a33),cream=mat(0xffffff),brown=mat(0x1f1f27),ink=mat(0x0c0c10,{roughness:.35}),pink=mat(0xff8fa3),straw=mat(0xf2d27a),ribbon=mat(0xd9343f),iris=mat(0x9a7a34,{roughness:.3}),pupil=mat(0x1a1208,{roughness:.3});
   const root=new THREE.Group(),body=new THREE.Group();root.add(body);
   const torso=mesh(new THREE.CapsuleGeometry(.4,.75,4,10),fur);torso.rotation.x=Math.PI/2;torso.position.y=.78;body.add(torso);
   const belly=mesh(new THREE.SphereGeometry(.34,10,8),cream);belly.scale.set(1.08,1.1,1.15);belly.position.set(0,.74,.42);body.add(belly);
@@ -20,12 +20,17 @@ function makeDog(){
   const mz=mesh(new THREE.SphereGeometry(.24,10,8),fur);mz.scale.set(1.1,.8,1.1);mz.position.set(0,-.12,.36);head.add(mz);
   const nose=mesh(new THREE.SphereGeometry(.085,8,6),ink);nose.position.set(0,-.04,.6);head.add(nose);
   const shine=new THREE.MeshBasicMaterial({color:0xffffff});
-  for(const s of [-1,1]){const e=mesh(new THREE.SphereGeometry(.08,8,6),iris,false);e.position.set(s*.17,.07,.37);head.add(e);
-    const sh=new THREE.Mesh(new THREE.SphereGeometry(.026,6,4),shine);sh.position.set(s*.17+.025,.1,.44);head.add(sh);
+  // hazel eyes: golden-brown iris with a dark pupil so the colour reads at this size
+  for(const s of [-1,1]){const e=mesh(new THREE.SphereGeometry(.08,10,8),iris,false);e.position.set(s*.17,.07,.37);head.add(e);
+    const pu=mesh(new THREE.SphereGeometry(.042,8,6),pupil,false);pu.position.set(s*.17,.068,.425);head.add(pu);
+    const sh=new THREE.Mesh(new THREE.SphereGeometry(.024,6,4),shine);sh.position.set(s*.17+.025,.1,.455);head.add(sh);
     const ch=mesh(new THREE.SphereGeometry(.07,6,5),pink,false);ch.scale.set(1,.5,.6);ch.position.set(s*.27,-.09,.3);head.add(ch);}
   const tongue=mesh(new THREE.BoxGeometry(.13,.03,.2),pink,false);tongue.position.set(0,-.26,.46);tongue.visible=false;head.add(tongue);
   const mouth=new THREE.Group();mouth.position.set(0,-.24,.62);head.add(mouth);
-  const ears=[-1,1].map(s=>{const p=new THREE.Group();p.position.set(s*.34,.18,-.02);const e=mesh(new THREE.BoxGeometry(.13,.26,.22),brown);e.position.set(s*.03,.04,0);e.rotation.x=-.5;p.add(e);p.rotation.z=s*.25;head.add(p);p.userData.s=s;return p;});
+  // floppy labrador ears hanging from the sides of the head, a few soft blobs each so they look fluffy
+  const ears=[-1,1].map(s=>{const p=new THREE.Group();p.position.set(s*.4,.2,-.04);
+    for(const [x,y,z,r,sx,sy] of [[.05,-.08,0,.14,.55,1],[.07,-.22,.02,.15,.6,1],[.08,-.34,.05,.12,.65,.9]]){const b=mesh(new THREE.IcosahedronGeometry(r,1),brown);b.scale.set(sx,sy,1.05);b.position.set(s*x,y,z);p.add(b);}
+    p.rotation.z=s*.12;head.add(p);p.userData.s=s;return p;});
   const hat=new THREE.Group();hat.position.set(0,.36,-.03);hat.rotation.x=-.15;hat.rotation.z=.08;head.add(hat);
   hat.add(mesh(new THREE.CylinderGeometry(.68,.72,.05,18),straw));
   const crown=mesh(new THREE.CylinderGeometry(.3,.33,.24,14),straw);crown.position.y=.14;hat.add(crown);
@@ -63,7 +68,7 @@ export function animDog(dt,sp){
   d.body.scale.set(1/Math.sqrt(P.sq),P.sq*stretchY,1/Math.sqrt(P.sq));d.body.position.y=bob;
   d.tail.rotation.z=Math.sin(T*(G.celebT>=0||digging||P.swing?22:12))*(.5+moving*.2);
   const vy=G.state==='rescue'||P.swing?6:P.vel.y;
-  d.ears.forEach(e=>{e.rotation.x=clamp(vy*.05,-.9,.9)+Math.sin(P.phase*2)*.15*moving;e.rotation.z=e.userData.s*(.25+clamp(-vy*.03,-.2,.5));});
+  d.ears.forEach(e=>{e.rotation.x=clamp(vy*.05,-.9,.9)+Math.sin(P.phase*2)*.15*moving;e.rotation.z=e.userData.s*(.12+clamp(-vy*.04,-.1,.7));});
   const bk=P.barkT>0;d.tongue.visible=bk&&!P.carry;d.head.rotation.x=bk?-Math.sin((.35-P.barkT)/.35*Math.PI)*.35:(P.carry&&P.carry.heavy?.12:Math.sin(T*1.3)*.04);
   d.head.rotation.z=Math.sin(T*.9)*.05;
 }

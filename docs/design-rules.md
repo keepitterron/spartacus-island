@@ -22,7 +22,7 @@ These came from Zoë and are the whole point of the game. Check every new featur
 
 ## Spartacus
 
-The real Spartacus: half pitbull, half labrador, shiny black coat, thin white stripe down the muzzle, big white chest patch, white paw tips, floppy ears, hazel eyes. Straw hat with a red band. Model: `src/player/dog.js`.
+The real Spartacus: half pitbull, half labrador, shiny black coat, thin white stripe down the muzzle, big white chest patch, white paw tips, floppy fluffy ears, hazel eyes. Straw hat with a red band. Big dog, big deep "WOOF-WOOF" (`sfx.bark`). Model: `src/player/dog.js`.
 
 ## IP note
 
