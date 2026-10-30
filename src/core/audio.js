@@ -126,6 +126,11 @@ export const sfx = {
     tone(300, { to: 180, duration: 0.1, type: 'triangle', volume: 0.1 });
     noise(0.06, { freq: 700, volume: 0.15 });
   },
+  // ground pound landing: a deep thump
+  pound() {
+    tone(130, { to: 45, duration: 0.3, type: 'sine', volume: 0.45 });
+    noise(0.2, { freq: 300, volume: 0.5 });
+  },
   // a coconut hitting the sand
   bonk() {
     tone(220, { to: 110, duration: 0.12, type: 'triangle', volume: 0.14 });

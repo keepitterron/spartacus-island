@@ -5,6 +5,7 @@ import { scene } from '../core/renderer.js';
 import { material, mesh } from '../core/materials.js';
 import { game } from '../core/state.js';
 import { player, SPEED } from './player.js';
+import { POUND_HANG } from './pound.js';
 
 // Spartacus: half pitbull, half labrador. Shiny black coat, thin white stripe down the
 // muzzle, white chest patch and paw tips, floppy ears, straw hat with a red band.
@@ -170,6 +171,9 @@ export function animateDog(dt, speed) {
   const digging = player.digTimer > 0;
   poseLegs({ time, moving, digging });
   dog.body.rotation.x = lerp(dog.body.rotation.x, bodyPitch(digging), Math.min(1, dt * 10));
+  // ground pound: a forward flip while hanging in the air
+  if (player.pounding && player.poundHang > 0)
+    dog.body.rotation.x = (1 - player.poundHang / POUND_HANG) * Math.PI * 2;
   updateSquash(dt);
   const bob = player.grounded ? Math.abs(Math.sin(player.gaitPhase)) * 0.08 * moving : 0;
   const stretchY = player.swing ? 1.12 : 1;
@@ -198,8 +202,8 @@ export function animateDog(dt, speed) {
 // legs 0-1 are the front pair, 2-3 the back pair; rotation.x swings them
 function poseLegs({ time, moving, digging }) {
   const legs = dog.legs;
-  if (game.state === 'rescue') {
-    // paddling in the bubble
+  if (game.state === 'rescue' || player.wading) {
+    // paddling in the bubble or in shallow water
     const paddle = Math.sin(player.gaitPhase) * 0.8;
     legs.forEach((leg, i) => {
       leg.rotation.x = i % 2 ? paddle : -paddle;
@@ -244,6 +248,7 @@ function poseLegs({ time, moving, digging }) {
 // nose-down while digging, nose-up while climbing / zipping / swinging
 function bodyPitch(digging) {
   if (digging) return 0.32;
+  if (player.pounding) return 0.3;
   if (player.climb) return -1.3;
   if (player.zip) return -0.35;
   if (player.swing) return -0.25;

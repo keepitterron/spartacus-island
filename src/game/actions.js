@@ -9,12 +9,13 @@ import { dropCarried, grabAction } from '../systems/items.js';
 import { digAction } from '../systems/digs.js';
 import { swingAction } from '../systems/hooks.js';
 import { barkReactions } from '../systems/reactions.js';
+import { poundAction } from '../player/pound.js';
 import { allTasksDone } from './tasks.js';
 
 // Returns {label, fn} or null. Whatever is first in this list wins:
 //   1. the island's exit (Sail / Dive / Ride), once its to-do list is done
 //   2. the island's own actions(p)  (give an item, open a gate, grow, chop…)
-//   3. swing, drop, grab, dig
+//   3. swing, drop, grab, dig, and in the air the ground pound
 export function currentAction() {
   const busy = player.digTimer > 0 || player.placing || player.swing || player.climb || player.zip;
   if (!isPlaying() || busy) return null;
@@ -27,7 +28,8 @@ export function currentAction() {
     swingAction() ||
     (player.carrying ? { label: 'Drop', run: dropCarried } : null) ||
     grabAction(pos) ||
-    digAction(pos)
+    digAction(pos) ||
+    poundAction()
   );
 }
 export function doAction() {

@@ -47,6 +47,12 @@ export function digAction(pos) {
   return null;
 }
 
+// a ground pound right on top of a mound digs it up in one go
+export function poundDig(pos) {
+  const dig = digs.find((d) => !d.dug && distXZ(pos, d.x, d.z) < 1.5 && Math.abs(pos.y - d.y) < 1);
+  if (dig) finishDig(dig);
+}
+
 function startDig(dig) {
   player.digTimer = DIG_TIME;
   player.digSpot = dig;
