@@ -22,15 +22,15 @@ npm run build && npm run preview
 
 Always on in dev; on the live site add `?debug` to the URL. From the browser console:
 
-| Call | Does |
-|---|---|
-| `__g.go(3)` | Jump to island 3 (from the title screen or mid-game) |
-| `__g.tp(x, z)` / `__g.tp(x, z, y)` | Teleport, island-local coordinates. Give a `y` above a rock or tree top to land on it |
-| `__g.where()` | Island-local position, state, island |
-| `__g.power('boing')` | Give a power (`boing`, `stretch`, `grow`, `chop`) |
-| `__g.done('bones')` / `__g.doneAll()` | Tick one task / the whole list (shows the win panel) |
-| `__g.action()` / `__g.act()` | What the action button would do / press it |
-| `__g.G`, `__g.P`, `__g.cam`, `__g.colliders` | Raw state |
+| Call                                                       | Does                                                                                  |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `__g.go(3)`                                                | Jump to island 3 (from the title screen or mid-game)                                  |
+| `__g.tp(x, z)` / `__g.tp(x, z, y)`                         | Teleport, island-local coordinates. Give a `y` above a rock or tree top to land on it |
+| `__g.where()`                                              | Island-local position, state, island                                                  |
+| `__g.power('boing')`                                       | Give a power (`boing`, `stretch`, `grow`, `chop`)                                     |
+| `__g.done('bones')` / `__g.doneAll()`                      | Tick one task / the whole list (shows the win panel)                                  |
+| `__g.action()` / `__g.act()`                               | What the action button would do / press it                                            |
+| `__g.game`, `__g.player`, `__g.followCam`, `__g.colliders` | Raw state                                                                             |
 
 In dev you can also import any module from the console, e.g. `(await import('/spartacus-island/src/npcs/wasabi.js')).wasabi.state`.
 
@@ -44,7 +44,7 @@ The full game was play-tested this way after the Vite migration (Oct 2026). Re-r
 
 **Island 2**: Stretchy fruit; Swing from the shore pad; bones on two pillars, the mesa and a dig spot; Boing-Boing to the mesa and dig the snack; swing to Mango's pillar and Give; walk onto the dock: Mango flies to the crow's nest; win; Sail.
 
-**Island 3**: Grow-Grow fruit; grow the seed at T1, walk into the vine to climb; grow and Zip T1→T2→T3; bark under the flower, Mango drops it, Grab; Give it at the hive on T3; take the key to the gate, Open; Wasabi refills, swims to the bucket; acorns (T1 top, T4 via Stretchy hook from T2, mushroom with Boing-Boing, dig spot); win; **Keep exploring**, then **Dive** from the end of the dock.
+**Island 3**: Grow-Grow fruit; grow the seed at the first tree (`seedTree`), walk into the vine to climb; grow and Zip seedTree → junctionTree → hiveTree; bark under the flower, Mango drops it, Grab; Give it at the hive on hiveTree; take the key to the gate, Open; Wasabi refills, swims to the bucket; acorns (seedTree top, acornTree via Stretchy hook from junctionTree, mushroom with Boing-Boing, dig spot); win; **Keep exploring**, then **Dive** from the end of the dock.
 
 **Island 4**: Chop-Chop fruit; crabs (sand, Boing shelf, lift-vent ledge, inside a clump, top of the kelp pillar via Grow-Grow); chop the lane entrance (octopus wakes), approach Eduardo, chop his two hiding clumps; get bonked by a tentacle once; pillow at the end of the vent canyon, Give it to the octopus; Eduardo recognises you and rides your hat; walk to the ship; win; **Keep exploring**, then **Ride** at the ship; whale; "To be continued…".
 

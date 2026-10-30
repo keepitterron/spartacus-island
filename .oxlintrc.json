@@ -1,0 +1,47 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["import", "unicorn", "oxc"],
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "eqeqeq": ["error", "smart"],
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-unused-vars": [
+      "error",
+      {
+        "caughtErrors": "none"
+      }
+    ],
+    "no-sequences": "error",
+    "no-nested-ternary": "warn",
+    "max-params": [
+      "error",
+      {
+        "max": 3
+      }
+    ],
+    "prefer-object-spread": "error",
+    "prefer-template": "warn",
+    "object-shorthand": "warn",
+    "no-useless-rename": "error",
+    "unicorn/prefer-query-selector": "off",
+    "import/no-cycle": "off",
+    "no-underscore-dangle": "off",
+    "import/no-unassigned-import": [
+      "warn",
+      {
+        "allow": ["**/*.css"]
+      }
+    ],
+    "no-undef": "error"
+  },
+  "ignorePatterns": ["dist", "dev-dist", "node_modules"],
+  "globals": {}
+}

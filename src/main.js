@@ -4,34 +4,34 @@ import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
 import './style.css';
 import * as THREE from 'three';
-import {$,angLerp,V} from './core/util.js';
-import {renderer,scene,camera,canvas,followSun} from './core/renderer.js';
-import {G,cur} from './core/state.js';
-import {burst,updParts} from './core/fx.js';
-import {overlayOpen,armButton} from './core/ui.js';
-import {bindInput} from './core/input.js';
-import {continueIsland,loadSave} from './core/save.js';
-import {addTerrain} from './world/terrain.js';
-import {updOcean} from './world/ocean.js';
-import {buildSky,updSky} from './world/sky.js';
-import {updShip} from './world/ship.js';
-import {P,SPAWN,stepPlayer,updRescue} from './player/player.js';
-import {animDog} from './player/dog.js';
-import {POWERS,updFruits} from './systems/powers.js';
-import {updPickups} from './systems/collect.js';
-import {updDigs,updDigging} from './systems/digs.js';
-import {updFloaters,updPlacing} from './systems/items.js';
-import {updHooks,updSwing,updSwingLine} from './systems/hooks.js';
-import {updGrowers,updClimb,updZip} from './systems/vines.js';
-import {updHat} from './systems/hat.js';
-import {updGull} from './npcs/gull.js';
-import {updMango} from './npcs/mango.js';
-import {updWasabi} from './npcs/wasabi.js';
-import {initTasks,renderTasks,showWin,hideWin} from './game/tasks.js';
-import {bark,doAction,updPrompt,updWoof} from './game/actions.js';
-import {interact} from './game/interact.js';
-import {startGame,restartFromBeginning} from './game/flow.js';
-import {orbitCamera,updCamera} from './game/camera.js';
+import { $, lerpAngle, vec3 } from './core/util.js';
+import { renderer, scene, camera, canvas, followSun } from './core/renderer.js';
+import { game, currentIsland } from './core/state.js';
+import { burst, updateParticles } from './core/fx.js';
+import { overlayOpen, armButton } from './core/ui.js';
+import { bindInput } from './core/input.js';
+import { continueIsland, loadSave } from './core/save.js';
+import { addTerrain } from './world/terrain.js';
+import { updateOcean } from './world/ocean.js';
+import { buildSky, updateSky } from './world/sky.js';
+import { updateShip } from './world/ship.js';
+import { player, SPAWN, stepPlayer, updateRescue } from './player/player.js';
+import { animateDog } from './player/dog.js';
+import { POWERS, updateFruits } from './systems/powers.js';
+import { updatePickups } from './systems/collect.js';
+import { updateDigSpots, updateDigging } from './systems/digs.js';
+import { updateFloaters, updatePlacing } from './systems/items.js';
+import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
+import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
+import { updateHat } from './systems/hat.js';
+import { updateGull } from './npcs/gull.js';
+import { updateMango } from './npcs/mango.js';
+import { updateWasabi } from './npcs/wasabi.js';
+import { initTasks, renderTasks, showWin, hideWin } from './game/tasks.js';
+import { bark, doAction, updatePrompt, updateWoof } from './game/actions.js';
+import { checkTriggers } from './game/interact.js';
+import { startGame, restartFromBeginning } from './game/flow.js';
+import { orbitCamera, updateCamera } from './game/camera.js';
 import island1 from './islands/island1/index.js';
 import island2 from './islands/island2/index.js';
 import island3 from './islands/island3/index.js';
@@ -39,71 +39,203 @@ import island4 from './islands/island4/index.js';
 
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
-const ISLANDS=[island1,island2,island3,island4];
-for(const I of ISLANDS){G.islands[I.id]=I;initTasks(I);addTerrain(I.zMax,I.height);}
+const ISLANDS = [island1, island2, island3, island4];
+for (const island of ISLANDS) {
+  game.islands[island.id] = island;
+  initTasks(island);
+  addTerrain(island.zMax, island.height);
+}
 // Build order matters: all scenery shares one seeded random sequence (see core/util.js rand).
-for(const I of ISLANDS)I.build();
+for (const island of ISLANDS) island.build();
 buildSky();
-for(const I of ISLANDS)I.buildLate?.();
-P.pos.copy(island1.spawn);SPAWN.copy(island1.spawn);
+for (const island of ISLANDS) island.buildLate?.();
+player.pos.copy(island1.spawn);
+SPAWN.copy(island1.spawn);
 
 /* ---------- HUD + menus ---------- */
 renderTasks();
-$('#listToggle').addEventListener('click',()=>{const l=$('#list');l.classList.toggle('closed');$('#listToggle').setAttribute('aria-expanded',!l.classList.contains('closed'));});
-if(innerWidth<500)$('#list').classList.add('closed');
-armButton($('#restartLink'),'Tap again to restart from island 1',restartFromBeginning);
+$('#listToggle').addEventListener('click', () => {
+  const list = $('#list');
+  list.classList.toggle('closed');
+  $('#listToggle').setAttribute('aria-expanded', !list.classList.contains('closed'));
+});
+if (innerWidth < 500) $('#list').classList.add('closed'); // task list starts folded on phones
+armButton($('#restartLink'), 'Tap again to restart from island 1', restartFromBeginning);
 
-const contIsland=continueIsland(ISLANDS.length);
-if(contIsland>=2){$('#cont').textContent=`Continue: Island ${contIsland}`;$('#cont').classList.remove('hidden');}
+const continueTo = continueIsland(ISLANDS.length);
+if (continueTo >= 2) {
+  $('#cont').textContent = `Continue: Island ${continueTo}`;
+  $('#cont').classList.remove('hidden');
+}
 // with a save to lose, starting over needs a second tap
-if(contIsland>=2&&loadSave().island>=2)armButton($('#play'),'Tap again to start over',()=>startGame(1));
-else $('#play').addEventListener('click',()=>startGame(1));
-$('#cont').addEventListener('click',()=>startGame(contIsland));
-$('#winExplore').addEventListener('click',()=>{hideWin();canvas.focus();});
-$('#winGo').addEventListener('click',()=>cur().exit.run());
-$('#restart').addEventListener('click',restartFromBeginning);
+if (continueTo >= 2 && loadSave().island >= 2)
+  armButton($('#play'), 'Tap again to start over', () => startGame(1));
+else $('#play').addEventListener('click', () => startGame(1));
+$('#cont').addEventListener('click', () => startGame(continueTo));
+$('#winExplore').addEventListener('click', () => {
+  hideWin();
+  canvas.focus();
+});
+$('#winGo').addEventListener('click', () => currentIsland().exit.run());
+$('#restart').addEventListener('click', restartFromBeginning);
 
+const JUMP_BUFFER = 0.15; // s a jump press is remembered, so pressing just before landing still jumps
 bindInput({
-  onKey(k){
-    if(G.state==='start'){if(k==='enter'||k===' ')startGame(contIsland);return;}
-    const cs=G.cutscenes[G.state];if(cs){if(k==='enter'||k===' '||k==='escape')cs.skip?.();return;}
-    if(overlayOpen())return; // let Enter/Space press the focused panel button
-    if(k===' ')P.jumpBuf=.15;if(k==='b')bark();if(k==='f'||k==='enter')doAction();},
-  onJump(){P.jumpBuf=.15;},onBark:bark,onAct:doAction,
+  onKey(k) {
+    if (game.state === 'start') {
+      if (k === 'enter' || k === ' ') startGame(continueTo);
+      return;
+    }
+    const cutscene = game.cutscenes[game.state];
+    if (cutscene) {
+      if (k === 'enter' || k === ' ' || k === 'escape') cutscene.skip?.();
+      return;
+    }
+    if (overlayOpen()) return; // let Enter/Space press the focused panel button
+    if (k === ' ') player.jumpBuffer = JUMP_BUFFER;
+    if (k === 'b') bark();
+    if (k === 'f' || k === 'enter') doAction();
+  },
+  onJump() {
+    player.jumpBuffer = JUMP_BUFFER;
+  },
+  onBark: bark,
+  onAct: doAction,
 });
 
 /* ---------- loop ---------- */
-const clock=new THREE.Clock();
-function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),1/30);G.T+=dt;update(dt);renderer.render(scene,camera);}
-function update(dt){
-  updOcean();updSky(dt);updShip(dt,G.state==='bubble');
-  updPickups(dt);updFruits(dt);updDigs(dt);updHooks(dt);updGrowers(dt);updHat(dt);
-  updGull(dt);updMango(dt);updWasabi(dt);
-  cur().update?.(dt);
-  updFloaters(dt);updParts(dt);updWoof(dt);
-  followSun(G.state==='start'?V(0,0,0):P.pos);
-  if(G.state==='start'){orbitCamera();animDog(dt,0);return;}
-  const cs=G.cutscenes[G.state];if(cs){cs.update(dt);animDog(dt,0);updPrompt();return;}
+const clock = new THREE.Clock();
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), 1 / 30); // cap the step so a slow frame can't tunnel through things
+  game.time += dt;
+  update(dt);
+  renderer.render(scene, camera);
+}
 
-  P.barkCd-=dt;P.barkT-=dt;
-  if(G.state==='rescue')updRescue(dt);
-  else if(P.swing){updSwing(dt);interact(dt);}
-  else if(P.climb){updClimb(dt);interact(dt);}
-  else if(P.zip){updZip(dt);interact(dt);}
-  else{stepPlayer(dt);interact(dt);updDigging(dt);updPlacing(dt);}
-  const sp=G.state==='play'&&!P.swing&&!P.climb&&!P.zip?Math.hypot(P.vel.x,P.vel.z):0;
-  if(sp>.6&&P.digT<=0)P.yaw=angLerp(P.yaw,Math.atan2(P.vel.x,P.vel.z),Math.min(1,dt*12));
-  if(P.power&&sp>2&&P.grounded){P.sparkT-=dt;if(P.sparkT<0){P.sparkT=.12;burst(P.pos.clone().add(V(0,.3,0)),2,POWERS[P.power].col.slice(1),1,1.5,.6,.7,.2);}}
-  // celebration: confetti for ~2.4 s, then the island's win panel
-  if(G.celebT>=0){G.celebT+=dt;if(G.celebT<2.4&&Math.floor(G.celebT*4)!==Math.floor((G.celebT-dt)*4))burst(P.pos.clone().add(V(0,3,0)),26,[0xff9fb2,0xffd84d,0x7fd8ee,0x8a5cf6,0x6ccb5f],7,5,2.2,1.4,.25,true);
-    if(G.celebT>2.8){showWin(G.celebIsland);G.celebT=-1;}}
-  updPrompt();
-  animDog(dt,G.state==='rescue'?3:sp);
-  updSwingLine();
-  updCamera(dt);
+// One frame of the game: the world always animates; then either the title-screen orbit,
+// a cutscene, or normal play (move the player, effects, prompt, camera).
+function update(dt) {
+  updateWorld(dt);
+  followSun(game.state === 'start' ? vec3(0, 0, 0) : player.pos);
+  if (game.state === 'start') {
+    orbitCamera();
+    animateDog(dt, 0);
+    return;
+  }
+  const cutscene = game.cutscenes[game.state];
+  if (cutscene) {
+    cutscene.update(dt);
+    animateDog(dt, 0);
+    updatePrompt();
+    return;
+  }
+
+  player.barkCooldown -= dt;
+  player.barkTimer -= dt;
+  stepPlayerForState(dt);
+  const speed = groundSpeed();
+  turnToFaceMovement(dt, speed);
+  updatePowerSparkles(dt, speed);
+  updateCelebration(dt);
+  updatePrompt();
+  animateDog(dt, game.state === 'rescue' ? 3 : speed);
+  updateSwingLine();
+  updateCamera(dt);
+}
+
+// scenery, pickups, NPCs and effects that move whatever the player is doing
+function updateWorld(dt) {
+  updateOcean();
+  updateSky(dt);
+  updateShip(dt, game.state === 'bubble');
+  updatePickups(dt);
+  updateFruits(dt);
+  updateDigSpots(dt);
+  updateHooks(dt);
+  updateGrowers(dt);
+  updateHat(dt);
+  updateGull(dt);
+  updateMango(dt);
+  updateWasabi(dt);
+  currentIsland().update?.(dt);
+  updateFloaters(dt);
+  updateParticles(dt);
+  updateWoof(dt);
+}
+
+// move the player the way their current mode moves them (rescue, swinging, climbing,
+// zip line, or ordinary walking, which is the only mode that can dig or place items)
+function stepPlayerForState(dt) {
+  if (game.state === 'rescue') {
+    updateRescue(dt);
+    return;
+  }
+  const onRopeOrVine = player.swing || player.climb || player.zip; // before this step changes it
+  if (player.swing) updateSwing(dt);
+  else if (player.climb) updateClimb(dt);
+  else if (player.zip) updateZip(dt);
+  else stepPlayer(dt);
+  checkTriggers(dt);
+  if (onRopeOrVine) return;
+  updateDigging(dt);
+  updatePlacing(dt);
+}
+
+// horizontal speed while walking freely in play; 0 during rescue, swing, climb or zip
+function groundSpeed() {
+  const walking = game.state === 'play' && !player.swing && !player.climb && !player.zip;
+  return walking ? Math.hypot(player.vel.x, player.vel.z) : 0;
+}
+
+function turnToFaceMovement(dt, speed) {
+  if (speed <= 0.6 || player.digTimer > 0) return;
+  player.yaw = lerpAngle(player.yaw, Math.atan2(player.vel.x, player.vel.z), Math.min(1, dt * 12));
+}
+
+// while a fruit power is active, running leaves a trail of sparkles in its light + accent colours
+function updatePowerSparkles(dt, speed) {
+  if (!player.power || speed <= 2 || !player.grounded) return;
+  player.sparkTimer -= dt;
+  if (player.sparkTimer >= 0) return;
+  player.sparkTimer = 0.12;
+  burst(player.pos.clone().add(vec3(0, 0.3, 0)), {
+    count: 2,
+    color: POWERS[player.power].sparkleColors.slice(1),
+    speed: 1,
+    up: 1.5,
+    life: 0.6,
+    size: 0.7,
+    gravity: 0.2,
+  });
+}
+
+// island complete: confetti four times a second for ~2.4 s, then the island's win panel
+function updateCelebration(dt) {
+  if (game.celebrateTime < 0) return;
+  game.celebrateTime += dt;
+  const crossedQuarterSecond =
+    Math.floor(game.celebrateTime * 4) !== Math.floor((game.celebrateTime - dt) * 4);
+  if (game.celebrateTime < 2.4 && crossedQuarterSecond)
+    burst(player.pos.clone().add(vec3(0, 3, 0)), {
+      count: 26,
+      color: [0xff9fb2, 0xffd84d, 0x7fd8ee, 0x8a5cf6, 0x6ccb5f],
+      speed: 7,
+      up: 5,
+      life: 2.2,
+      size: 1.4,
+      gravity: 0.25,
+      confetti: true,
+    });
+  if (game.celebrateTime > 2.8) {
+    showWin(game.celebrateIsland);
+    game.celebrateTime = -1;
+  }
 }
 frame();
 
 /* ---------- debug: ?debug (always on in dev) ---------- */
-if(import.meta.env.DEV||new URLSearchParams(location.search).has('debug')){G.debug=true;
-  import('./game/debug.js').then(m=>m.installDebug());}
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
+  game.debug = true;
+  import('./game/debug.js').then((m) => m.installDebug());
+}

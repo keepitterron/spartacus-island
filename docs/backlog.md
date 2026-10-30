@@ -5,7 +5,7 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 ## Story and levels
 
 - **Island 5**: story not written yet. Eduardo's ability is pinching through ropes. Ask Zoë: where does the whale leave the ship, what's tied up, who needs rescuing. How-to: [islands.md](islands.md#adding-island-5-step-by-step).
-- **Zoë's layouts** for Mossy Paw Woods and Bubbly Ocean (currently placeholders). Positions are island-local (`W3`, `W4`), so her maps are a number edit. A next step could be moving those positions into a plain data object per island.
+- **Zoë's layouts** for Mossy Paw Woods and Bubbly Ocean (currently placeholders). Positions are island-local (`toWorld(x, z)` in each island), so her maps are a number edit. A next step could be moving those positions into a plain data object per island.
 
 ## Features
 

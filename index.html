@@ -1,98 +1,143 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Spartacus’s Island</title>
-<meta name="description" content="A cosy 3D pirate pup adventure. Sail from island to island, eat magic fruits and gather a crew of animal friends.">
-<meta name="theme-color" content="#a8e6f7">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Spartacus">
-</head>
-<body>
-<canvas id="c" tabindex="0" aria-label="Game view"></canvas>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Spartacus’s Island</title>
+    <meta
+      name="description"
+      content="A cosy 3D pirate pup adventure. Sail from island to island, eat magic fruits and gather a crew of animal friends."
+    />
+    <meta name="theme-color" content="#a8e6f7" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Spartacus" />
+  </head>
+  <body>
+    <canvas id="c" tabindex="0" aria-label="Game view"></canvas>
 
-<div class="hud"><div class="list" id="list">
-  <button class="lh" id="listToggle" aria-expanded="true"><span class="chev">▼</span><span id="listTitle">Spartacus’s to-do list</span><span class="count" id="count"></span></button>
-  <ul id="tasks"></ul>
-  <button class="rl" id="restartLink">↺ Restart from the beginning</button>
-</div></div>
-<div id="power" class="hidden"><span><small>Power</small><b id="powerName"></b></span></div>
-<div id="toast" role="status" aria-live="polite"><span></span></div>
-<div id="prompt"><span></span></div>
-<div id="card"><div><small id="cardSmall"></small><b id="cardBig"></b></div></div>
-<button class="cta ghost hidden" id="skip">Skip ⏩</button>
-
-<div class="touch" id="stickZone"><div id="stickBase"><div id="knob"></div></div></div>
-<div class="touch btns">
-  <button class="btn off" id="btnAct" aria-label="Action">Grab</button>
-  <button class="btn" id="btnBark" aria-label="Bark">Woof</button>
-  <button class="btn" id="btnJump" aria-label="Jump">Jump</button>
-</div>
-
-<div class="overlay" id="start">
-  <div class="panel">
-    <h1 class="title">Spartacus’s Island<small>🐾 a pirate pup adventure</small></h1>
-    <p>Spartacus wants to go sailing! Finish each island’s to-do list so the ship can sail on.</p>
-    <dl class="controls">
-      <span class="kb">
-        <dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</dd>
-        <dt>Jump</dt><dd><kbd>Space</kbd></dd>
-        <dt>Grab, dig</dt><dd><kbd>F</kbd></dd>
-        <dt>Bark</dt><dd><kbd>B</kbd></dd>
-        <dt>Look</dt><dd><kbd>Q</kbd><kbd>E</kbd> or drag</dd>
-      </span>
-      <span class="tc">
-        <dt>Move</dt><dd>Yellow stick</dd>
-        <dt>Jump</dt><dd>Jump button</dd>
-        <dt>Grab, dig</dt><dd>Green button</dd>
-        <dt>Bark</dt><dd>Woof button</dd>
-        <dt>Look</dt><dd>Drag the screen</dd>
-      </span>
-    </dl>
-    <p class="tip">Fell in the water? No problem, a bubble carries you back.</p>
-    <div class="row">
-      <button class="cta ghost" id="play">Start from the beginning</button>
-      <button class="cta hidden" id="cont">Continue</button>
+    <div class="hud">
+      <div class="list" id="list">
+        <button class="lh" id="listToggle" aria-expanded="true">
+          <span class="chev">▼</span><span id="listTitle">Spartacus’s to-do list</span
+          ><span class="count" id="count"></span>
+        </button>
+        <ul id="tasks"></ul>
+        <button class="rl" id="restartLink">↺ Restart from the beginning</button>
+      </div>
     </div>
-  </div>
-</div>
-
-<!-- shown when an island's to-do list is finished; filled from the island's `win` data -->
-<div class="overlay hidden" id="win">
-  <div class="panel">
-    <h1 class="title" id="winTitle"></h1>
-    <p id="winText"></p>
-    <p class="tip" id="winTip"></p>
-    <div class="row">
-      <button class="cta ghost" id="winExplore">Keep exploring</button>
-      <button class="cta" id="winGo"></button>
+    <div id="power" class="hidden">
+      <span><small>Power</small><b id="powerName"></b></span>
     </div>
-  </div>
-</div>
+    <div id="toast" role="status" aria-live="polite"><span></span></div>
+    <div id="prompt"><span></span></div>
+    <div id="card">
+      <div><small id="cardSmall"></small><b id="cardBig"></b></div>
+    </div>
+    <button class="cta ghost hidden" id="skip">Skip ⏩</button>
 
-<div class="overlay hidden" id="end">
-  <div class="panel">
-    <h1 class="title">To be continued…</h1>
-    <p>A friendly whale pushed the ship back up to the surface! Eduardo’s pincers are ready to cut ropes on the next island. What happens next? Make up the story!</p>
-    <div class="row"><button class="cta" id="restart">Start over</button></div>
-  </div>
-</div>
+    <div class="touch" id="stickZone">
+      <div id="stickBase"><div id="knob"></div></div>
+    </div>
+    <div class="touch btns">
+      <button class="btn off" id="btnAct" aria-label="Action">Grab</button>
+      <button class="btn" id="btnBark" aria-label="Bark">Woof</button>
+      <button class="btn" id="btnJump" aria-label="Jump">Jump</button>
+    </div>
 
-<div id="fade"></div>
-<div class="overlay hidden" id="err"><div class="panel"><h1 class="title" style="font-size:2.2rem">Oops!</h1><p id="errMsg"></p><button class="cta" id="errBtn">Reload</button></div></div>
-<script>
-// plain script so errors are shown even if the game module never loads
-(function(){
-  var shown=false;
-  function show(m){if(shown)return;shown=true;var o=document.getElementById('err');document.getElementById('errMsg').textContent=m;o.classList.remove('hidden');}
-  window.__showErr=show;
-  addEventListener('error',function(e){if(e.message)show('Something went wrong: '+e.message);});
-  document.getElementById('errBtn').addEventListener('click',function(){location.reload();});
-})();
-</script>
-<script type="module" src="/src/main.js"></script>
-</body>
+    <div class="overlay" id="start">
+      <div class="panel">
+        <h1 class="title">Spartacus’s Island<small>🐾 a pirate pup adventure</small></h1>
+        <p>
+          Spartacus wants to go sailing! Finish each island’s to-do list so the ship can sail on.
+        </p>
+        <dl class="controls">
+          <span class="kb">
+            <dt>Move</dt>
+            <dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</dd>
+            <dt>Jump</dt>
+            <dd><kbd>Space</kbd></dd>
+            <dt>Grab, dig</dt>
+            <dd><kbd>F</kbd></dd>
+            <dt>Bark</dt>
+            <dd><kbd>B</kbd></dd>
+            <dt>Look</dt>
+            <dd><kbd>Q</kbd><kbd>E</kbd> or drag</dd>
+          </span>
+          <span class="tc">
+            <dt>Move</dt>
+            <dd>Yellow stick</dd>
+            <dt>Jump</dt>
+            <dd>Jump button</dd>
+            <dt>Grab, dig</dt>
+            <dd>Green button</dd>
+            <dt>Bark</dt>
+            <dd>Woof button</dd>
+            <dt>Look</dt>
+            <dd>Drag the screen</dd>
+          </span>
+        </dl>
+        <p class="tip">Fell in the water? No problem, a bubble carries you back.</p>
+        <div class="row">
+          <button class="cta ghost" id="play">Start from the beginning</button>
+          <button class="cta hidden" id="cont">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- shown when an island's to-do list is finished; filled from the island's `win` data -->
+    <div class="overlay hidden" id="win">
+      <div class="panel">
+        <h1 class="title" id="winTitle"></h1>
+        <p id="winText"></p>
+        <p class="tip" id="winTip"></p>
+        <div class="row">
+          <button class="cta ghost" id="winExplore">Keep exploring</button>
+          <button class="cta" id="winGo"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="end">
+      <div class="panel">
+        <h1 class="title">To be continued…</h1>
+        <p>
+          A friendly whale pushed the ship back up to the surface! Eduardo’s pincers are ready to
+          cut ropes on the next island. What happens next? Make up the story!
+        </p>
+        <div class="row"><button class="cta" id="restart">Start over</button></div>
+      </div>
+    </div>
+
+    <div id="fade"></div>
+    <div class="overlay hidden" id="err">
+      <div class="panel">
+        <h1 class="title" style="font-size: 2.2rem">Oops!</h1>
+        <p id="errMsg"></p>
+        <button class="cta" id="errBtn">Reload</button>
+      </div>
+    </div>
+    <script>
+      // plain script so errors are shown even if the game module never loads
+      (function () {
+        var shown = false;
+        function show(m) {
+          if (shown) return;
+          shown = true;
+          var o = document.getElementById('err');
+          document.getElementById('errMsg').textContent = m;
+          o.classList.remove('hidden');
+        }
+        window.__showErr = show;
+        addEventListener('error', function (e) {
+          if (e.message) show('Something went wrong: ' + e.message);
+        });
+        document.getElementById('errBtn').addEventListener('click', function () {
+          location.reload();
+        });
+      })();
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
