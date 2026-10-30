@@ -1,11 +1,16 @@
-// Little things the world does when Spartacus barks nearby, on every island: palms shake their
-// fronds and drop a coconut, which bounces and later pops back up into the tree.
+// Little things the world does when Spartacus barks or ground-pounds nearby, on every island:
+// palms shake their fronds and drop a coconut, which bounces and later pops back up into the
+// tree; beach balls get shoved (systems/balls.js); birds and fish scatter (systems/critters.js).
+// A ground pound also digs up a sand mound right underneath.
 import { distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
 import { terrainHeight } from '../world/terrain.js';
 import { palms } from '../world/props.js';
+import { poundDig } from './digs.js';
+import { shoveBalls } from './balls.js';
+import { barkAtCritters } from './critters.js';
 
 const BARK_REACH = 7;
 const COCONUT_RADIUS = 0.17;
@@ -14,8 +19,20 @@ const REGROW_TIME = 12; // seconds a coconut lies on the ground before it's back
 const fallen = [];
 
 export function barkReactions(pos) {
+  shakePalms(pos, BARK_REACH);
+  shoveBalls(pos, { reach: 6, push: 6, up: 3 });
+  barkAtCritters(pos);
+}
+
+export function poundReactions(pos) {
+  shakePalms(pos, 5);
+  poundDig(pos);
+  shoveBalls(pos, { reach: 5, push: 3, up: 10 });
+}
+
+function shakePalms(pos, reach) {
   for (const palm of palms) {
-    if (distXZ(pos, palm.x, palm.z) > BARK_REACH || Math.abs(pos.y - palm.ground) > 4) continue;
+    if (distXZ(pos, palm.x, palm.z) > reach || Math.abs(pos.y - palm.ground) > 4) continue;
     palm.shake = 1;
     burst(palm.crown.getWorldPosition(vec3()), {
       count: 8,

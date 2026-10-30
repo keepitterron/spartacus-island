@@ -562,7 +562,34 @@ const island = {
     { id: 'i1-shore-rock', x: -6, z: -26, reward: 'flower-crown' }, // on the rock by the sea
     { id: 'i1-hill', x: -13.6, z: -16.6, reward: 'tricorn' }, // next to the treasure chest
     { id: 'i1-dig', x: 22, z: -4, reward: 'feather-bow', dig: true },
+    { id: 'i1-night-crates', x: 3, z: 20.3, reward: 'nightcap', night: true }, // on the crates by the start
   ],
+  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
+  balls: [
+    [4, 15],
+    [-5, 15],
+  ],
+  critters: {
+    birds: [
+      [-12, 24],
+      [20, -18],
+      [26, 12],
+    ],
+    butterflies: [
+      [-8, 10],
+      [12, 10],
+      [-16, -4],
+      [-22, 14],
+    ],
+  },
+  // a sunny, bouncy tune (core/music.js)
+  music: {
+    tempo: 100,
+    root: 60,
+    wave: 'triangle',
+    melody: [0, 2, 4, null, 4, 5, 4, 2, 3, null, 2, 0, 1, null, 0, null],
+    bass: [-5, null, null, null, -2, null, null, null, -1, null, null, null, -2, null, null, null],
+  },
   intro: [[400, 'Check the list. Let’s go, Spartacus!', 2600]],
   win: {
     title: 'Ready to sail!',

@@ -41,7 +41,8 @@ function resize() {
 addEventListener('resize', resize);
 resize();
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x8fcf7a, 1.3));
+export const hemi = new THREE.HemisphereLight(0xffffff, 0x8fcf7a, 1.3);
+scene.add(hemi);
 export const sun = new THREE.DirectionalLight(0xfff2d6, 2.3);
 sun.castShadow = true;
 sun.shadow.mapSize.set(LOW_POWER ? 1024 : 2048, LOW_POWER ? 1024 : 2048);
@@ -56,7 +57,7 @@ export function followSun(target) {
 }
 
 export const ambience = { under: false }; // under: we're on the sea floor
-// underwater: deep blue and much thicker fog
+// underwater: deep blue and much thicker fog (world/daylight.js darkens the colours at night)
 export function setUnderwater(underwater) {
   ambience.under = underwater;
   scene.background.set(underwater ? 0x1a6f9e : 0xa8e6f7);

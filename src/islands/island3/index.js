@@ -712,7 +712,29 @@ const island = {
     { id: 'i3-acorn-tree', x: 16.3, z: -11, reward: 'butterfly-wings' }, // Stretchy hook
     { id: 'i3-spring', x: -16, z: -1, reward: 'vine-scarf' }, // by Wasabi's spring
     { id: 'i3-dig', x: 12, z: 14, reward: 'leaf-cape', dig: true },
+    { id: 'i3-night-meadow', x: 4, z: 13, reward: 'star-glasses', night: true }, // in the meadow by the dock
   ],
+  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
+  balls: [[3, 12]],
+  critters: {
+    birds: [[8, 22]],
+    butterflies: [
+      [5, 9],
+      [-8, 12],
+      [12, 0],
+      [-6, -6],
+      [-20, 4],
+      [18, 10],
+    ],
+  },
+  // a slow walk in the woods (core/music.js)
+  music: {
+    tempo: 84,
+    root: 62,
+    wave: 'triangle',
+    melody: [2, null, null, 3, 4, null, 3, null, 2, null, 1, null, 0, null, null, null],
+    bass: [-5, null, null, null, -3, null, null, null, -4, null, null, null, -2, null, null, null],
+  },
   intro: [[3400, 'Wasabi the axolotl’s spring has dried up!', 3400]],
   win: {
     title: 'Wasabi is home!',

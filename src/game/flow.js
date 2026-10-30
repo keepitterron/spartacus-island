@@ -3,6 +3,7 @@ import { $ } from '../core/util.js';
 import { canvas, setUnderwater } from '../core/renderer.js';
 import { game, followCam, currentIsland } from '../core/state.js';
 import { sfx, audioContext } from '../core/audio.js';
+import { startMusic } from '../core/music.js';
 import { toast, showTitleCard } from '../core/ui.js';
 import { writeSave } from '../core/save.js';
 import { placeShipAt } from '../world/ship.js';
@@ -21,6 +22,7 @@ const showIntro = (messages) => {
 export function startGame(n) {
   if (game.state !== 'start') return;
   audioContext();
+  startMusic();
   $('#start').classList.add('hidden');
   canvas.focus();
   if (n >= 2) {

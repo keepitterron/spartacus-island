@@ -8,13 +8,15 @@ import { $, lerpAngle, vec3 } from './core/util.js';
 import { renderer, scene, camera, canvas, followSun } from './core/renderer.js';
 import { game, currentIsland } from './core/state.js';
 import { burst, updateParticles } from './core/fx.js';
-import { overlayOpen, armButton } from './core/ui.js';
+import { overlayOpen, armButton, hintOnce } from './core/ui.js';
 import { bindInput } from './core/input.js';
 import { continueIsland, loadSave, writeSave } from './core/save.js';
 import { isMuted, setMuted } from './core/audio.js';
+import { isMusicOn, setMusicOn } from './core/music.js';
 import { addTerrain } from './world/terrain.js';
 import { updateOcean } from './world/ocean.js';
 import { buildSky, updateSky } from './world/sky.js';
+import { buildStars, setNight, updateDaylight, daylight } from './world/daylight.js';
 import { updateShip } from './world/ship.js';
 import { player, SPAWN, stepPlayer, updateRescue } from './player/player.js';
 import { animateDog } from './player/dog.js';
@@ -28,6 +30,8 @@ import { updateHat } from './systems/hat.js';
 import { loadOutfit, updateOutfit } from './systems/outfits.js';
 import { buildSecrets, updateSecrets } from './systems/secrets.js';
 import { updateReactions } from './systems/reactions.js';
+import { buildBalls, updateBalls } from './systems/balls.js';
+import { buildCritters, updateCritters } from './systems/critters.js';
 import { updateGull } from './npcs/gull.js';
 import { updateMango } from './npcs/mango.js';
 import { updateWasabi } from './npcs/wasabi.js';
@@ -53,8 +57,12 @@ for (const island of ISLANDS) {
 // Build order matters: all scenery shares one seeded random sequence (see core/util.js rand).
 for (const island of ISLANDS) island.build();
 buildSky();
+buildStars();
 for (const island of ISLANDS) island.buildLate?.();
-buildSecrets(); // last, so presents can sit on top of everything built above
+// last, so presents, balls and critters can sit on top of everything built above
+buildSecrets();
+buildBalls();
+buildCritters();
 loadOutfit();
 player.pos.copy(island1.spawn);
 SPAWN.copy(island1.spawn);
@@ -82,6 +90,37 @@ function toggleSound() {
 setMuted(!!loadSave().muted);
 showSoundButton();
 $('#btnSound').addEventListener('click', toggleSound);
+
+// music on/off (sound effects stay), also remembered; a crossed-out note when off
+function showMusicButton() {
+  $('#btnMusic').classList.toggle('off', !isMusicOn());
+}
+function toggleMusic() {
+  setMusicOn(!isMusicOn());
+  writeSave({ music: isMusicOn() });
+  showMusicButton();
+}
+setMusicOn(loadSave().music !== false);
+showMusicButton();
+$('#btnMusic').addEventListener('click', toggleMusic);
+
+// day or night, also remembered; the button shows what you'd switch to
+function showNightButton() {
+  $('#btnNight').textContent = daylight.target ? '☀️' : '🌙';
+}
+function toggleNight() {
+  setNight(!daylight.target);
+  writeSave({ night: !!daylight.target });
+  showNightButton();
+  if (daylight.target)
+    hintOnce('night', 'Night time! Some presents only come out at night ✨', 3200);
+}
+if (loadSave().night) {
+  setNight(true);
+  daylight.night = 1;
+}
+showNightButton();
+$('#btnNight').addEventListener('click', toggleNight);
 
 const continueTo = continueIsland(ISLANDS.length);
 if (continueTo >= 2) {
@@ -118,6 +157,8 @@ bindInput({
     if (k === 'f' || k === 'enter') doAction();
     if (k === 'o') openWardrobe();
     if (k === 'm') toggleSound();
+    if (k === 'n') toggleMusic();
+    if (k === 'l') toggleNight();
   },
   onJump() {
     player.jumpBuffer = JUMP_BUFFER;
@@ -171,6 +212,7 @@ function update(dt) {
 function updateWorld(dt) {
   updateOcean();
   updateSky(dt);
+  updateDaylight(dt);
   updateShip(dt, game.state === 'bubble');
   updatePickups(dt);
   updateFruits(dt);
@@ -181,6 +223,8 @@ function updateWorld(dt) {
   updateOutfit();
   updateSecrets(dt);
   updateReactions(dt);
+  updateBalls(dt);
+  updateCritters(dt);
   updateGull(dt);
   updateMango(dt);
   updateWasabi(dt);

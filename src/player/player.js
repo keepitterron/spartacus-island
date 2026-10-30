@@ -7,11 +7,12 @@ import { game, followCam, currentIsland } from '../core/state.js';
 import { keys, moveAxis } from '../core/input.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
-import { toast, hintOnce } from '../core/ui.js';
+import { toast, hintOnce, actionKeyName } from '../core/ui.js';
 import { colliders, inFootprint, pushOut } from '../core/colliders.js';
 import { terrainHeight } from '../world/terrain.js';
 import { startClimb } from '../systems/vines.js';
 import { POWERS } from '../systems/powers.js';
+import { poundAction, holdPound, landPound, cancelPound } from './pound.js';
 
 // Spartacus's physical state. Sub-states: swing / climb / zip are set by their systems
 // and replace normal walking while active; digTimer>0 or placing locks movement.
@@ -42,6 +43,10 @@ export const player = {
   runTime: 0, // seconds the stick has been pushed all the way (a long push turns into a run)
   sprinting: false,
   dustTimer: 0,
+  wading: false, // standing in shallow water: slower, paddling
+  airTime: 0,
+  pounding: false, // ground pound in progress (player/pound.js)
+  poundHang: 0,
 };
 export const RADIUS = 0.45,
   STEP_HEIGHT = 0.5,
@@ -51,8 +56,9 @@ export const RADIUS = 0.45,
   SUPER_JUMP_SPEED = 18.5;
 // Movement tuning in one place, so it can be tweaked live with Zoë (__g.move in debug).
 //   sprint: speed multiplier while running; runAfter: seconds of a full push before running
-//   starts (Shift runs straight away); fullPush: how far the stick counts as "all the way"
-export const MOVE = { sprint: 1.5, runAfter: 1.1, fullPush: 0.9 };
+//   starts (Shift runs straight away); fullPush: how far the stick counts as "all the way";
+//   wadeSpeed: speed multiplier in shallow water; wadeDepth: deeper than this is a bubble rescue
+export const MOVE = { sprint: 1.5, runAfter: 1.1, fullPush: 0.9, wadeSpeed: 0.55, wadeDepth: 0.65 };
 // where a bubble rescue goes when there is no recent safe spot (set on entering an island)
 export const SPAWN = vec3();
 export const forwardDir = () => vec3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
@@ -86,8 +92,14 @@ export function stepPlayer(dt) {
     phys = physics();
   const { forward, right, amount } = readMoveInput(locked);
   const heavy = player.carrying?.heavy;
+  player.wading = phys.water && pos.y < 0;
   updateSprint(dt, { amount, heavy });
-  const speed = SPEED * (heavy ? 0.6 : 1) * (player.sprinting ? MOVE.sprint : 1) * phys.speed;
+  const speed =
+    SPEED *
+    (heavy ? 0.6 : 1) *
+    (player.sprinting ? MOVE.sprint : 1) *
+    (player.wading ? MOVE.wadeSpeed : 1) *
+    phys.speed;
   const move = cameraRelative(forward, right);
   // ease towards the wanted velocity: snappy on the ground, floatier in the air
   const ease = Math.min(1, dt * (player.grounded ? 12 : 4));
@@ -96,13 +108,39 @@ export function stepPlayer(dt) {
   vel.y -= phys.gravity * dt;
   if (vel.y < -phys.maxFall) vel.y = -phys.maxFall;
   updateJump(dt, { locked, heavy, phys });
+  if (player.pounding) holdPound(dt);
   const prevY = pos.y;
   pos.addScaledVector(vel, dt);
   if (collideSides(prevY, { move, amount, heavy })) return;
   landOn(groundHeightUnder(pos, prevY));
   rememberSafeSpot(dt);
   if (phys.bound) keepInBound(pos, phys.bound);
-  if (phys.water && pos.y < -0.3) startRescue();
+  hintPound(dt);
+  if (player.wading) splashAround(dt, amount);
+  if (phys.water && pos.y < -MOVE.wadeDepth) startRescue();
+}
+
+// the first time he's up high for a while, tell her about the ground pound
+function hintPound(dt) {
+  player.airTime = player.grounded ? 0 : player.airTime + dt;
+  if (player.airTime > 0.4 && poundAction())
+    hintOnce('pound', `Up high? Press ${actionKeyName()} to SLAM down!`, 3000);
+}
+
+// little splashes round his legs while wading
+function splashAround(dt, amount) {
+  hintOnce('wade', 'Splish splash! Too deep and the bubble comes.', 2600);
+  player.dustTimer -= dt;
+  if (player.dustTimer > 0 || amount < 0.2) return;
+  player.dustTimer = 0.12;
+  burst(vec3(player.pos.x, 0.05, player.pos.z), {
+    count: 3,
+    color: [0xffffff, 0xbff3ff],
+    speed: 1.5,
+    up: 2,
+    life: 0.4,
+    size: 0.8,
+  });
 }
 
 // running: Shift, or keep the stick pushed all the way for a moment. Carrying something heavy
@@ -110,7 +148,8 @@ export function stepPlayer(dt) {
 function updateSprint(dt, { amount, heavy }) {
   const fullPush = amount >= MOVE.fullPush;
   player.runTime = fullPush ? player.runTime + dt : 0;
-  player.sprinting = !heavy && amount > 0.3 && (keys.shift || player.runTime > MOVE.runAfter);
+  player.sprinting =
+    !heavy && !player.wading && amount > 0.3 && (keys.shift || player.runTime > MOVE.runAfter);
   if (!player.sprinting) return;
   hintOnce('run', 'Zoom! Keep pushing to run fast!', 2400);
   if (player.grounded) kickDust(dt);
@@ -203,7 +242,7 @@ function collideSides(prevY, { move, amount, heavy }) {
 
 // touching a grown vine's trunk while pushing the stick roughly towards it
 function isWalkingIntoVine(c, { move, amount, heavy }) {
-  if (!c.tree?.grown || amount <= 0.4 || heavy) return false;
+  if (!c.tree?.grown || amount <= 0.4 || heavy || player.pounding) return false;
   const dx = c.x - player.pos.x,
     dz = c.z - player.pos.z,
     dist = Math.hypot(dx, dz) || 1;
@@ -226,8 +265,9 @@ function landOn(support) {
     vel = player.vel;
   if (pos.y <= support) {
     if (vel.y <= 0) {
+      if (player.pounding) landPound();
       // a hard landing squashes him and puffs some dust
-      if (!player.grounded && vel.y < -9) {
+      else if (!player.grounded && vel.y < -9) {
         player.squashVel = -Math.min(9, -vel.y * 0.45);
         burst(pos.clone(), {
           count: 8,
@@ -284,6 +324,7 @@ rescueBubble.visible = false;
 scene.add(rescueBubble);
 export function startRescue() {
   game.state = 'rescue';
+  cancelPound();
   rescue.t = 0;
   rescue.from.copy(player.pos);
   // a spot from ~1.5 s ago, so we don't land right back on the edge we fell off

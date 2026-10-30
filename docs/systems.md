@@ -55,13 +55,25 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 - **Secrets:** each island lists `secrets: [{id, x, z, reward, y?, dig?}]` in island-local coordinates. A present sits on the highest surface at that spot (rock tops, pillars, tree decks) unless `y` is given; `dig: true` buries it in an unmarked mound. Walking into one opens it, gives and wears the accessory, and shows it spinning above Spartacus. Presents only glitter within 12 units. The to-do list shows `🎁 Secrets n/m`, which never blocks finishing an island.
 - **Wardrobe:** the 👕 button (or `O`) opens the dress-up panel as the `wardrobe` cutscene, so the camera can circle Spartacus while the player is frozen. Back and tail tabs look from behind.
 
-## Bark reactions (`systems/reactions.js`)
+## Bark and pound reactions (`systems/reactions.js`)
 
-`barkReactions(pos)` runs on every bark, on every island, before the island's own `bark(p)`. Palms within 7 shake and usually drop a coconut that bounces and pops back into its tree after 12 s (`palms` is filled by `palm()` in `world/props.js`). Add new reactions here: anything that just reacts to a bark, without being part of a puzzle.
+`barkReactions(pos)` runs on every bark (and `poundReactions(pos)` on every ground-pound landing), on every island, before the island's own `bark(p)`. Palms within 7 shake and usually drop a coconut that bounces and pops back into its tree after 12 s (`palms` is filled by `palm()` in `world/props.js`). Add new reactions here: anything that just reacts to a bark, without being part of a puzzle.
+
+## Beach balls (`systems/balls.js`)
+
+Islands list `balls: [[x, z], …]` (island-local). Home-made physics, no library: gravity, bounces, rolling friction, pushed out of colliders. Running into a ball kicks it, a bark shoves balls within 6, a ground pound launches them. A ball in the sea bobs for 2.5 s, then pops back home. Balls further than 70 from Spartacus sleep.
+
+## Ambient critters (`systems/critters.js`)
+
+Islands list spots: `critters: { birds: [[x, z]], butterflies: [[x, z]], fish: [[x, z, height]] }`. Each spot gets a flock of 6 birds, 3 butterflies or a school of 8 fish. Birds scatter when Spartacus runs or ground-pounds within 4.5, or barks within 10, swirl around and land again ~9 s later. Butterflies loop over their spot and drift away if he comes close. Fish circle and dart round wide after a bark. Every kind is a few `InstancedMesh`es (6 draw calls in total); spots further than 80 aren't animated.
 
 ## Movement tuning (`player/player.js`)
 
-`MOVE` holds the tuning numbers (`sprint`, `runAfter`, `fullPush`); in debug it's `__g.move`, so you can change them live. Running: Shift, or keep the stick (or keys) pushed all the way for `runAfter` seconds; never while carrying something heavy. Running kicks up dust.
+`MOVE` holds the tuning numbers (`sprint`, `runAfter`, `fullPush`, `wadeSpeed`, `wadeDepth`); in debug it's `__g.move`, so you can change them live.
+
+- **Running:** Shift, or keep the stick (or keys) pushed all the way for `runAfter` seconds; never while carrying something heavy or wading. Running kicks up dust.
+- **Wading:** below the sea surface he paddles at `wadeSpeed`; the bubble rescue only starts deeper than `wadeDepth`.
+- **Ground pound** (`player/pound.js`): in the air, at least 1.3 above whatever is below, the action button offers **Slam** (it's last in the action list, so island actions, swing, drop, grab and dig win). He hangs and flips for 0.2 s, then drops. Landing calls `poundReactions(pos)`: palms shake, and a sand mound right underneath is dug up instantly (`poundDig`).
 
 ## NPCs
 
@@ -91,6 +103,14 @@ Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'na
 
 `sfx.name()`. Everything goes through one master gain, so `setMuted(bool)` (the 🔊 button or `M`, saved as `muted`) silences it all. Everything is synthesised from `tone(fromHz, {to, duration, type, volume, delay})` and `noise(duration, {freq, volume, delay})`; add a new sound as a one-liner. Audio unlocks on the first tap/click (`audioContext()`).
 
+## Music and ambience (`core/music.js`)
+
+Each island has a tune as data: `music: {tempo, root, wave, melody, bass}`. `melody` and `bass` are 16 half-beat steps counting up the major pentatonic scale from `root` (a MIDI note): 0 is the root, 5 an octave up, -5 an octave down, `null` a rest. Any steps sound fine together, so Zoë can make up tunes as lists of numbers. A look-ahead scheduler plays it from `startMusic()` (called when the game starts), switching tune when the island changes. Underneath, a looping filtered noise swells like waves (a low hum underwater). 🎵 / `N` turns the music off (saved as `music`); 🔊 / `M` mutes everything. Footsteps (`sfx.step`) sound different on sand, grass, wood and in shallow water.
+
+## Day and night (`world/daylight.js`)
+
+The 🌙 button (or `L`, saved as `night`) fades to night over 2.5 s: sky, fog, sun and hemisphere light lerp to moonlit colours (a darker blue underwater), stars appear, butterflies sleep and fireflies come out (`systems/critters.js`), and the island tune plays slower and softer. Presents with `night: true` are invisible (and can't be opened) by day, with a one-time "come back at night" hint nearby. It's a toggle rather than a timed cycle; ask Zoë which she prefers. `daylight.night` (0..1) is what other systems read.
+
 ## Save (`core/save.js`)
 
-`{v:4, island, owned, equipped, secrets}` in `localStorage['spartacus-save']`. `writeSave(data)` merges, so each system writes only its own fields: the island on arrival, outfits and secrets as they change. Starting over keeps outfits and found secrets. When the shape changes, bump `VERSION` and add a step to `migrate()` (v3 saves keep their island). `#islandN` in the URL overrides it for testing. Mid-island progress is not saved yet.
+`{v:4, island, owned, equipped, secrets, muted, music, night}` in `localStorage['spartacus-save']`. `writeSave(data)` merges, so each system writes only its own fields: the island on arrival, outfits and secrets as they change. Starting over keeps outfits and found secrets. When the shape changes, bump `VERSION` and add a step to `migrate()` (v3 saves keep their island). `#islandN` in the URL overrides it for testing. Mid-island progress is not saved yet.

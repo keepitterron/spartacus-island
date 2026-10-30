@@ -26,6 +26,9 @@ const island = {
   //   ids must be unique across the whole game; power:'grow' ticks itself when that fruit is eaten
   collect:{total, count:0, taskId, name, all, model},   // optional bones/acorns-style pickups
   secrets:[{id, x, z, reward, y?, dig?}],                // hidden presents (island-local), see systems.md
+  balls:[[x, z], …],                                     // beach balls (island-local)
+  critters:{birds, butterflies, fish},                   // ambient life spots (island-local)
+  music:{tempo, root, wave, melody, bass},               // the island's tune (core/music.js)
   intro:[[delayMs, text, durationMs], …],                // toasts after arriving
   win:{title, text, tip, go},                            // win panel; "go" button runs exit.run
   exit:{label, at(p), run()},                            // dock action once every task is done

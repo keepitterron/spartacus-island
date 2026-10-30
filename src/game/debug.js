@@ -6,6 +6,7 @@
 //   __g.act()               press the action button; __g.action() shows what it would do
 //   __g.where()             current island-local position
 //   __g.secrets()           this island's presents; __g.secret(i) teleports onto one (opens it)
+//   __g.night(true)         switch to night (false for day), instantly
 //   __g.move.sprint = 1.7  live movement tuning (see MOVE in player/player.js)
 //   __g.dressAll()          own every accessory; __g.wear('tricorn') puts one on
 // Raw state is there too: __g.game, __g.player, __g.followCam, __g.colliders.
@@ -17,6 +18,7 @@ import { setPower } from '../systems/powers.js';
 import { completeTask, renderTasks } from './tasks.js';
 import { currentAction, doAction } from './actions.js';
 import { secretList } from '../systems/secrets.js';
+import { daylight, setNight } from '../world/daylight.js';
 import { ACCESSORIES } from '../models/accessories.js';
 import { giveAccessory, wear } from '../systems/outfits.js';
 import { startGame, enterIsland } from './flow.js';
@@ -73,6 +75,10 @@ export function installDebug() {
       for (const item of ACCESSORIES) giveAccessory(item.id);
     },
     wear,
+    night(on = true) {
+      setNight(on);
+      daylight.night = on ? 1 : 0;
+    },
   };
   console.info(
     '[debug] window.__g ready: go(n), tp(x,z), power(t), done(id), doneAll(), act(), where(), secrets(), secret(i), dressAll(), wear(id)',

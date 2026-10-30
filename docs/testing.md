@@ -32,6 +32,8 @@ Always on in dev; on the live site add `?debug` to the URL. From the browser con
 | `__g.action()` / `__g.act()`                               | What the action button would do / press it                                            |
 | `__g.secrets()` / `__g.secret(i)`                          | This island's presents / teleport onto one (opens it; dig the buried ones first)      |
 | `__g.dressAll()` / `__g.wear('tricorn')`                   | Own every accessory / put one on                                                      |
+| `__g.night()` / `__g.night(false)`                         | Switch to night / day instantly                                                       |
+| `__g.move`                                                 | Movement tuning (run speed, wading), live                                             |
 | `__g.game`, `__g.player`, `__g.followCam`, `__g.colliders` | Raw state                                                                             |
 
 In dev you can also import any module from the console, e.g. `(await import('/spartacus-island/src/npcs/wasabi.js')).wasabi.state`.
@@ -50,8 +52,12 @@ The full game was play-tested this way after the Vite migration (Oct 2026). Re-r
 
 **Island 4**: Chop-Chop fruit; crabs (sand, Boing shelf, lift-vent ledge, inside a clump, top of the kelp pillar via Grow-Grow); chop the lane entrance (octopus wakes), approach Eduardo, chop his two hiding clumps; get bonked by a tentacle once; pillow at the end of the vent canyon, Give it to the octopus; Eduardo recognises you and rides your hat; walk to the ship; win; **Keep exploring**, then **Ride** at the ship; whale; "To be continued…".
 
+**Exploration layer:** a present on each island (`__g.secret(i)`), dig one up by ground-pounding its mound; 👕 wardrobe on a phone in portrait; run (Shift / full stick) and wade at a beach; bark at a palm, a flock of birds, a beach ball, and the fish on island 4; 🌙 night: fireflies, a night present (island 1 crates, island 3 meadow); 🔊 and 🎵 toggles survive a reload.
+
 **Every time:** start screen with and without a save (Continue appears only with a save; "Start from the beginning" needs two taps when there is one); phone size (touch controls, toasts not covering buttons); no console errors.
 
 ## Headless browsers
 
-Headless Chrome with software GL (`--use-gl=swiftshader`) currently **loses the WebGL context** right after the first frame with this build, while the original single-file game ran fine. See [bugs.md](bugs.md). Until that's fixed, automated tests need real GPU rendering (headful Chrome) or must tolerate the context loss. Lessons from earlier automated runs still apply: small viewport (software rendering is ~3 fps), poll `window.__g` instead of sleeping, teleport to each step and press F, keep each test short.
+Playwright's Chromium with `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader` renders fine (Oct 2026) and was used to check every present, the wardrobe and the critters. Game time runs ~5× slower than real time there, so wait on `__g.game.time`, not wall-clock sleeps.
+
+Headless Chrome with plain software GL (`--use-gl=swiftshader`) currently **loses the WebGL context** right after the first frame with this build, while the original single-file game ran fine. See [bugs.md](bugs.md). Until that's fixed, automated tests need real GPU rendering (headful Chrome) or must tolerate the context loss. Lessons from earlier automated runs still apply: small viewport (software rendering is ~3 fps), poll `window.__g` instead of sleeping, teleport to each step and press F, keep each test short.

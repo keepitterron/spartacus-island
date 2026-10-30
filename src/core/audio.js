@@ -16,6 +16,9 @@ export function audioContext() {
   if (context?.state === 'suspended') context.resume().catch(() => {});
   return context;
 }
+// where longer-running sound (music, ambience) plugs in, so the mute switch covers it too
+export const masterOut = () => (audioContext() ? master : null);
+
 // an oscillator sliding from frequency `from` to `to` (Hz) with a quick attack and fade out
 function tone(from, { to, duration, type = 'sine', volume = 0.2, delay = 0 }) {
   const ac = audioContext();
@@ -125,6 +128,22 @@ export const sfx = {
   drop() {
     tone(300, { to: 180, duration: 0.1, type: 'triangle', volume: 0.1 });
     noise(0.06, { freq: 700, volume: 0.15 });
+  },
+  // one quiet footstep on sand, grass, wood or in shallow water
+  step(surface) {
+    if (surface === 'wood') tone(340, { to: 260, duration: 0.05, type: 'triangle', volume: 0.05 });
+    else if (surface === 'water') noise(0.08, { freq: 900, volume: 0.1 });
+    else noise(0.045, { freq: surface === 'sand' ? 3200 : 1500, volume: 0.05 });
+  },
+  // a flock of birds taking off: a quick flurry of soft wing flaps
+  flutter() {
+    for (let i = 0; i < 6; i++)
+      noise(0.05, { freq: 1200 + i * 150, volume: 0.12, delay: i * 0.04 });
+  },
+  // ground pound landing: a deep thump
+  pound() {
+    tone(130, { to: 45, duration: 0.3, type: 'sine', volume: 0.45 });
+    noise(0.2, { freq: 300, volume: 0.5 });
   },
   // a coconut hitting the sand
   bonk() {
