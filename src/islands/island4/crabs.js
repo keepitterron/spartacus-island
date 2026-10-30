@@ -1,0 +1,56 @@
+import * as THREE from 'three';
+import {angLerp,flat,rand,V} from '../../core/util.js';
+import {scene} from '../../core/renderer.js';
+import {mat,mesh} from '../../core/materials.js';
+import {G,playing} from '../../core/state.js';
+import {sfx} from '../../core/audio.js';
+import {burst} from '../../core/fx.js';
+import {toast} from '../../core/ui.js';
+import {terrainH} from '../../world/terrain.js';
+import {ship} from '../../world/ship.js';
+import {P} from '../../player/player.js';
+import {complete,renderTasks} from '../../game/tasks.js';
+
+// The red hermit crabs. Hidden ones blow bubbles; walk up or bark to find them, then
+// they parade behind Spartacus (following his trail) and party round the ship at the end.
+// state: inClump (inside seaweed, chop it first) | hidden | pop | follow | party
+export const crabs=[];
+export const CRABS_TOTAL=5;
+export const crabCount=()=>crabs.filter(c=>c.found).length;
+const trail=[];
+
+// a hermit crab model; spots=true for Eduardo. inner = body/legs (hidden while in the shell)
+export function makeCrab(body,shell,spots){const g=new THREE.Group(),inner=new THREE.Group();g.add(inner);const B=mat(body),S=mat(shell),I=mat(0x1c2333);
+  const bd=mesh(new THREE.SphereGeometry(.22,10,8),B);bd.scale.set(1.3,.7,1);bd.position.set(0,.18,.15);inner.add(bd);
+  for(const sd of [-1,1]){const st=mesh(new THREE.CylinderGeometry(.025,.025,.22,4),B);st.position.set(sd*.09,.36,.28);inner.add(st);
+    const e=mesh(new THREE.SphereGeometry(.05,6,5),I,false);e.position.set(sd*.09,.48,.28);inner.add(e);
+    const cl=mesh(new THREE.SphereGeometry(.11,7,5),B);cl.scale.set(1,.7,1.4);cl.position.set(sd*.26,.14,.38);inner.add(cl);
+    for(let k=0;k<3;k++){const l=mesh(new THREE.BoxGeometry(.22,.04,.04),B,false);l.position.set(sd*.28,.08,.1-k*.12);l.rotation.z=sd*-.5;inner.add(l);}}
+  const sh=mesh(new THREE.ConeGeometry(.3,.6,8),S);sh.rotation.x=-Math.PI/2+.5;sh.position.set(0,.3,-.12);g.add(sh);
+  const sw=mesh(new THREE.TorusGeometry(.2,.06,5,10),S);sw.position.set(0,.3,-.05);sw.rotation.y=Math.PI/2;g.add(sw);
+  if(spots)for(let k=0;k<9;k++){const a=k*2.4,d=mesh(new THREE.SphereGeometry(.045,5,4),I,false);
+    if(k<5)d.position.set(Math.cos(a)*.24,.22+Math.sin(a*1.7)*.04,.15+Math.sin(a)*.17);else d.position.set(Math.cos(a)*.16,.34+(k-5)*.03,-.1-(k-5)*.06);(k<5?inner:g).add(d);}
+  return{g,inner};}
+// inClump: a seaweed clump that hides it (chop to reveal)
+export function addCrab(x,z,y,inClump){const c=makeCrab(0xf2545b,0xf3d9a4,false);c.g.position.set(x,y,z);c.g.rotation.y=rand()*6;scene.add(c.g);c.inner.visible=false;
+  const cr={g:c.g,inner:c.inner,x,z,y,state:inClump?'inClump':'hidden',t:0,j:0,found:false};if(inClump){c.g.visible=false;inClump.crab=cr;}crabs.push(cr);return cr;}
+export function popCrab(c){c.state='pop';c.t=0;c.inner.visible=true;c.found=true;const n=crabCount();c.j=n-1;sfx.bone();burst(c.g.position.clone().add(V(0,.5,0)),12,[0xf2545b,0xffffff],3,2,.6,.8,-.05);
+  if(n>=CRABS_TOTAL){toast('All the red hermit crabs found! Look at that parade!',3200);complete('crabs');}else{toast(`A red hermit crab! ${n} of ${CRABS_TOTAL}`,1800);renderTasks();}}
+// barking finds hidden crabs a little further away than walking up
+export function barkCrabs(p){for(const c of crabs)if(c.state==='hidden'&&flat(p,c.g.position.x,c.g.position.z)<5&&Math.abs(p.y-c.y)<2)popCrab(c);}
+export function touchCrabs(p){for(const c of crabs)if(c.state==='hidden'&&flat(p,c.g.position.x,c.g.position.z)<2.2&&Math.abs(p.y-c.y)<1.6)popCrab(c);}
+export const crabNear=(p,r)=>crabs.some(c=>(c.state==='hidden'||c.state==='inClump')&&flat(p,c.x,c.z)<r);
+export function crabsParty(){for(const c of crabs)if(c.state==='follow'||c.state==='pop')c.state='party';}
+
+export function updCrabs(dt){const T=G.T;
+  if(playing()&&(!trail.length||trail[trail.length-1].distanceTo(P.pos)>.45)){trail.push(P.pos.clone());if(trail.length>90)trail.shift();}
+  for(const c of crabs){c.t+=dt;
+    if(c.state==='inClump'){if(Math.random()<dt*2.5)burst(V(c.x,c.y+.8,c.z),2,[0xffffff,0xdff9ff],.4,3,2.6,.9,-.12);}
+    else if(c.state==='hidden'){c.g.position.y=c.y+Math.abs(Math.sin(T*2+c.x))*.03;c.g.rotation.z=Math.sin(T*9+c.x)*(Math.sin(T*1.3+c.x)>.5?.18:0);
+      if(Math.random()<dt*2.5)burst(c.g.position.clone().add(V(0,.4,0)),2,[0xffffff,0xdff9ff],.4,3,2.6,.9,-.12);}
+    else if(c.state==='pop'){c.g.position.y=c.y+Math.sin(Math.min(1,c.t/.5)*Math.PI)*.8;if(c.t>.6)c.state='follow';}
+    else if(c.state==='follow'){const idx=trail.length-1-(c.j+1)*3,tp=trail[Math.max(0,idx)]||P.pos;const ox=c.g.position.x,oz=c.g.position.z;
+      c.g.position.lerp(tp,1-Math.exp(-dt*7));const mx=c.g.position.x-ox,mz=c.g.position.z-oz;if(Math.hypot(mx,mz)>.005)c.g.rotation.y=angLerp(c.g.rotation.y,Math.atan2(mx,mz),Math.min(1,dt*10));
+      c.inner.position.y=Math.abs(Math.sin(T*12+c.j))*.04;}
+    else if(c.state==='party'){const a=T*.6+c.j*6.283/CRABS_TOTAL;c.g.position.set(ship.position.x+Math.cos(a)*5.5,terrainH(ship.position.x+Math.cos(a)*5.5,ship.position.z+Math.sin(a)*5.5)+Math.abs(Math.sin(T*6+c.j))*.5,ship.position.z+Math.sin(a)*5.5);c.g.rotation.y=-a;}}
+}

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Spartacus: black pup, thin white muzzle stripe, hazel eyes, straw hat with a red band -->
+  <rect width="512" height="512" fill="#a8e6f7"/>
+  <path d="M0 430 Q64 405 128 430 T256 430 T384 430 T512 430 V512 H0Z" fill="#34b3d4"/>
+  <g stroke="#2b3a55" stroke-width="9" stroke-linejoin="round">
+    <ellipse cx="118" cy="300" rx="44" ry="84" transform="rotate(18 118 300)" fill="#1f1f27"/>
+    <ellipse cx="394" cy="300" rx="44" ry="84" transform="rotate(-18 394 300)" fill="#1f1f27"/>
+    <ellipse cx="256" cy="300" rx="148" ry="132" fill="#2a2a33"/>
+    <ellipse cx="256" cy="362" rx="82" ry="58" fill="#33333d"/>
+  </g>
+  <rect x="250" y="236" width="12" height="96" rx="6" fill="#fff"/>
+  <circle cx="194" cy="296" r="21" fill="#9a7432"/>
+  <circle cx="318" cy="296" r="21" fill="#9a7432"/>
+  <circle cx="201" cy="289" r="7" fill="#fff"/>
+  <circle cx="325" cy="289" r="7" fill="#fff"/>
+  <ellipse cx="166" cy="342" rx="20" ry="11" fill="#ff8fa3" opacity=".8"/>
+  <ellipse cx="346" cy="342" rx="20" ry="11" fill="#ff8fa3" opacity=".8"/>
+  <ellipse cx="256" cy="340" rx="28" ry="19" fill="#0c0c10"/>
+  <path d="M232 384 Q256 400 280 384 L276 404 Q256 428 236 404Z" fill="#ff8fa3" stroke="#2b3a55" stroke-width="6" stroke-linejoin="round"/>
+  <g stroke="#2b3a55" stroke-width="9" stroke-linejoin="round">
+    <ellipse cx="256" cy="196" rx="196" ry="44" fill="#f2d27a"/>
+    <path d="M168 196 V136 Q168 92 256 92 Q344 92 344 136 V196 Z" fill="#f2d27a"/>
+    <path d="M168 158 H344 V190 H168 Z" fill="#d9343f"/>
+  </g>
+</svg>
