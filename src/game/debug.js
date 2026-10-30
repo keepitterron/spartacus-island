@@ -6,12 +6,13 @@
 //   __g.act()               press the action button; __g.action() shows what it would do
 //   __g.where()             current island-local position
 //   __g.secrets()           this island's presents; __g.secret(i) teleports onto one (opens it)
+//   __g.move.sprint = 1.7  live movement tuning (see MOVE in player/player.js)
 //   __g.dressAll()          own every accessory; __g.wear('tricorn') puts one on
 // Raw state is there too: __g.game, __g.player, __g.followCam, __g.colliders.
 import { game, followCam, currentIsland } from '../core/state.js';
 import { colliders } from '../core/colliders.js';
 import { terrainHeight } from '../world/terrain.js';
-import { player } from '../player/player.js';
+import { player, MOVE } from '../player/player.js';
 import { setPower } from '../systems/powers.js';
 import { completeTask, renderTasks } from './tasks.js';
 import { currentAction, doAction } from './actions.js';
@@ -32,6 +33,7 @@ export function installDebug() {
     player,
     followCam,
     colliders,
+    move: MOVE,
     go(n) {
       if (game.state === 'start') startGame(n);
       else enterIsland(n, false);

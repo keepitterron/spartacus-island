@@ -55,6 +55,14 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 - **Secrets:** each island lists `secrets: [{id, x, z, reward, y?, dig?}]` in island-local coordinates. A present sits on the highest surface at that spot (rock tops, pillars, tree decks) unless `y` is given; `dig: true` buries it in an unmarked mound. Walking into one opens it, gives and wears the accessory, and shows it spinning above Spartacus. Presents only glitter within 12 units. The to-do list shows `🎁 Secrets n/m`, which never blocks finishing an island.
 - **Wardrobe:** the 👕 button (or `O`) opens the dress-up panel as the `wardrobe` cutscene, so the camera can circle Spartacus while the player is frozen. Back and tail tabs look from behind.
 
+## Bark reactions (`systems/reactions.js`)
+
+`barkReactions(pos)` runs on every bark, on every island, before the island's own `bark(p)`. Palms within 7 shake and usually drop a coconut that bounces and pops back into its tree after 12 s (`palms` is filled by `palm()` in `world/props.js`). Add new reactions here: anything that just reacts to a bark, without being part of a puzzle.
+
+## Movement tuning (`player/player.js`)
+
+`MOVE` holds the tuning numbers (`sprint`, `runAfter`, `fullPush`); in debug it's `__g.move`, so you can change them live. Running: Shift, or keep the stick (or keys) pushed all the way for `runAfter` seconds; never while carrying something heavy. Running kicks up dust.
+
 ## NPCs
 
 Crew members who travel live in `src/npcs/`; island-only characters live in their island folder (`island4/octopus.js`, `crabs.js`, `eduardo.js`).
@@ -81,7 +89,7 @@ Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'na
 
 ## Sounds (`core/audio.js`)
 
-`sfx.name()`. Everything is synthesised from `tone(fromHz, {to, duration, type, volume, delay})` and `noise(duration, {freq, volume, delay})`; add a new sound as a one-liner. Audio unlocks on the first tap/click (`audioContext()`).
+`sfx.name()`. Everything goes through one master gain, so `setMuted(bool)` (the 🔊 button or `M`, saved as `muted`) silences it all. Everything is synthesised from `tone(fromHz, {to, duration, type, volume, delay})` and `noise(duration, {freq, volume, delay})`; add a new sound as a one-liner. Audio unlocks on the first tap/click (`audioContext()`).
 
 ## Save (`core/save.js`)
 

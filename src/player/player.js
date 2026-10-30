@@ -4,10 +4,10 @@ import * as THREE from 'three';
 import { clamp, lerp, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { game, followCam, currentIsland } from '../core/state.js';
-import { moveAxis } from '../core/input.js';
+import { keys, moveAxis } from '../core/input.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
-import { toast } from '../core/ui.js';
+import { toast, hintOnce } from '../core/ui.js';
 import { colliders, inFootprint, pushOut } from '../core/colliders.js';
 import { terrainHeight } from '../world/terrain.js';
 import { startClimb } from '../systems/vines.js';
@@ -39,6 +39,9 @@ export const player = {
   climb: null,
   zip: null,
   placing: null,
+  runTime: 0, // seconds the stick has been pushed all the way (a long push turns into a run)
+  sprinting: false,
+  dustTimer: 0,
 };
 export const RADIUS = 0.45,
   STEP_HEIGHT = 0.5,
@@ -46,6 +49,10 @@ export const RADIUS = 0.45,
   SPEED = 7,
   JUMP_SPEED = 10.5,
   SUPER_JUMP_SPEED = 18.5;
+// Movement tuning in one place, so it can be tweaked live with Zoë (__g.move in debug).
+//   sprint: speed multiplier while running; runAfter: seconds of a full push before running
+//   starts (Shift runs straight away); fullPush: how far the stick counts as "all the way"
+export const MOVE = { sprint: 1.5, runAfter: 1.1, fullPush: 0.9 };
 // where a bubble rescue goes when there is no recent safe spot (set on entering an island)
 export const SPAWN = vec3();
 export const forwardDir = () => vec3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
@@ -79,7 +86,8 @@ export function stepPlayer(dt) {
     phys = physics();
   const { forward, right, amount } = readMoveInput(locked);
   const heavy = player.carrying?.heavy;
-  const speed = SPEED * (heavy ? 0.6 : 1) * phys.speed;
+  updateSprint(dt, { amount, heavy });
+  const speed = SPEED * (heavy ? 0.6 : 1) * (player.sprinting ? MOVE.sprint : 1) * phys.speed;
   const move = cameraRelative(forward, right);
   // ease towards the wanted velocity: snappy on the ground, floatier in the air
   const ease = Math.min(1, dt * (player.grounded ? 12 : 4));
@@ -95,6 +103,34 @@ export function stepPlayer(dt) {
   rememberSafeSpot(dt);
   if (phys.bound) keepInBound(pos, phys.bound);
   if (phys.water && pos.y < -0.3) startRescue();
+}
+
+// running: Shift, or keep the stick pushed all the way for a moment. Carrying something heavy
+// never runs. Once running he keeps going until the push eases off, even in the air.
+function updateSprint(dt, { amount, heavy }) {
+  const fullPush = amount >= MOVE.fullPush;
+  player.runTime = fullPush ? player.runTime + dt : 0;
+  player.sprinting = !heavy && amount > 0.3 && (keys.shift || player.runTime > MOVE.runAfter);
+  if (!player.sprinting) return;
+  hintOnce('run', 'Zoom! Keep pushing to run fast!', 2400);
+  if (player.grounded) kickDust(dt);
+}
+
+// little sand puffs from the back paws while running
+function kickDust(dt) {
+  player.dustTimer -= dt;
+  if (player.dustTimer > 0) return;
+  player.dustTimer = 0.07;
+  const back = vec3(-Math.sin(player.yaw) * 0.6, 0.15, -Math.cos(player.yaw) * 0.6);
+  burst(player.pos.clone().add(back), {
+    count: 2,
+    color: [0xfff0c8, 0xf0dcb0],
+    speed: 1.2,
+    up: 1.2,
+    life: 0.45,
+    size: 0.8,
+    gravity: 0.2,
+  });
 }
 
 // stick/keys as forward/right in -1..1; amount is the stick strength before limiting it to 1

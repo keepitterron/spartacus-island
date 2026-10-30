@@ -10,7 +10,8 @@ import { game, currentIsland } from './core/state.js';
 import { burst, updateParticles } from './core/fx.js';
 import { overlayOpen, armButton } from './core/ui.js';
 import { bindInput } from './core/input.js';
-import { continueIsland, loadSave } from './core/save.js';
+import { continueIsland, loadSave, writeSave } from './core/save.js';
+import { isMuted, setMuted } from './core/audio.js';
 import { addTerrain } from './world/terrain.js';
 import { updateOcean } from './world/ocean.js';
 import { buildSky, updateSky } from './world/sky.js';
@@ -26,6 +27,7 @@ import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
 import { updateHat } from './systems/hat.js';
 import { loadOutfit, updateOutfit } from './systems/outfits.js';
 import { buildSecrets, updateSecrets } from './systems/secrets.js';
+import { updateReactions } from './systems/reactions.js';
 import { updateGull } from './npcs/gull.js';
 import { updateMango } from './npcs/mango.js';
 import { updateWasabi } from './npcs/wasabi.js';
@@ -68,6 +70,19 @@ if (innerWidth < 500) $('#list').classList.add('closed'); // task list starts fo
 armButton($('#restartLink'), 'Tap again to restart from island 1', restartFromBeginning);
 installWardrobe();
 
+// sound on/off, remembered in the save
+function showSoundButton() {
+  $('#btnSound').textContent = isMuted() ? '🔇' : '🔊';
+}
+function toggleSound() {
+  setMuted(!isMuted());
+  writeSave({ muted: isMuted() });
+  showSoundButton();
+}
+setMuted(!!loadSave().muted);
+showSoundButton();
+$('#btnSound').addEventListener('click', toggleSound);
+
 const continueTo = continueIsland(ISLANDS.length);
 if (continueTo >= 2) {
   $('#cont').textContent = `Continue: Island ${continueTo}`;
@@ -102,6 +117,7 @@ bindInput({
     if (k === 'b') bark();
     if (k === 'f' || k === 'enter') doAction();
     if (k === 'o') openWardrobe();
+    if (k === 'm') toggleSound();
   },
   onJump() {
     player.jumpBuffer = JUMP_BUFFER;
@@ -164,6 +180,7 @@ function updateWorld(dt) {
   updateHat(dt);
   updateOutfit();
   updateSecrets(dt);
+  updateReactions(dt);
   updateGull(dt);
   updateMango(dt);
   updateWasabi(dt);
