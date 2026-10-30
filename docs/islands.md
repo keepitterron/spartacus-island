@@ -2,12 +2,12 @@
 
 Each island is one module, `src/islands/islandN/index.js`, that default-exports an object with the same shape. The main loop, menus and flow never branch on `island===n`; they ask the current island.
 
-| # | Island | New power | Friend rescued | Core loop |
-|---|---|---|---|---|
-| 1 | Spartacus's Island (starter) | Boing-Boing (super jump) | — | 6 bones, fruit, bark at seagull, lighthouse bell, plank fixes bridge, dig up key, open chest → map |
-| 2 | Hook Rock Bay | Stretchy (swing from golden hooks) | Mango the parrot | Dig snack on a Boing-only mesa, swing rock to rock to the tall pillar, feed Mango, he rides your hat to the ship |
-| 3 | Mossy Paw Woods | Grow-Grow (climbing vines + ziplines) | Wasabi the axolotl | Climb, zip treetop to treetop, Mango fetches a flower, trade it to the bees for a key, open the water gate, Wasabi swims to the ship |
-| 4 | Bubbly Ocean (underwater) | Chop-Chop (hat frisbee cuts seaweed) | Eduardo the hermit crab | 5 red crabs parade behind you, chase Eduardo through the tentacle lane, fetch the octopus's pillow through the vent canyon, bring Eduardo to the ship, whale ending |
+| #   | Island                       | New power                             | Friend rescued          | Core loop                                                                                                                                                           |
+| --- | ---------------------------- | ------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Spartacus's Island (starter) | Boing-Boing (super jump)              | —                       | 6 bones, fruit, bark at seagull, lighthouse bell, plank fixes bridge, dig up key, open chest → map                                                                  |
+| 2   | Hook Rock Bay                | Stretchy (swing from golden hooks)    | Mango the parrot        | Dig snack on a Boing-only mesa, swing rock to rock to the tall pillar, feed Mango, he rides your hat to the ship                                                    |
+| 3   | Mossy Paw Woods              | Grow-Grow (climbing vines + ziplines) | Wasabi the axolotl      | Climb, zip treetop to treetop, Mango fetches a flower, trade it to the bees for a key, open the water gate, Wasabi swims to the ship                                |
+| 4   | Bubbly Ocean (underwater)    | Chop-Chop (hat frisbee cuts seaweed)  | Eduardo the hermit crab | 5 red crabs parade behind you, chase Eduardo through the tentacle lane, fetch the octopus's pillow through the vent canyon, bring Eduardo to the ship, whale ending |
 
 Layouts for islands 3 and 4 are **placeholders** until Zoë draws them.
 

@@ -69,12 +69,12 @@ There are a few circular imports (e.g. `player.js` ↔ `systems/vines.js`). They
 
 `G.state` is one of:
 
-| state | meaning | who sets it |
-|---|---|---|
-| `start` | title screen, camera orbits island 1 | initial |
-| `play` | normal play | `startGame`, `enterIsland`, end of rescue |
-| `rescue` | bubble carrying Spartacus back after falling in water | `startRescue` |
-| `sail`, `bubble`, `whale` | cutscenes | registered in `G.cutscenes`; each has `update(dt)` and optionally `skip()` |
+| state                     | meaning                                               | who sets it                                                                |
+| ------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------- |
+| `start`                   | title screen, camera orbits island 1                  | initial                                                                    |
+| `play`                    | normal play                                           | `startGame`, `enterIsland`, end of rescue                                  |
+| `rescue`                  | bubble carrying Spartacus back after falling in water | `startRescue`                                                              |
+| `sail`, `bubble`, `whale` | cutscenes                                             | registered in `G.cutscenes`; each has `update(dt)` and optionally `skip()` |
 
 Inside `play`, one of these drives the player each frame: `P.swing` → `updSwing`, `P.climb` → `updClimb`, `P.zip` → `updZip`, otherwise `stepPlayer` (+ digging and item placing).
 

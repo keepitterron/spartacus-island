@@ -35,7 +35,7 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 
 ## Vines (`systems/vines.js`), Grow-Grow
 
-- A *tree* is `{x,z,gh,top,grown}` with a collider whose `.tree` points back to it (`bigTree` on island 3, kelp `pillar` on island 4).
+- A _tree_ is `{x,z,gh,top,grown}` with a collider whose `.tree` points back to it (`bigTree` on island 3, kelp `pillar` on island 4).
 - `climbVine(tree, towardX, towardZ)`: a seed at the foot; once grown, walking into the trunk climbs it.
 - `zipVine(a,b)`: a seed on top of `a` grows a zipline to `b`.
 - `vineAction(p)` gives Grow / Zip.

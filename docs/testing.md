@@ -22,15 +22,15 @@ npm run build && npm run preview
 
 Always on in dev; on the live site add `?debug` to the URL. From the browser console:
 
-| Call | Does |
-|---|---|
-| `__g.go(3)` | Jump to island 3 (from the title screen or mid-game) |
-| `__g.tp(x, z)` / `__g.tp(x, z, y)` | Teleport, island-local coordinates. Give a `y` above a rock or tree top to land on it |
-| `__g.where()` | Island-local position, state, island |
-| `__g.power('boing')` | Give a power (`boing`, `stretch`, `grow`, `chop`) |
-| `__g.done('bones')` / `__g.doneAll()` | Tick one task / the whole list (shows the win panel) |
-| `__g.action()` / `__g.act()` | What the action button would do / press it |
-| `__g.G`, `__g.P`, `__g.cam`, `__g.colliders` | Raw state |
+| Call                                         | Does                                                                                  |
+| -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `__g.go(3)`                                  | Jump to island 3 (from the title screen or mid-game)                                  |
+| `__g.tp(x, z)` / `__g.tp(x, z, y)`           | Teleport, island-local coordinates. Give a `y` above a rock or tree top to land on it |
+| `__g.where()`                                | Island-local position, state, island                                                  |
+| `__g.power('boing')`                         | Give a power (`boing`, `stretch`, `grow`, `chop`)                                     |
+| `__g.done('bones')` / `__g.doneAll()`        | Tick one task / the whole list (shows the win panel)                                  |
+| `__g.action()` / `__g.act()`                 | What the action button would do / press it                                            |
+| `__g.G`, `__g.P`, `__g.cam`, `__g.colliders` | Raw state                                                                             |
 
 In dev you can also import any module from the console, e.g. `(await import('/spartacus-island/src/npcs/wasabi.js')).wasabi.state`.
 
