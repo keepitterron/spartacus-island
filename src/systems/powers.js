@@ -72,13 +72,13 @@ const fruitSkins = {
     }
   }),
 };
-// col: [main, light, accent] colours used for sparkles; signColor: bush label colour;
+// sparkleColors: [main, light, accent]; signColor: bush label colour;
 // intro() is the first-time toast, shown for introMs
 export const POWERS = {
   boing: {
     name: 'Boing-Boing',
     icon: '🌀',
-    col: [0x8a5cf6, 0xc4adff, 0xffd84d],
+    sparkleColors: [0x8a5cf6, 0xc4adff, 0xffd84d],
     signColor: '#c4adff',
     bushColor: 0x3f9f4a,
     intro: () => 'Boing-Boing fruit! Now Spartacus can jump super high.',
@@ -87,7 +87,7 @@ export const POWERS = {
   stretch: {
     name: 'Stretchy',
     icon: '➰',
-    col: [0xff9a3d, 0xff6b8a, 0xffd84d],
+    sparkleColors: [0xff9a3d, 0xff6b8a, 0xffd84d],
     signColor: '#ffb36b',
     bushColor: 0x58a83a,
     intro: () => `Stretchy fruit! Swing from golden hooks with ${actionKeyName()}.`,
@@ -96,7 +96,7 @@ export const POWERS = {
   grow: {
     name: 'Grow-Grow',
     icon: '🌱',
-    col: [0x4cc05a, 0xb6f08a, 0xffd84d],
+    sparkleColors: [0x4cc05a, 0xb6f08a, 0xffd84d],
     signColor: '#a6f08a',
     bushColor: 0x58a83a,
     intro: () => `Grow-Grow fruit! Touch magic seeds with ${actionKeyName()} to grow vines.`,
@@ -105,7 +105,7 @@ export const POWERS = {
   chop: {
     name: 'Chop-Chop',
     icon: '✂️',
-    col: [0xffd84d, 0xff9a3d, 0xffffff],
+    sparkleColors: [0xffd84d, 0xff9a3d, 0xffffff],
     signColor: '#ffe16b',
     bushColor: 0x58a83a,
     intro: () =>
@@ -177,7 +177,7 @@ export function updateFruits(dt) {
       fruit.model.visible = true;
       burst(fruit.model.position.clone(), {
         count: 10,
-        color: POWERS[fruit.type].col,
+        color: POWERS[fruit.type].sparkleColors,
         speed: 2,
         up: 2,
         life: 0.5,
@@ -201,7 +201,7 @@ export function eatFruits(pos) {
       sfx.fruit();
       burst(fruit.model.position.clone(), {
         count: 30,
-        color: POWERS[fruit.type].col,
+        color: POWERS[fruit.type].sparkleColors,
         speed: 5,
         up: 3,
         life: 1,

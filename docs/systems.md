@@ -4,34 +4,34 @@ Reusable pieces in `src/systems/`, `src/npcs/`, `src/cutscenes/` and `src/game/`
 
 ## Colliders (`core/colliders.js`)
 
-A flat list of cylinders and boxes: `addCyl(x,z,r,bottom,top)`, `addBox(x,z,hw,hd,bottom,top)`. Anything taller than a step (0.5) pushes the player out sideways; anything lower can be stood on. Set `c.top=-999` to switch one off (cut seaweed, opened gate). `supportAt(x,z,maxY)` gives the floor height under a point.
+A flat list of cylinders and boxes: `addCylinder(x, z, {r, bottom, top})`, `addBox(x, z, {hw, hd, bottom, top})`. Anything taller than a step (0.5) pushes the player out sideways; anything lower can be stood on. Set `c.top=-999` to switch one off (cut seaweed, opened gate). `supportHeight(x, z, maxY)` gives the floor height under a point.
 
 ## Items (`systems/items.js`)
 
 Carried in the mouth, one at a time.
 
 ```js
-addItem('pillow', makePillow(), pos, heavy, {name:'pillow', lift:.2, reach:1.6, onCarry(it){…}})
+addItem('pillow', { model: makePillow(), pos, heavy: false, name: 'pillow', lift: 0.2, reach: 1.6, onCarry(it) {…} })
 ```
 
 - `heavy` items slow Spartacus and stop super jumps and climbing.
 - Dropped in water (on islands with `physics.water`) they float home in a bubble with sparkles.
-- `carry(it)` puts one in the mouth (e.g. straight from a dig), `useUp()` consumes the carried one (given away), `placeItem(to,onDone)` tweens it into place and locks movement while it moves (the bridge plank).
+- `carryItem(it)` puts one in the mouth (e.g. straight from a dig), `useUpCarried()` consumes the carried one (given away), `placeItem(to,onDone)` tweens it into place and locks movement while it moves (the bridge plank).
 - `grabAction`/`Drop` are offered automatically by the context button.
 
 ## Pickups (`systems/collect.js`)
 
-Spinning collectibles counted per island (bones, golden acorns). Configure `collect` on the island, then `addPickup(x,z,y,islandId,pop)`. The task text: `pickupText(id,'bones')`.
+Spinning collectibles counted per island (bones, golden acorns). Configure `collect` on the island, then `addPickup(x, z, {y, island, pop})`. The task text: `pickupText(id,'bones')`.
 
 ## Dig spots (`systems/digs.js`)
 
-`addDig(x,z,reward,marked,y)`: reward is a function `d=>{…}` that runs when digging finishes (spawn a pickup with `pop`, or `carry(addItem(…))`). `marked` adds a red X. `digNear(p,r)` for hints.
+`addDig(x, z, {reward, marked, y})`: reward is a function `d=>{…}` that runs when digging finishes (spawn a pickup with `pop`, or `carryItem(addItem(…))`). `marked` adds a red X. `digNear(p,r)` for hints.
 
 ## Powers and fruits (`systems/powers.js`)
 
-`POWERS` defines each power: name, emoji, sparkle colours, sign colour, intro message. `addFruit(type,x,z,y,bush)` places one (bush = regrowing bush with a name sign). Eating sets `P.power` and flags (`P.super`, `P.stretch`) and completes any task with `power:type` on the current island.
+`POWERS` defines each power: `name`, `icon`, `sparkleColors`, `signColor`, `bushColor`, `intro()`, `introMs`. `addFruit(x, z, {type, y, bush})` places one (bush = regrowing bush with a name sign). Eating sets `player.power` and flags (`player.superJump`, `player.canStretch`) and completes any task with `power:type` on the current island.
 
-**Adding a power:** add an entry to `POWERS` and a texture to `tex`, then implement what it does, usually as an action (`chopAction`-style function returned from the island's `actions(p)`) or a physics flag read in `stepPlayer`.
+**Adding a power:** add an entry to `POWERS` and a texture to `fruitSkins`, then implement what it does, usually as an action (`chopAction`-style function returned from the island's `actions(p)`) or a physics flag read in `stepPlayer`.
 
 ## Vines (`systems/vines.js`), Grow-Grow
 
@@ -56,11 +56,11 @@ Crew members who travel live in `src/npcs/`; island-only characters live in thei
 - **Mango**: `placeMango`, `mangoHop` (onto the hat), `mangoToShip(onArrive)`, `ensureMangoCrew()`, and `mangoFetch(to, mesh, onDrop)` for errands on later islands.
 - **Wasabi**: island 3 drives her story (stuck → happy → swim); `wasabiFollow()` makes her swim beside Spartacus.
 
-Pattern: each NPC has a `state` string and an `upd…(dt)` function with one branch per state. Riders are attached to `dog.head`; crew on the ship are attached to `ship`.
+Pattern: each NPC has a `state` string and an `update…(dt)` function that switches over the states, one small helper per state. Riders are attached to `dog.head`; crew on the ship are attached to `ship`.
 
 ## Cutscenes
 
-Register `G.cutscenes.name={update(dt), skip?()}` and set `G.state='name'`. While one runs, the player is not simulated (put Spartacus on deck with `P.pos.copy(onDeck())`), the power badge hides, and Enter/Space/Escape call `skip()`.
+Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'name'`. While one runs, the player is not simulated (put Spartacus on deck with `player.pos.copy(onDeck())`), the power badge hides, and Enter/Space/Escape call `skip()`.
 
 - `startSail(path, onArrive)`: ship follows a Catmull-Rom path (~13 s, skippable).
 - `startBubble(onDone)`: island 3 → 4.
@@ -68,13 +68,13 @@ Register `G.cutscenes.name={update(dt), skip?()}` and set `G.state='name'`. Whil
 
 ## Tasks, celebration, hints (`game/`)
 
-- `complete(id)`: ticks a task on whichever island owns it; when a list completes: `onAllDone`, spin + confetti, then the win panel.
-- `hintOnce(id,msg,ms)`: once per session. `tooHigh(near,msg)`: repeating (10 s) "you need Boing-Boing".
+- `completeTask(id)`: ticks a task on whichever island owns it; when a list completes: `onAllDone`, spin + confetti, then the win panel.
+- `hintOnce(id, msg, ms)`: once per session. `hintTooHigh(near, msg)`: repeating (10 s) "you need Boing-Boing".
 - `toast(msg,ms)` for everything else. Keep messages short and kind.
 
 ## Sounds (`core/audio.js`)
 
-`sfx.name()`. Everything is synthesised from `tone()` and `noise()`; add a new sound as a one-liner. Audio unlocks on the first tap/click (`ac()`).
+`sfx.name()`. Everything is synthesised from `tone(fromHz, {to, duration, type, volume, delay})` and `noise(duration, {freq, volume, delay})`; add a new sound as a one-liner. Audio unlocks on the first tap/click (`audioContext()`).
 
 ## Save (`core/save.js`)
 

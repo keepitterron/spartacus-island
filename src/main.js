@@ -201,7 +201,7 @@ function updatePowerSparkles(dt, speed) {
   player.sparkTimer = 0.12;
   burst(player.pos.clone().add(vec3(0, 0.3, 0)), {
     count: 2,
-    color: POWERS[player.power].col.slice(1),
+    color: POWERS[player.power].sparkleColors.slice(1),
     speed: 1,
     up: 1.5,
     life: 0.6,

@@ -85,7 +85,7 @@ function startSwing({ hook, to: landing }) {
   sfx.stretch();
   burst(vec3(hook.x, hook.y, hook.z), {
     count: 10,
-    color: POWERS.stretch.col,
+    color: POWERS.stretch.sparkleColors,
     speed: 3,
     up: 1,
     life: 0.5,
@@ -120,7 +120,7 @@ export function updateSwing(dt) {
   player.squashVel = -4;
   burst(player.pos.clone(), {
     count: 10,
-    color: POWERS.stretch.col,
+    color: POWERS.stretch.sparkleColors,
     speed: 2.5,
     up: 1.5,
     life: 0.5,

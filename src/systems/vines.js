@@ -160,7 +160,7 @@ function startGrow(grower) {
   sfx.grow();
   burst(vec3(grower.x, grower.y + 0.4, grower.z), {
     count: 20,
-    color: POWERS.grow.col,
+    color: POWERS.grow.sparkleColors,
     speed: 3,
     up: 3,
     life: 0.8,
@@ -277,7 +277,7 @@ export function updateZip(dt) {
   if (Math.random() < dt * 20)
     burst(point.clone(), {
       count: 1,
-      color: POWERS.grow.col,
+      color: POWERS.grow.sparkleColors,
       speed: 1,
       up: 0,
       life: 0.4,
@@ -292,7 +292,7 @@ export function updateZip(dt) {
   player.squashVel = -4;
   burst(player.pos.clone(), {
     count: 10,
-    color: POWERS.grow.col,
+    color: POWERS.grow.sparkleColors,
     speed: 2.5,
     up: 1.5,
     life: 0.5,

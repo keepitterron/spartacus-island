@@ -142,7 +142,7 @@ function updateJump(dt, { locked, heavy, phys }) {
   sfx.boing();
   burst(player.pos.clone().add(vec3(0, 0.2, 0)), {
     count: 14,
-    color: POWERS.boing.col,
+    color: POWERS.boing.sparkleColors,
     speed: 4,
     up: 1,
     life: 0.7,
