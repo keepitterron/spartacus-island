@@ -17,22 +17,22 @@ export const player = {
   pos: vec3(),
   vel: vec3(),
   grounded: false,
-  coyote: 0,
-  jumpBuf: 0,
+  coyoteTimer: 0,
+  jumpBuffer: 0,
   yaw: Math.PI,
   power: null,
-  super: false,
-  stretch: false,
-  phase: 0,
-  sq: 1,
-  sqv: 0,
-  barkT: 0,
-  barkCd: 0,
-  sparkT: 0,
-  carry: null,
-  digT: 0,
-  dig: null,
-  scratchT: 0,
+  superJump: false,
+  canStretch: false,
+  gaitPhase: 0,
+  squash: 1,
+  squashVel: 0,
+  barkTimer: 0,
+  barkCooldown: 0,
+  sparkTimer: 0,
+  carrying: null,
+  digTimer: 0,
+  digSpot: null,
+  scratchTimer: 0,
   swing: null,
   climb: null,
   zip: null,
@@ -47,7 +47,7 @@ export const RADIUS = 0.45,
 // where a bubble rescue goes when there is no recent safe spot (set on entering an island)
 export const SPAWN = vec3();
 export const forwardDir = () => vec3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
-export const isMovementLocked = () => player.digT > 0 || !!player.placing;
+export const isMovementLocked = () => player.digTimer > 0 || !!player.placing;
 
 // per-island tweaks; an island can override any of these with `physics:{…}`
 const PHYS = { gravity: GRAVITY, maxFall: Infinity, speed: 1, jump: 1, water: true, bound: null };
@@ -73,7 +73,7 @@ export function stepPlayer(dt) {
     f /= mag;
     r /= mag;
   }
-  const heavy = player.carry && player.carry.heavy,
+  const heavy = player.carrying && player.carrying.heavy,
     spd = SPEED * (heavy ? 0.6 : 1) * ph.speed;
   // movement is relative to the camera
   const fx = -Math.sin(followCam.yaw),
@@ -88,15 +88,15 @@ export function stepPlayer(dt) {
   v.y -= ph.gravity * dt;
   if (v.y < -ph.maxFall) v.y = -ph.maxFall;
   // coyote time + jump buffer make jumps forgiving
-  player.coyote = player.grounded ? 0.12 : player.coyote - dt;
-  player.jumpBuf -= dt;
-  if (!lk && player.jumpBuf > 0 && player.coyote > 0) {
-    const sup = player.super && !heavy;
+  player.coyoteTimer = player.grounded ? 0.12 : player.coyoteTimer - dt;
+  player.jumpBuffer -= dt;
+  if (!lk && player.jumpBuffer > 0 && player.coyoteTimer > 0) {
+    const sup = player.superJump && !heavy;
     v.y = (heavy ? JUMP_SPEED * 0.78 : sup ? SUPER_JUMP_SPEED : JUMP_SPEED) * ph.jump;
-    player.coyote = 0;
-    player.jumpBuf = 0;
+    player.coyoteTimer = 0;
+    player.jumpBuffer = 0;
     player.grounded = false;
-    player.sqv = 4;
+    player.squashVel = 4;
     if (sup) {
       sfx.boing();
       burst(p.clone().add(vec3(0, 0.2, 0)), {
@@ -135,7 +135,7 @@ export function stepPlayer(dt) {
   if (p.y <= sup) {
     if (v.y <= 0) {
       if (!player.grounded && v.y < -9) {
-        player.sqv = -Math.min(9, -v.y * 0.45);
+        player.squashVel = -Math.min(9, -v.y * 0.45);
         burst(p.clone(), { count: 8, color: 0xfff0c8, speed: 2.5, up: 1.5, life: 0.5, size: 0.8 });
       }
       p.y = sup;
@@ -209,7 +209,7 @@ export function updateRescue(dt) {
   player.pos.y = lerp(rescue.from.y, rescue.to.y, e) + Math.sin(Math.PI * k) * 3.5;
   bubble.position.copy(player.pos).add(vec3(0, 0.85, 0));
   bubble.scale.setScalar(1 + Math.sin(rescue.t * 9) * 0.05);
-  player.phase += dt * 18;
+  player.gaitPhase += dt * 18;
   if (k >= 1) {
     bubble.visible = false;
     sfx.pop();

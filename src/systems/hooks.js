@@ -41,7 +41,7 @@ export function addHook(a, b) {
 }
 // several hooks can start from the same rock: pick the one Spartacus is facing
 export function swingOption() {
-  if (!player.stretch || player.swing) return null;
+  if (!player.canStretch || player.swing) return null;
   let best = null,
     bs = -1e9;
   const fx = Math.sin(player.yaw),
@@ -108,7 +108,7 @@ export function updateSwing(dt) {
     player.swing = null;
     player.vel.set(0, 0, 0);
     player.grounded = false;
-    player.sqv = -4;
+    player.squashVel = -4;
     burst(player.pos.clone(), {
       count: 10,
       color: POWERS.stretch.col,
@@ -122,12 +122,12 @@ export function updateSwing(dt) {
 
 // rings spin and the one you'd swing to glows
 export function updateHooks(dt) {
-  const T = game.T,
+  const T = game.time,
     swOpt = isPlaying() ? swingOption() : null;
   for (const h of hooks) {
     h.ring.rotation.y += dt * 1.2;
     h.ring.material.emissiveIntensity =
-      swOpt && swOpt.h === h ? 0.8 + 0.5 * Math.sin(T * 8) : player.stretch ? 0.3 : 0.12;
+      swOpt && swOpt.h === h ? 0.8 + 0.5 * Math.sin(T * 8) : player.canStretch ? 0.3 : 0.12;
   }
 }
 

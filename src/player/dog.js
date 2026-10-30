@@ -147,20 +147,20 @@ scene.add(dog.root);
 // pose the model from P every frame; sp = horizontal speed
 export function animateDog(dt, sp) {
   const d = dog,
-    T = game.T;
+    T = game.time;
   d.root.position.copy(player.pos);
-  if (game.spin > 0) {
-    const s = Math.min(game.spin, dt * 10);
-    game.spin -= s;
+  if (game.spinLeft > 0) {
+    const s = Math.min(game.spinLeft, dt * 10);
+    game.spinLeft -= s;
     player.yaw += s;
   }
   d.root.rotation.y = player.yaw;
   const moving = clamp(sp / SPEED, 0, 1);
-  player.phase += dt * (4 + sp * 1.9);
-  const sw = Math.sin(player.phase) * 0.75 * moving,
-    digging = player.digT > 0;
+  player.gaitPhase += dt * (4 + sp * 1.9);
+  const sw = Math.sin(player.gaitPhase) * 0.75 * moving,
+    digging = player.digTimer > 0;
   if (game.state === 'rescue') {
-    const pd = Math.sin(player.phase) * 0.8;
+    const pd = Math.sin(player.gaitPhase) * 0.8;
     d.legs.forEach((l, i) => (l.rotation.x = i % 2 ? pd : -pd));
   } else if (digging) {
     const q = Math.sin(T * 28) * 1.1;
@@ -169,7 +169,7 @@ export function animateDog(dt, sp) {
     d.legs[2].rotation.x = 0.2;
     d.legs[3].rotation.x = 0.2;
   } else if (player.climb) {
-    const q = Math.sin(player.phase) * 0.9;
+    const q = Math.sin(player.gaitPhase) * 0.9;
     d.legs[0].rotation.x = -0.9 + q;
     d.legs[1].rotation.x = -0.9 - q;
     d.legs[2].rotation.x = 0.3 - q;
@@ -193,26 +193,31 @@ export function animateDog(dt, sp) {
     Math.min(1, dt * 10),
   );
   // squash & stretch spring
-  player.sqv += (1 - player.sq) * 140 * dt;
-  player.sqv *= Math.exp(-dt * 9);
-  player.sq += player.sqv * dt;
-  player.sq = clamp(player.sq, 0.6, 1.4);
-  const bob = player.grounded ? Math.abs(Math.sin(player.phase)) * 0.08 * moving : 0;
+  player.squashVel += (1 - player.squash) * 140 * dt;
+  player.squashVel *= Math.exp(-dt * 9);
+  player.squash += player.squashVel * dt;
+  player.squash = clamp(player.squash, 0.6, 1.4);
+  const bob = player.grounded ? Math.abs(Math.sin(player.gaitPhase)) * 0.08 * moving : 0;
   const stretchY = player.swing ? 1.12 : 1;
-  d.body.scale.set(1 / Math.sqrt(player.sq), player.sq * stretchY, 1 / Math.sqrt(player.sq));
+  d.body.scale.set(
+    1 / Math.sqrt(player.squash),
+    player.squash * stretchY,
+    1 / Math.sqrt(player.squash),
+  );
   d.body.position.y = bob;
   d.tail.rotation.z =
-    Math.sin(T * (game.celebT >= 0 || digging || player.swing ? 22 : 12)) * (0.5 + moving * 0.2);
+    Math.sin(T * (game.celebrateTime >= 0 || digging || player.swing ? 22 : 12)) *
+    (0.5 + moving * 0.2);
   const vy = game.state === 'rescue' || player.swing ? 6 : player.vel.y;
   d.ears.forEach((e) => {
-    e.rotation.x = clamp(vy * 0.05, -0.9, 0.9) + Math.sin(player.phase * 2) * 0.15 * moving;
+    e.rotation.x = clamp(vy * 0.05, -0.9, 0.9) + Math.sin(player.gaitPhase * 2) * 0.15 * moving;
     e.rotation.z = e.userData.s * (0.12 + clamp(-vy * 0.04, -0.1, 0.7));
   });
-  const bk = player.barkT > 0;
-  d.tongue.visible = bk && !player.carry;
+  const bk = player.barkTimer > 0;
+  d.tongue.visible = bk && !player.carrying;
   d.head.rotation.x = bk
-    ? -Math.sin(((0.35 - player.barkT) / 0.35) * Math.PI) * 0.35
-    : player.carry && player.carry.heavy
+    ? -Math.sin(((0.35 - player.barkTimer) / 0.35) * Math.PI) * 0.35
+    : player.carrying && player.carrying.heavy
       ? 0.12
       : Math.sin(T * 1.3) * 0.04;
   d.head.rotation.z = Math.sin(T * 0.9) * 0.05;

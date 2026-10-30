@@ -53,7 +53,7 @@ const wh = { t: 0, shown: false, popped: false, popT: 0 };
 export function startWhale() {
   if (!isPlaying()) return;
   hideWin();
-  if (player.carry) useUpCarried();
+  if (player.carrying) useUpCarried();
   player.climb = player.zip = player.swing = null;
   game.state = 'whale';
   wh.t = 0;
@@ -65,7 +65,7 @@ export function startWhale() {
 
 game.cutscenes.whale = {
   update(dt) {
-    const T = game.T;
+    const T = game.time;
     wh.t += dt;
     const tgt = vec3(ship.position.x, shipState.baseY - 4.6, ship.position.z);
     whale.userData.tail.rotation.x = Math.sin(T * 2.5) * 0.35;

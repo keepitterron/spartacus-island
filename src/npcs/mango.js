@@ -141,7 +141,7 @@ function landOnShip() {
 }
 export function updateMango(dt) {
   const g = mango.g,
-    T = game.T;
+    T = game.time;
   mango.t += dt;
   const flap = (a) =>
     mango.wings.forEach(
@@ -181,7 +181,7 @@ export function updateMango(dt) {
     }
   } else if (mango.state === 'riding') {
     flap(player.grounded ? 0.05 : 0.9);
-    g.position.y = 0.66 + (player.grounded ? Math.abs(Math.sin(player.phase)) * 0.03 : 0);
+    g.position.y = 0.66 + (player.grounded ? Math.abs(Math.sin(player.gaitPhase)) * 0.03 : 0);
   } else if (mango.state === 'fly') {
     if (flyTo(ship.localToWorld(NEST.clone().setY(6.65)), 1.6, 3) >= 1) {
       landOnShip();

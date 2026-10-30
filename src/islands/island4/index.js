@@ -166,7 +166,7 @@ function pillar(lx, lz, h) {
 function bonk(g) {
   player.pos.set(g.cp.x, terrainHeight(g.cp.x, g.cp.z), g.cp.z);
   player.vel.set(0, 0, 0);
-  player.sqv = -6;
+  player.squashVel = -6;
   sfx.boing();
   octo.hmphT = 1.2;
   burst(player.pos.clone().add(vec3(0, 1, 0)), {
@@ -449,7 +449,7 @@ function placeShip() {
 }
 
 function update(dt) {
-  const T = game.T;
+  const T = game.time;
   const cp = ceilGeo.attributes.position;
   for (let i = 0; i < cp.count; i++) {
     const x = cp.getX(i),
@@ -583,7 +583,7 @@ function interact(p) {
   if (
     OCTO.awake &&
     distXZ(p, OCTO.x, OCTO.z) < 5 &&
-    !(player.carry && player.carry.id === 'pillow')
+    !(player.carrying && player.carrying.id === 'pillow')
   )
     hintOnce('octo', 'Octopus: “Grumble… I can’t sleep without my pillow!”', 4000);
   hintTooHigh(distXZ(p, SHELF.x, SHELF.z) < 3.5, 'Too high! A Boing-Boing jump could reach it.');
@@ -659,8 +659,8 @@ const I = {
   interact,
   actions(p) {
     if (
-      player.carry &&
-      player.carry.id === 'pillow' &&
+      player.carrying &&
+      player.carrying.id === 'pillow' &&
       !I.done.sleep &&
       distXZ(p, OCTO.x, OCTO.z) < 4.4
     )

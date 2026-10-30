@@ -152,7 +152,7 @@ function startGrow(g) {
   });
 }
 export function updateGrowers(dt) {
-  const T = game.T;
+  const T = game.time;
   for (const g of growers) {
     if (!g.grown && !g.growing) {
       g.seed.children[0].position.y = 0.3 + Math.sin(T * 3 + g.x) * 0.06;
@@ -192,15 +192,15 @@ export function updateClimb(dt) {
   r = clamp(r, -1, 1);
   player.pos.y += f * 3.6 * dt;
   c.a -= r * 1.3 * dt;
-  player.phase += (Math.abs(f) + Math.abs(r) * 0.5) * dt * 9;
+  player.gaitPhase += (Math.abs(f) + Math.abs(r) * 0.5) * dt * 9;
   const rad = 1.35 - 0.35 * clamp((player.pos.y - t.gh) / (t.top - t.gh), 0, 1) + 0.5;
   player.pos.x = t.x + Math.cos(c.a) * rad;
   player.pos.z = t.z + Math.sin(c.a) * rad;
   player.yaw = Math.atan2(t.x - player.pos.x, t.z - player.pos.z);
   const gy = terrainHeight(player.pos.x, player.pos.z);
-  player.jumpBuf -= dt;
-  if (player.jumpBuf > 0) {
-    player.jumpBuf = 0;
+  player.jumpBuffer -= dt;
+  if (player.jumpBuffer > 0) {
+    player.jumpBuffer = 0;
     player.climb = null;
     player.vel.set(Math.cos(c.a) * 5, 7, Math.sin(c.a) * 5);
     sfx.jump();
@@ -220,7 +220,7 @@ export function updateClimb(dt) {
     player.pos.set(t.x + Math.cos(c.a) * 1.7, t.top, t.z + Math.sin(c.a) * 1.7);
     player.vel.set(0, 0, 0);
     player.grounded = true;
-    player.sqv = -4;
+    player.squashVel = -4;
     sfx.pop();
     hintOnce('treetop', `Treetop! Another magic seed is up here…`, 3000);
   }
@@ -256,7 +256,7 @@ export function updateZip(dt) {
     player.pos.copy(g.end);
     player.vel.set(0, 0, 0);
     player.grounded = false;
-    player.sqv = -4;
+    player.squashVel = -4;
     burst(player.pos.clone(), {
       count: 10,
       color: POWERS.grow.col,

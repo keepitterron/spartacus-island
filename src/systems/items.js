@@ -45,14 +45,14 @@ export function carryItem(it) {
   dog.mouth.add(it.mesh);
   it.mesh.position.copy(it.carryPos);
   it.mesh.rotation.set(0, it.carryRot, 0);
-  player.carry = it;
+  player.carrying = it;
   sfx.grab();
   it.onCarry?.(it);
 }
 // take the carried item out of the mouth (it stays where it was in the world)
 export function releaseCarried() {
-  const it = player.carry;
-  player.carry = null;
+  const it = player.carrying;
+  player.carrying = null;
   const w = vec3();
   it.mesh.getWorldPosition(w);
   dog.mouth.remove(it.mesh);

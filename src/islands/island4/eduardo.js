@@ -59,7 +59,7 @@ export function eduardoToShip() {
 export function updateEduardo(dt) {
   const e = eduardo,
     eg = e.g,
-    T = game.T;
+    T = game.time;
   e.t += dt;
   if (e.state === 'idle0') {
     e.inner.children.forEach((ch, i) => {

@@ -10,10 +10,14 @@ import { player } from '../player/player.js';
 const target = vec3();
 export function snapCamera() {
   target.copy(player.pos);
-  camera.position.set(player.pos.x, player.pos.y + followCam.h, player.pos.z + followCam.dist);
+  camera.position.set(
+    player.pos.x,
+    player.pos.y + followCam.height,
+    player.pos.z + followCam.distance,
+  );
 }
 export function orbitCamera() {
-  const a = game.T * 0.1;
+  const a = game.time * 0.1;
   camera.position.set(Math.sin(a) * 50, 22, Math.cos(a) * 50);
   camera.lookAt(0, 2, 0);
 }
@@ -29,9 +33,9 @@ export function updateCamera(dt) {
     1 - Math.exp(-dt * (player.swing ? 5 : 8)),
   );
   const want = vec3(
-    target.x + Math.sin(followCam.yaw) * followCam.dist,
-    target.y + followCam.h,
-    target.z + Math.cos(followCam.yaw) * followCam.dist,
+    target.x + Math.sin(followCam.yaw) * followCam.distance,
+    target.y + followCam.height,
+    target.z + Math.cos(followCam.yaw) * followCam.distance,
   );
   camera.position.lerp(want, 1 - Math.exp(-dt * 6));
   const minY = C.minY ? C.minY(camera.position) : 1.2;

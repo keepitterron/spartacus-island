@@ -71,7 +71,7 @@ export function wasabiFollow() {
 export function updateWasabi(dt) {
   const w = wasabi,
     g = w.g,
-    T = game.T;
+    T = game.time;
   w.t += dt;
   w.tail.rotation.y = Math.sin(T * (w.state === 'stuck' ? 3 : 9)) * 0.45;
   if (w.state === 'crew') g.rotation.y = Math.sin(T * 0.7) * 0.8;

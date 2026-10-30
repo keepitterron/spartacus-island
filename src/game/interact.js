@@ -10,14 +10,14 @@ export function checkTriggers(dt) {
   const p = player.pos;
   grabPickups(p);
   eatFruits(p);
-  game.hintT -= dt;
+  game.hintCooldown -= dt;
   currentIsland().interact?.(p, dt);
 }
 // a repeating "too high" hint (at most every 10 s) while Spartacus stands near something
 // he can't jump onto without Boing-Boing
 export function hintTooHigh(near, msg) {
-  if (!player.super && game.hintT <= 0 && player.grounded && near) {
-    game.hintT = 10;
+  if (!player.superJump && game.hintCooldown <= 0 && player.grounded && near) {
+    game.hintCooldown = 10;
     toast(msg, 3000);
   }
 }

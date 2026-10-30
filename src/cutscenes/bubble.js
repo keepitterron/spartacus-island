@@ -15,7 +15,7 @@ const bub = { t: 0, shown: false, onDone: null };
 export function startBubble(onDone) {
   if (!isPlaying()) return;
   hideWin();
-  if (player.carry) useUpCarried();
+  if (player.carrying) useUpCarried();
   player.climb = player.zip = player.swing = null;
   game.state = 'bubble';
   Object.assign(bub, { t: 0, shown: false, onDone });
@@ -27,7 +27,7 @@ export function startBubble(onDone) {
 
 game.cutscenes.bubble = {
   update(dt) {
-    const T = game.T;
+    const T = game.time;
     bub.t += dt;
     const s = clamp(bub.t / 1.6, 0, 1);
     shipBubble.scale.setScalar(0.01 + s * (1 + Math.sin(T * 3) * 0.02));

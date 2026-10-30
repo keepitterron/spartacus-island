@@ -39,17 +39,17 @@ export function digAction(p) {
 }
 
 function startDig(d) {
-  player.digT = 1.1;
-  player.dig = d;
+  player.digTimer = 1.1;
+  player.digSpot = d;
   player.vel.x = player.vel.z = 0;
   player.yaw = Math.atan2(d.x - player.pos.x, d.z - player.pos.z) || player.yaw;
 }
 export function updateDigging(dt) {
-  if (player.digT <= 0) return;
-  player.digT -= dt;
-  player.scratchT -= dt;
-  if (player.scratchT <= 0) {
-    player.scratchT = 0.16;
+  if (player.digTimer <= 0) return;
+  player.digTimer -= dt;
+  player.scratchTimer -= dt;
+  if (player.scratchTimer <= 0) {
+    player.scratchTimer = 0.16;
     sfx.scratch();
     const f = forwardDir();
     burst(player.pos.clone().add(vec3(f.x * 0.7, 0.3, f.z * 0.7)), {
@@ -64,7 +64,7 @@ export function updateDigging(dt) {
       dir: vec3(-f.x, 0, -f.z),
     });
   }
-  if (player.digT <= 0) finishDig(player.dig);
+  if (player.digTimer <= 0) finishDig(player.digSpot);
 }
 function finishDig(d) {
   d.dug = true;

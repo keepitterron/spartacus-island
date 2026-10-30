@@ -91,12 +91,12 @@ bindInput({
       return;
     }
     if (overlayOpen()) return; // let Enter/Space press the focused panel button
-    if (k === ' ') player.jumpBuf = 0.15;
+    if (k === ' ') player.jumpBuffer = 0.15;
     if (k === 'b') bark();
     if (k === 'f' || k === 'enter') doAction();
   },
   onJump() {
-    player.jumpBuf = 0.15;
+    player.jumpBuffer = 0.15;
   },
   onBark: bark,
   onAct: doAction,
@@ -107,7 +107,7 @@ const clock = new THREE.Clock();
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 1 / 30);
-  game.T += dt;
+  game.time += dt;
   update(dt);
   renderer.render(scene, camera);
 }
@@ -142,8 +142,8 @@ function update(dt) {
     return;
   }
 
-  player.barkCd -= dt;
-  player.barkT -= dt;
+  player.barkCooldown -= dt;
+  player.barkTimer -= dt;
   if (game.state === 'rescue') updateRescue(dt);
   else if (player.swing) {
     updateSwing(dt);
@@ -164,16 +164,16 @@ function update(dt) {
     game.state === 'play' && !player.swing && !player.climb && !player.zip
       ? Math.hypot(player.vel.x, player.vel.z)
       : 0;
-  if (sp > 0.6 && player.digT <= 0)
+  if (sp > 0.6 && player.digTimer <= 0)
     player.yaw = lerpAngle(
       player.yaw,
       Math.atan2(player.vel.x, player.vel.z),
       Math.min(1, dt * 12),
     );
   if (player.power && sp > 2 && player.grounded) {
-    player.sparkT -= dt;
-    if (player.sparkT < 0) {
-      player.sparkT = 0.12;
+    player.sparkTimer -= dt;
+    if (player.sparkTimer < 0) {
+      player.sparkTimer = 0.12;
       burst(player.pos.clone().add(vec3(0, 0.3, 0)), {
         count: 2,
         color: POWERS[player.power].col.slice(1),
@@ -186,9 +186,12 @@ function update(dt) {
     }
   }
   // celebration: confetti for ~2.4 s, then the island's win panel
-  if (game.celebT >= 0) {
-    game.celebT += dt;
-    if (game.celebT < 2.4 && Math.floor(game.celebT * 4) !== Math.floor((game.celebT - dt) * 4))
+  if (game.celebrateTime >= 0) {
+    game.celebrateTime += dt;
+    if (
+      game.celebrateTime < 2.4 &&
+      Math.floor(game.celebrateTime * 4) !== Math.floor((game.celebrateTime - dt) * 4)
+    )
       burst(player.pos.clone().add(vec3(0, 3, 0)), {
         count: 26,
         color: [0xff9fb2, 0xffd84d, 0x7fd8ee, 0x8a5cf6, 0x6ccb5f],
@@ -199,9 +202,9 @@ function update(dt) {
         gravity: 0.25,
         confetti: true,
       });
-    if (game.celebT > 2.8) {
-      showWin(game.celebIsland);
-      game.celebT = -1;
+    if (game.celebrateTime > 2.8) {
+      showWin(game.celebrateIsland);
+      game.celebrateTime = -1;
     }
   }
   updatePrompt();

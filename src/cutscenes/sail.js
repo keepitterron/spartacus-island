@@ -15,7 +15,7 @@ const sail = { t: 0, path: null, onArrive: null };
 export function startSail(path, onArrive) {
   if (!isPlaying()) return;
   hideWin();
-  if (player.carry) useUpCarried();
+  if (player.carrying) useUpCarried();
   Object.assign(sail, { t: 0, path, onArrive });
   game.state = 'sail';
   player.swing = null;

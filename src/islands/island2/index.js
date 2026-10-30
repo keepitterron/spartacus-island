@@ -233,14 +233,14 @@ const I = {
       distXZ(p, I2.mesa.x, I2.mesa.z) < 5.5,
       'Too high! A Boing-Boing fruit grows nearby.',
     );
-    if (!player.stretch && (distXZ(p, I2.S.x, I2.S.z) < 3 || distXZ(p, I2.E.x, I2.E.z) < 3))
+    if (!player.canStretch && (distXZ(p, I2.S.x, I2.S.z) < 3 || distXZ(p, I2.E.x, I2.E.z) < 3))
       hintOnce('hook', 'Golden hooks! Spartacus needs a Stretchy fruit to swing.', 3400);
-    if (player.stretch && swingOption())
+    if (player.canStretch && swingOption())
       hintOnce('swing', `Press ${actionKeyName()} to swing!`, 2400);
     if (
       mango.state === 'hungry' &&
       distXZ(p, I2.N.x, I2.N.z) < 3 &&
-      !(player.carry && player.carry.id === 'snack')
+      !(player.carrying && player.carrying.id === 'snack')
     )
       hintOnce('mango', 'Mango is too hungry to fly. Find his snack!', 3200);
     // walking onto the dock with Mango on the hat: he flies up to the crow's nest
@@ -255,7 +255,7 @@ const I = {
     }
   },
   actions(p) {
-    const it = player.carry;
+    const it = player.carrying;
     if (
       it &&
       it.id === 'snack' &&

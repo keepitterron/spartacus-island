@@ -519,7 +519,7 @@ const I = {
   build,
   buildLate,
   update(dt) {
-    const T = game.T;
+    const T = game.time;
     CHEST.flag.rotation.y = Math.sin(T * 3) * 0.3;
     for (const l of lilies) {
       l.g.position.y = 0.16 + Math.sin(T * 1.6 + l.phase) * 0.04;
@@ -542,18 +542,18 @@ const I = {
   interact(p) {
     if (p.y > LH.deckTop - 0.3 && distXZ(p, LH.x, LH.z) < 1.55 && LH.swing < 0.25) ringBell();
     hintTooHigh(distXZ(p, LH.rockX, LH.rockZ) < 3.2, 'Too high to jump… find the swirly fruit!');
-    if (!I.done.bridge && !player.carry && distXZ(p, BR.gap0 - 1, BR.z) < 2.5 && p.y > 1)
+    if (!I.done.bridge && !player.carrying && distXZ(p, BR.gap0 - 1, BR.z) < 2.5 && p.y > 1)
       hintOnce('bridge', 'The bridge is broken! Find a long plank.', 3200);
     if (digNear(p, 4)) hintOnce('dig', `A sand mound! Dig it with ${actionKeyName()}.`, 3200);
     if (
       !I.done.chest &&
       distXZ(p, CHEST.x, CHEST.z) < 3 &&
-      !(player.carry && player.carry.id === 'key')
+      !(player.carrying && player.carrying.id === 'key')
     )
       hintOnce('chest', 'A locked treasure chest. It needs a key…', 3200);
   },
   actions(p) {
-    const it = player.carry;
+    const it = player.carrying;
     if (!it) return null;
     if (
       it.id === 'plank' &&

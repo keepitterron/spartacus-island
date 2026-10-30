@@ -159,7 +159,7 @@ export function addBucket() {
 }
 
 export function updateShip(dt, cutscene) {
-  const T = game.T;
+  const T = game.time;
   ship.position.y = shipState.baseY + Math.sin(T * 1.2) * 0.12 - shipState.depth;
   if (shipBubble.visible && !cutscene)
     shipBubble.position.copy(ship.position).add(new THREE.Vector3(0, 2.8, 0));

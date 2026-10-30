@@ -39,7 +39,9 @@
       {
         "allow": ["**/*.css"]
       }
-    ]
+    ],
+    "no-undef": "error"
   },
-  "ignorePatterns": ["dist", "dev-dist", "node_modules"]
+  "ignorePatterns": ["dist", "dev-dist", "node_modules"],
+  "globals": {}
 }

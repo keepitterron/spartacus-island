@@ -99,7 +99,7 @@ export function gullJoinsShip() {
 
 export function updateGull(dt) {
   const g = gull.g,
-    T = game.T,
+    T = game.time,
     post = gull.post;
   gull.t += dt;
   if (gull.state === 'sleep') {

@@ -146,7 +146,7 @@ export function addFruit(x, z, { type, y, bush }) {
   fruits.push({ type, m: g, x, z, y: fy, regrow: 0 });
 }
 export function updateFruits(dt) {
-  const T = game.T;
+  const T = game.time;
   for (const f of fruits) {
     if (f.m.visible) {
       f.m.rotation.y += dt * 1.5;
@@ -194,8 +194,8 @@ export function eatFruits(p) {
 export function setPower(t) {
   const prev = player.power;
   player.power = t;
-  player.super = t === 'boing';
-  player.stretch = t === 'stretch';
+  player.superJump = t === 'boing';
+  player.canStretch = t === 'stretch';
   updatePowerHud();
   if (prev && prev !== t) toast(`Swapped to ${POWERS[t].name}! One power at a time.`, 3000);
   else toast(POWERS[t].intro(), POWERS[t].ms);

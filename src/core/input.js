@@ -53,7 +53,7 @@ export function bindInput({ onKey, onJump, onBark, onAct }) {
   canvas.addEventListener('pointermove', (e) => {
     if (e.pointerId !== drag.id) return;
     followCam.yaw -= (e.clientX - drag.x) * 0.007;
-    followCam.h = clamp(followCam.h + (e.clientY - drag.y) * 0.02, 2.5, 11);
+    followCam.height = clamp(followCam.height + (e.clientY - drag.y) * 0.02, 2.5, 11);
     drag.x = e.clientX;
     drag.y = e.clientY;
   });

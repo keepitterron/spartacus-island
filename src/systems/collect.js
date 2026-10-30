@@ -22,7 +22,7 @@ export function addPickup(x, z, { y, island: isl, pop = 0 }) {
 }
 
 export function updatePickups(dt) {
-  const T = game.T;
+  const T = game.time;
   for (const b of pickups)
     if (!b.got) {
       b.g.rotation.y += dt * 2;

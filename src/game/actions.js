@@ -16,7 +16,7 @@ import { allTasksDone } from './tasks.js';
 export function currentAction() {
   if (
     !isPlaying() ||
-    player.digT > 0 ||
+    player.digTimer > 0 ||
     player.placing ||
     player.swing ||
     player.climb ||
@@ -29,7 +29,7 @@ export function currentAction() {
   return (
     I.actions?.(p) ||
     swingAction() ||
-    (player.carry ? { label: 'Drop', fn: dropCarried } : null) ||
+    (player.carrying ? { label: 'Drop', fn: dropCarried } : null) ||
     grabAction(p) ||
     digAction(p)
   );
@@ -56,7 +56,7 @@ export function updatePrompt() {
       btn.classList.remove('off');
     } else {
       pr.classList.remove('show');
-      btn.textContent = player.carry ? 'Drop' : 'Grab';
+      btn.textContent = player.carrying ? 'Drop' : 'Grab';
       btn.classList.add('off');
     }
   }
@@ -66,9 +66,9 @@ export function updatePrompt() {
 let woof = null,
   woofT = 0;
 export function bark() {
-  if (game.state === 'start' || isInCutscene() || player.barkCd > 0) return;
-  player.barkCd = 0.45;
-  player.barkT = 0.35;
+  if (game.state === 'start' || isInCutscene() || player.barkCooldown > 0) return;
+  player.barkCooldown = 0.45;
+  player.barkTimer = 0.35;
   sfx.bark();
   if (!woof) {
     woof = textSprite('WOOF!', '#ffd84d');

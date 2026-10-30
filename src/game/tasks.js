@@ -35,9 +35,9 @@ export function completeTask(id) {
 }
 // spin + confetti, then the island's win panel (shown from the main loop after ~2.8 s)
 export function celebrate(I) {
-  game.celebT = 0;
-  game.celebIsland = I;
-  game.spin = Math.PI * 4;
+  game.celebrateTime = 0;
+  game.celebrateIsland = I;
+  game.spinLeft = Math.PI * 4;
   sfx.win();
 }
 

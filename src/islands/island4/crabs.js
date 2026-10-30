@@ -148,7 +148,7 @@ export function crabsParty() {
 }
 
 export function updateCrabs(dt) {
-  const T = game.T;
+  const T = game.time;
   if (isPlaying() && (!trail.length || trail[trail.length - 1].distanceTo(player.pos) > 0.45)) {
     trail.push(player.pos.clone());
     if (trail.length > 90) trail.shift();

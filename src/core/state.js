@@ -5,16 +5,16 @@ export const game = {
   island: 1, // id of the island being played
   islands: {}, // id -> island module (see docs/islands.md)
   cutscenes: {}, // state name -> {update(dt)}
-  T: 0, // seconds since boot (drives all idle animations)
+  time: 0, // seconds since boot (drives all idle animations)
   flagUp: false, // ship flag raised
-  spin: 0, // celebration spin left (radians)
-  celebT: -1,
-  celebIsland: null,
-  hintT: 0, // cooldown for repeating "too high" hints
+  spinLeft: 0, // celebration spin left (radians)
+  celebrateTime: -1,
+  celebrateIsland: null,
+  hintCooldown: 0, // cooldown for repeating "too high" hints
   debug: false,
 };
 // follow-camera settings: yaw around the player, height above, distance behind
-export const followCam = { yaw: 0, h: 6, dist: 11.5 };
+export const followCam = { yaw: 0, height: 6, distance: 11.5 };
 export const currentIsland = () => game.islands[game.island];
 export const isPlaying = () => game.state === 'play';
 export const isInCutscene = () => !!game.cutscenes[game.state];

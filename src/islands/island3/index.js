@@ -493,7 +493,7 @@ function giveFlower() {
       pos: vec3(HIVE.x, HIVE.y + 0.6, HIVE.z),
       name: 'key',
     });
-    if (!player.carry && game.state === 'play') carryItem(k); // if busy, the key just waits on the hive
+    if (!player.carrying && game.state === 'play') carryItem(k); // if busy, the key just waits on the hive
     toast('Bzz bzz! The bees give Spartacus their shiny key!', 3400);
     completeTask('trade');
   }, 700);
@@ -520,7 +520,7 @@ function openGate() {
 function updWasabi3(dt) {
   const w = wasabi,
     g = w.g,
-    T = game.T;
+    T = game.time;
   if (thirsty) thirsty.visible = w.state === 'stuck';
   if (w.state === 'stuck') {
     g.rotation.y = 0.6 + Math.sin(T * 0.8) * 0.4;
@@ -641,7 +641,7 @@ const I = {
     addBucket();
   },
   update(dt) {
-    const T = game.T;
+    const T = game.time;
     HIVE.excite = Math.max(0, HIVE.excite - dt);
     HIVE.bees.forEach((b) => {
       const a = T * (2 + HIVE.excite) + b.ph,
@@ -683,7 +683,7 @@ const I = {
     if (
       !I.done.gate &&
       distXZ(p, GATE.fx, GATE.fz) < 3.5 &&
-      !(player.carry && player.carry.id === 'key3')
+      !(player.carrying && player.carrying.id === 'key3')
     )
       hintOnce('gate', 'The water gate is locked. Who has the key?', 3200);
     if (player.power !== 'grow' && !t1vine.grown && distXZ(p, t1vine.x, t1vine.z) < 3)
@@ -697,7 +697,7 @@ const I = {
       !I.done.trade &&
       distXZ(p, HIVE.x, HIVE.z) < 4 &&
       Math.abs(p.y - HIVE.y) < 2 &&
-      !(player.carry && player.carry.id === 'flower')
+      !(player.carrying && player.carrying.id === 'flower')
     )
       hintOnce('bees', 'Bees: “Bzz! Bring us a flower and the shiny key is yours!”', 4000);
     if (!flowerCalled && distXZ(p, FLW.x, FLW.z) < 5.5)
@@ -705,7 +705,7 @@ const I = {
     hintTooHigh(distXZ(p, MUSH.x, MUSH.z) < 4, 'Too high! A Boing-Boing jump could reach it.');
   },
   actions(p) {
-    const it = player.carry;
+    const it = player.carrying;
     if (
       it &&
       it.id === 'flower' &&

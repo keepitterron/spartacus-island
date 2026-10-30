@@ -123,7 +123,7 @@ export function givePillow() {
 }
 
 export function updateOcto(dt) {
-  const T = game.T;
+  const T = game.time;
   // shuffle aside to bed (and take his collider with him)
   if (octo.moveT > 0 && octo.moveT < 1) {
     octo.moveT = Math.min(1, octo.moveT + dt / 2.5);

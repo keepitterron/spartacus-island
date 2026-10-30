@@ -28,7 +28,7 @@ scene.add(
 
 export function updateOcean() {
   if (ambience.under) return; // can't be seen from the sea floor, skip the per-vertex work
-  const T = game.T,
+  const T = game.time,
     wp = wGeo.attributes.position;
   for (let i = 0; i < wp.count; i++) {
     const x = wp.getX(i),
