@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { clamp } from '../core/util.js';
-import { scene, LOW } from '../core/renderer.js';
+import { scene, LOW_POWER } from '../core/renderer.js';
 import { mesh } from '../core/materials.js';
 
 // All islands live in one world, spread along -z. Each island registers a height
@@ -10,7 +10,7 @@ export function addTerrain(zMax, h) {
   zones.push({ zMax, h });
   zones.sort((a, b) => b.zMax - a.zMax);
 }
-export function terrainH(x, z) {
+export function terrainHeight(x, z) {
   let h = zones[0].h;
   for (const e of zones) if (z < e.zMax) h = e.h;
   return h(x, z);
@@ -23,10 +23,10 @@ export function buildGround(cx, cz, S, N, pal = { g: 0x6ccb5f, g2: 0x92dc6c }) {
   g.rotateX(-Math.PI / 2);
   g.translate(cx, 0, cz);
   const p = g.attributes.position;
-  for (let i = 0; i < p.count; i++) p.setY(i, terrainH(p.getX(i), p.getZ(i)));
+  for (let i = 0; i < p.count; i++) p.setY(i, terrainHeight(p.getX(i), p.getZ(i)));
   g.computeVertexNormals();
   g.computeBoundingSphere();
-  const TW = LOW ? 256 : 512,
+  const TW = LOW_POWER ? 256 : 512,
     cv = document.createElement('canvas');
   cv.width = cv.height = TW;
   const cx2 = cv.getContext('2d'),
@@ -44,7 +44,7 @@ export function buildGround(cx, cz, S, N, pal = { g: 0x6ccb5f, g2: 0x92dc6c }) {
     for (let px = 0; px < TW; px++) {
       const x = cx + ((px + 0.5) / TW) * S - S / 2,
         z = cz + ((py + 0.5) / TW) * S - S / 2,
-        h = terrainH(x, z);
+        h = terrainHeight(x, z);
       if (sea) {
         c.copy(cs).lerp(cw, 0.5 + 0.5 * Math.sin(x * 0.5) * Math.cos(z * 0.45));
         if (h > pal.seabed + 3) c.lerp(cdeep, clamp((h - pal.seabed - 3) / 8, 0, 1));

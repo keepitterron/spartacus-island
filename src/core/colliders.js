@@ -1,11 +1,11 @@
-import { terrainH } from '../world/terrain.js';
+import { terrainHeight } from '../world/terrain.js';
 
 // Everything you can stand on or bump into. Flat list, checked every frame:
 //   {type:'cyl', x,z, r, bottom, top}   or   {type:'box', x,z, hw,hd, bottom, top}
 // A cylinder with `.tree` set is climbable once tree.grown is true.
 // To switch a collider off, set top=-999.
 export const colliders = [];
-export const addCyl = (x, z, r, bottom, top) => {
+export const addCylinder = (x, z, r, bottom, top) => {
   const c = { type: 'cyl', x, z, r, bottom, top };
   colliders.push(c);
   return c;
@@ -16,15 +16,15 @@ export const addBox = (x, z, hw, hd, bottom, top) => {
   return c;
 };
 
-export function inFoot(c, x, z, pad) {
+export function inFootprint(c, x, z, pad) {
   return c.type === 'cyl'
     ? Math.hypot(x - c.x, z - c.z) < c.r + pad
     : Math.abs(x - c.x) < c.hw + pad && Math.abs(z - c.z) < c.hd + pad;
 }
 // highest surface under (x,z) that is not above maxY
-export function supportAt(x, z, maxY) {
-  let s = terrainH(x, z);
-  for (const c of colliders) if (c.top <= maxY && inFoot(c, x, z, 0)) s = Math.max(s, c.top);
+export function supportHeight(x, z, maxY) {
+  let s = terrainHeight(x, z);
+  for (const c of colliders) if (c.top <= maxY && inFootprint(c, x, z, 0)) s = Math.max(s, c.top);
   return s;
 }
 // push a body of radius R at p out of collider c, cancelling velocity into it

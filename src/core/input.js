@@ -1,7 +1,7 @@
 import { $, clamp } from './util.js';
 import { canvas } from './renderer.js';
-import { cam } from './state.js';
-import { ac } from './audio.js';
+import { followCam } from './state.js';
+import { audioContext } from './audio.js';
 import { overlayOpen } from './ui.js';
 
 // Keyboard + touch stick + drag-to-look. Game code reads `keys`/`axis()`; one-shot
@@ -11,7 +11,7 @@ export const stick = { x: 0, y: 0 };
 export const drag = { id: null };
 
 // movement input: f = forward/back, r = right/left, each roughly -1..1 (not normalised)
-export function axis() {
+export function moveAxis() {
   let f = 0,
     r = 0;
   if (overlayOpen()) return { f, r };
@@ -48,12 +48,12 @@ export function bindInput({ onKey, onJump, onBark, onAct }) {
     drag.x = e.clientX;
     drag.y = e.clientY;
     canvas.setPointerCapture(e.pointerId);
-    ac();
+    audioContext();
   });
   canvas.addEventListener('pointermove', (e) => {
     if (e.pointerId !== drag.id) return;
-    cam.yaw -= (e.clientX - drag.x) * 0.007;
-    cam.h = clamp(cam.h + (e.clientY - drag.y) * 0.02, 2.5, 11);
+    followCam.yaw -= (e.clientX - drag.x) * 0.007;
+    followCam.h = clamp(followCam.h + (e.clientY - drag.y) * 0.02, 2.5, 11);
     drag.x = e.clientX;
     drag.y = e.clientY;
   });
@@ -95,7 +95,7 @@ export function bindInput({ onKey, onJump, onBark, onAct }) {
     so = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     moveStick(e);
     e.preventDefault();
-    ac();
+    audioContext();
   });
   zone.addEventListener('pointermove', (e) => {
     if (e.pointerId === stickId) moveStick(e);
@@ -111,7 +111,7 @@ export function bindInput({ onKey, onJump, onBark, onAct }) {
   zone.addEventListener('pointercancel', endStick);
   $('#btnJump').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    ac();
+    audioContext();
     onJump();
   });
   $('#btnBark').addEventListener('pointerdown', (e) => {

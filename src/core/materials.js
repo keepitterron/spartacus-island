@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // materials are cached by colour + options, so mat(0xff0000) everywhere shares one material
 const MC = {};
-export function mat(c, o = {}) {
+export function material(c, o = {}) {
   const k = c + JSON.stringify(o);
   if (!MC[k])
     MC[k] = new THREE.MeshStandardMaterial(
@@ -16,7 +16,7 @@ export function mesh(g, m, cast = true, recv = false) {
   o.receiveShadow = recv;
   return o;
 }
-export function canvasTex(w, h, draw) {
+export function canvasTexture(w, h, draw) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -26,7 +26,7 @@ export function canvasTex(w, h, draw) {
   return t;
 }
 // paw print drawn into a 2D canvas (sail, landing pads)
-export function paw(x, cx, cy, s, col) {
+export function drawPaw(x, cx, cy, s, col) {
   x.fillStyle = col;
   x.beginPath();
   x.ellipse(cx, cy + s * 0.35, s * 0.55, s * 0.45, 0, 0, 7);

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clamp, V } from './util.js';
+import { clamp, vec3 } from './util.js';
 import { scene } from './renderer.js';
 
 // Particles: little icosahedrons (or paper confetti). grav<0 makes them rise (bubbles).
@@ -28,9 +28,11 @@ export function burst(
     m.scale.setScalar(size * (0.6 + Math.random() * 0.8));
     const a = Math.random() * 6.283,
       e = Math.random() * 1.2 - 0.2;
-    const v = V(Math.cos(a) * Math.cos(e), Math.sin(e), Math.sin(a) * Math.cos(e)).multiplyScalar(
-      speed * (0.4 + Math.random() * 0.6),
-    );
+    const v = vec3(
+      Math.cos(a) * Math.cos(e),
+      Math.sin(e),
+      Math.sin(a) * Math.cos(e),
+    ).multiplyScalar(speed * (0.4 + Math.random() * 0.6));
     v.y += up;
     if (dir) v.addScaledVector(dir, speed);
     scene.add(m);
@@ -40,11 +42,11 @@ export function burst(
       life,
       max: life,
       grav,
-      spin: confetti ? V(Math.random() * 8, Math.random() * 8, Math.random() * 8) : null,
+      spin: confetti ? vec3(Math.random() * 8, Math.random() * 8, Math.random() * 8) : null,
     });
   }
 }
-export function updParts(dt) {
+export function updateParticles(dt) {
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i];
     p.life -= dt;

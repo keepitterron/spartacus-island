@@ -1,23 +1,23 @@
 import * as THREE from 'three';
 import { clamp, lerp } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { mat, mesh } from '../core/materials.js';
-import { G } from '../core/state.js';
-import { P, SPEED } from './player.js';
+import { material, mesh } from '../core/materials.js';
+import { game } from '../core/state.js';
+import { player, SPEED } from './player.js';
 
 // Spartacus: half pitbull, half labrador. Shiny black coat, thin white stripe down the
 // muzzle, white chest patch and paw tips, floppy ears, straw hat with a red band.
 // Friends who ride along are added to dog.head; carried items go in dog.mouth.
 function makeDog() {
-  const fur = mat(0x2a2a33),
-    cream = mat(0xffffff),
-    brown = mat(0x1f1f27),
-    ink = mat(0x0c0c10, { roughness: 0.35 }),
-    pink = mat(0xff8fa3),
-    straw = mat(0xf2d27a),
-    ribbon = mat(0xd9343f),
-    iris = mat(0x9a7a34, { roughness: 0.3 }),
-    pupil = mat(0x1a1208, { roughness: 0.3 });
+  const fur = material(0x2a2a33),
+    cream = material(0xffffff),
+    brown = material(0x1f1f27),
+    ink = material(0x0c0c10, { roughness: 0.35 }),
+    pink = material(0xff8fa3),
+    straw = material(0xf2d27a),
+    ribbon = material(0xd9343f),
+    iris = material(0x9a7a34, { roughness: 0.3 }),
+    pupil = material(0x1a1208, { roughness: 0.3 });
   const root = new THREE.Group(),
     body = new THREE.Group();
   root.add(body);
@@ -145,22 +145,22 @@ export const dog = makeDog();
 scene.add(dog.root);
 
 // pose the model from P every frame; sp = horizontal speed
-export function animDog(dt, sp) {
+export function animateDog(dt, sp) {
   const d = dog,
-    T = G.T;
-  d.root.position.copy(P.pos);
-  if (G.spin > 0) {
-    const s = Math.min(G.spin, dt * 10);
-    G.spin -= s;
-    P.yaw += s;
+    T = game.T;
+  d.root.position.copy(player.pos);
+  if (game.spin > 0) {
+    const s = Math.min(game.spin, dt * 10);
+    game.spin -= s;
+    player.yaw += s;
   }
-  d.root.rotation.y = P.yaw;
+  d.root.rotation.y = player.yaw;
   const moving = clamp(sp / SPEED, 0, 1);
-  P.phase += dt * (4 + sp * 1.9);
-  const sw = Math.sin(P.phase) * 0.75 * moving,
-    digging = P.digT > 0;
-  if (G.state === 'rescue') {
-    const pd = Math.sin(P.phase) * 0.8;
+  player.phase += dt * (4 + sp * 1.9);
+  const sw = Math.sin(player.phase) * 0.75 * moving,
+    digging = player.digT > 0;
+  if (game.state === 'rescue') {
+    const pd = Math.sin(player.phase) * 0.8;
     d.legs.forEach((l, i) => (l.rotation.x = i % 2 ? pd : -pd));
   } else if (digging) {
     const q = Math.sin(T * 28) * 1.1;
@@ -168,18 +168,18 @@ export function animDog(dt, sp) {
     d.legs[1].rotation.x = -0.6 - q;
     d.legs[2].rotation.x = 0.2;
     d.legs[3].rotation.x = 0.2;
-  } else if (P.climb) {
-    const q = Math.sin(P.phase) * 0.9;
+  } else if (player.climb) {
+    const q = Math.sin(player.phase) * 0.9;
     d.legs[0].rotation.x = -0.9 + q;
     d.legs[1].rotation.x = -0.9 - q;
     d.legs[2].rotation.x = 0.3 - q;
     d.legs[3].rotation.x = 0.3 + q;
-  } else if (P.zip) {
+  } else if (player.zip) {
     d.legs.forEach((l, i) => (l.rotation.x = 0.25 + Math.sin(T * 6 + i) * 0.25));
-  } else if (P.swing) {
+  } else if (player.swing) {
     const q = Math.sin(T * 20) * 0.5;
     d.legs.forEach((l, i) => (l.rotation.x = (i < 2 ? -1 : 1) * (0.7 + q * (i % 2 ? 1 : -1))));
-  } else if (!P.grounded) {
+  } else if (!player.grounded) {
     d.legs.forEach((l, i) => (l.rotation.x = i < 2 ? -0.6 : 0.6));
   } else {
     d.legs[0].rotation.x = sw;
@@ -189,30 +189,30 @@ export function animDog(dt, sp) {
   }
   d.body.rotation.x = lerp(
     d.body.rotation.x,
-    digging ? 0.32 : P.climb ? -1.3 : P.zip ? -0.35 : P.swing ? -0.25 : 0,
+    digging ? 0.32 : player.climb ? -1.3 : player.zip ? -0.35 : player.swing ? -0.25 : 0,
     Math.min(1, dt * 10),
   );
   // squash & stretch spring
-  P.sqv += (1 - P.sq) * 140 * dt;
-  P.sqv *= Math.exp(-dt * 9);
-  P.sq += P.sqv * dt;
-  P.sq = clamp(P.sq, 0.6, 1.4);
-  const bob = P.grounded ? Math.abs(Math.sin(P.phase)) * 0.08 * moving : 0;
-  const stretchY = P.swing ? 1.12 : 1;
-  d.body.scale.set(1 / Math.sqrt(P.sq), P.sq * stretchY, 1 / Math.sqrt(P.sq));
+  player.sqv += (1 - player.sq) * 140 * dt;
+  player.sqv *= Math.exp(-dt * 9);
+  player.sq += player.sqv * dt;
+  player.sq = clamp(player.sq, 0.6, 1.4);
+  const bob = player.grounded ? Math.abs(Math.sin(player.phase)) * 0.08 * moving : 0;
+  const stretchY = player.swing ? 1.12 : 1;
+  d.body.scale.set(1 / Math.sqrt(player.sq), player.sq * stretchY, 1 / Math.sqrt(player.sq));
   d.body.position.y = bob;
   d.tail.rotation.z =
-    Math.sin(T * (G.celebT >= 0 || digging || P.swing ? 22 : 12)) * (0.5 + moving * 0.2);
-  const vy = G.state === 'rescue' || P.swing ? 6 : P.vel.y;
+    Math.sin(T * (game.celebT >= 0 || digging || player.swing ? 22 : 12)) * (0.5 + moving * 0.2);
+  const vy = game.state === 'rescue' || player.swing ? 6 : player.vel.y;
   d.ears.forEach((e) => {
-    e.rotation.x = clamp(vy * 0.05, -0.9, 0.9) + Math.sin(P.phase * 2) * 0.15 * moving;
+    e.rotation.x = clamp(vy * 0.05, -0.9, 0.9) + Math.sin(player.phase * 2) * 0.15 * moving;
     e.rotation.z = e.userData.s * (0.12 + clamp(-vy * 0.04, -0.1, 0.7));
   });
-  const bk = P.barkT > 0;
-  d.tongue.visible = bk && !P.carry;
+  const bk = player.barkT > 0;
+  d.tongue.visible = bk && !player.carry;
   d.head.rotation.x = bk
-    ? -Math.sin(((0.35 - P.barkT) / 0.35) * Math.PI) * 0.35
-    : P.carry && P.carry.heavy
+    ? -Math.sin(((0.35 - player.barkT) / 0.35) * Math.PI) * 0.35
+    : player.carry && player.carry.heavy
       ? 0.12
       : Math.sin(T * 1.3) * 0.04;
   d.head.rotation.z = Math.sin(T * 0.9) * 0.05;

@@ -1,6 +1,6 @@
 // Shared, mutable game state. Modules read and write G.x instead of exporting `let`s,
 // because ES module bindings can't be reassigned from outside.
-export const G = {
+export const game = {
   state: 'start', // start | play | rescue | or the name of a cutscene (sail, bubble, whale)
   island: 1, // id of the island being played
   islands: {}, // id -> island module (see docs/islands.md)
@@ -14,7 +14,7 @@ export const G = {
   debug: false,
 };
 // follow-camera settings: yaw around the player, height above, distance behind
-export const cam = { yaw: 0, h: 6, dist: 11.5 };
-export const cur = () => G.islands[G.island];
-export const playing = () => G.state === 'play';
-export const inCutscene = () => !!G.cutscenes[G.state];
+export const followCam = { yaw: 0, h: 6, dist: 11.5 };
+export const currentIsland = () => game.islands[game.island];
+export const isPlaying = () => game.state === 'play';
+export const isInCutscene = () => !!game.cutscenes[game.state];

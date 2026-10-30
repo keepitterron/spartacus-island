@@ -4,34 +4,34 @@ import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
 import './style.css';
 import * as THREE from 'three';
-import { $, angLerp, V } from './core/util.js';
+import { $, lerpAngle, vec3 } from './core/util.js';
 import { renderer, scene, camera, canvas, followSun } from './core/renderer.js';
-import { G, cur } from './core/state.js';
-import { burst, updParts } from './core/fx.js';
+import { game, currentIsland } from './core/state.js';
+import { burst, updateParticles } from './core/fx.js';
 import { overlayOpen, armButton } from './core/ui.js';
 import { bindInput } from './core/input.js';
 import { continueIsland, loadSave } from './core/save.js';
 import { addTerrain } from './world/terrain.js';
-import { updOcean } from './world/ocean.js';
-import { buildSky, updSky } from './world/sky.js';
-import { updShip } from './world/ship.js';
-import { P, SPAWN, stepPlayer, updRescue } from './player/player.js';
-import { animDog } from './player/dog.js';
-import { POWERS, updFruits } from './systems/powers.js';
-import { updPickups } from './systems/collect.js';
-import { updDigs, updDigging } from './systems/digs.js';
-import { updFloaters, updPlacing } from './systems/items.js';
-import { updHooks, updSwing, updSwingLine } from './systems/hooks.js';
-import { updGrowers, updClimb, updZip } from './systems/vines.js';
-import { updHat } from './systems/hat.js';
-import { updGull } from './npcs/gull.js';
-import { updMango } from './npcs/mango.js';
-import { updWasabi } from './npcs/wasabi.js';
+import { updateOcean } from './world/ocean.js';
+import { buildSky, updateSky } from './world/sky.js';
+import { updateShip } from './world/ship.js';
+import { player, SPAWN, stepPlayer, updateRescue } from './player/player.js';
+import { animateDog } from './player/dog.js';
+import { POWERS, updateFruits } from './systems/powers.js';
+import { updatePickups } from './systems/collect.js';
+import { updateDigSpots, updateDigging } from './systems/digs.js';
+import { updateFloaters, updatePlacing } from './systems/items.js';
+import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
+import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
+import { updateHat } from './systems/hat.js';
+import { updateGull } from './npcs/gull.js';
+import { updateMango } from './npcs/mango.js';
+import { updateWasabi } from './npcs/wasabi.js';
 import { initTasks, renderTasks, showWin, hideWin } from './game/tasks.js';
-import { bark, doAction, updPrompt, updWoof } from './game/actions.js';
-import { interact } from './game/interact.js';
+import { bark, doAction, updatePrompt, updateWoof } from './game/actions.js';
+import { checkTriggers } from './game/interact.js';
 import { startGame, restartFromBeginning } from './game/flow.js';
-import { orbitCamera, updCamera } from './game/camera.js';
+import { orbitCamera, updateCamera } from './game/camera.js';
 import island1 from './islands/island1/index.js';
 import island2 from './islands/island2/index.js';
 import island3 from './islands/island3/index.js';
@@ -41,7 +41,7 @@ import island4 from './islands/island4/index.js';
 // Islands in play order. To add one, see docs/islands.md.
 const ISLANDS = [island1, island2, island3, island4];
 for (const I of ISLANDS) {
-  G.islands[I.id] = I;
+  game.islands[I.id] = I;
   initTasks(I);
   addTerrain(I.zMax, I.height);
 }
@@ -49,7 +49,7 @@ for (const I of ISLANDS) {
 for (const I of ISLANDS) I.build();
 buildSky();
 for (const I of ISLANDS) I.buildLate?.();
-P.pos.copy(island1.spawn);
+player.pos.copy(island1.spawn);
 SPAWN.copy(island1.spawn);
 
 /* ---------- HUD + menus ---------- */
@@ -76,27 +76,27 @@ $('#winExplore').addEventListener('click', () => {
   hideWin();
   canvas.focus();
 });
-$('#winGo').addEventListener('click', () => cur().exit.run());
+$('#winGo').addEventListener('click', () => currentIsland().exit.run());
 $('#restart').addEventListener('click', restartFromBeginning);
 
 bindInput({
   onKey(k) {
-    if (G.state === 'start') {
+    if (game.state === 'start') {
       if (k === 'enter' || k === ' ') startGame(contIsland);
       return;
     }
-    const cs = G.cutscenes[G.state];
+    const cs = game.cutscenes[game.state];
     if (cs) {
       if (k === 'enter' || k === ' ' || k === 'escape') cs.skip?.();
       return;
     }
     if (overlayOpen()) return; // let Enter/Space press the focused panel button
-    if (k === ' ') P.jumpBuf = 0.15;
+    if (k === ' ') player.jumpBuf = 0.15;
     if (k === 'b') bark();
     if (k === 'f' || k === 'enter') doAction();
   },
   onJump() {
-    P.jumpBuf = 0.15;
+    player.jumpBuf = 0.15;
   },
   onBark: bark,
   onAct: doAction,
@@ -107,71 +107,77 @@ const clock = new THREE.Clock();
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 1 / 30);
-  G.T += dt;
+  game.T += dt;
   update(dt);
   renderer.render(scene, camera);
 }
 function update(dt) {
-  updOcean();
-  updSky(dt);
-  updShip(dt, G.state === 'bubble');
-  updPickups(dt);
-  updFruits(dt);
-  updDigs(dt);
-  updHooks(dt);
-  updGrowers(dt);
-  updHat(dt);
-  updGull(dt);
-  updMango(dt);
-  updWasabi(dt);
-  cur().update?.(dt);
-  updFloaters(dt);
-  updParts(dt);
-  updWoof(dt);
-  followSun(G.state === 'start' ? V(0, 0, 0) : P.pos);
-  if (G.state === 'start') {
+  updateOcean();
+  updateSky(dt);
+  updateShip(dt, game.state === 'bubble');
+  updatePickups(dt);
+  updateFruits(dt);
+  updateDigSpots(dt);
+  updateHooks(dt);
+  updateGrowers(dt);
+  updateHat(dt);
+  updateGull(dt);
+  updateMango(dt);
+  updateWasabi(dt);
+  currentIsland().update?.(dt);
+  updateFloaters(dt);
+  updateParticles(dt);
+  updateWoof(dt);
+  followSun(game.state === 'start' ? vec3(0, 0, 0) : player.pos);
+  if (game.state === 'start') {
     orbitCamera();
-    animDog(dt, 0);
+    animateDog(dt, 0);
     return;
   }
-  const cs = G.cutscenes[G.state];
+  const cs = game.cutscenes[game.state];
   if (cs) {
     cs.update(dt);
-    animDog(dt, 0);
-    updPrompt();
+    animateDog(dt, 0);
+    updatePrompt();
     return;
   }
 
-  P.barkCd -= dt;
-  P.barkT -= dt;
-  if (G.state === 'rescue') updRescue(dt);
-  else if (P.swing) {
-    updSwing(dt);
-    interact(dt);
-  } else if (P.climb) {
-    updClimb(dt);
-    interact(dt);
-  } else if (P.zip) {
-    updZip(dt);
-    interact(dt);
+  player.barkCd -= dt;
+  player.barkT -= dt;
+  if (game.state === 'rescue') updateRescue(dt);
+  else if (player.swing) {
+    updateSwing(dt);
+    checkTriggers(dt);
+  } else if (player.climb) {
+    updateClimb(dt);
+    checkTriggers(dt);
+  } else if (player.zip) {
+    updateZip(dt);
+    checkTriggers(dt);
   } else {
     stepPlayer(dt);
-    interact(dt);
-    updDigging(dt);
-    updPlacing(dt);
+    checkTriggers(dt);
+    updateDigging(dt);
+    updatePlacing(dt);
   }
   const sp =
-    G.state === 'play' && !P.swing && !P.climb && !P.zip ? Math.hypot(P.vel.x, P.vel.z) : 0;
-  if (sp > 0.6 && P.digT <= 0)
-    P.yaw = angLerp(P.yaw, Math.atan2(P.vel.x, P.vel.z), Math.min(1, dt * 12));
-  if (P.power && sp > 2 && P.grounded) {
-    P.sparkT -= dt;
-    if (P.sparkT < 0) {
-      P.sparkT = 0.12;
+    game.state === 'play' && !player.swing && !player.climb && !player.zip
+      ? Math.hypot(player.vel.x, player.vel.z)
+      : 0;
+  if (sp > 0.6 && player.digT <= 0)
+    player.yaw = lerpAngle(
+      player.yaw,
+      Math.atan2(player.vel.x, player.vel.z),
+      Math.min(1, dt * 12),
+    );
+  if (player.power && sp > 2 && player.grounded) {
+    player.sparkT -= dt;
+    if (player.sparkT < 0) {
+      player.sparkT = 0.12;
       burst(
-        P.pos.clone().add(V(0, 0.3, 0)),
+        player.pos.clone().add(vec3(0, 0.3, 0)),
         2,
-        POWERS[P.power].col.slice(1),
+        POWERS[player.power].col.slice(1),
         1,
         1.5,
         0.6,
@@ -181,11 +187,11 @@ function update(dt) {
     }
   }
   // celebration: confetti for ~2.4 s, then the island's win panel
-  if (G.celebT >= 0) {
-    G.celebT += dt;
-    if (G.celebT < 2.4 && Math.floor(G.celebT * 4) !== Math.floor((G.celebT - dt) * 4))
+  if (game.celebT >= 0) {
+    game.celebT += dt;
+    if (game.celebT < 2.4 && Math.floor(game.celebT * 4) !== Math.floor((game.celebT - dt) * 4))
       burst(
-        P.pos.clone().add(V(0, 3, 0)),
+        player.pos.clone().add(vec3(0, 3, 0)),
         26,
         [0xff9fb2, 0xffd84d, 0x7fd8ee, 0x8a5cf6, 0x6ccb5f],
         7,
@@ -195,20 +201,20 @@ function update(dt) {
         0.25,
         true,
       );
-    if (G.celebT > 2.8) {
-      showWin(G.celebIsland);
-      G.celebT = -1;
+    if (game.celebT > 2.8) {
+      showWin(game.celebIsland);
+      game.celebT = -1;
     }
   }
-  updPrompt();
-  animDog(dt, G.state === 'rescue' ? 3 : sp);
-  updSwingLine();
-  updCamera(dt);
+  updatePrompt();
+  animateDog(dt, game.state === 'rescue' ? 3 : sp);
+  updateSwingLine();
+  updateCamera(dt);
 }
 frame();
 
 /* ---------- debug: ?debug (always on in dev) ---------- */
 if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
-  G.debug = true;
+  game.debug = true;
   import('./game/debug.js').then((m) => m.installDebug());
 }

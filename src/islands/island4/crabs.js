@@ -1,15 +1,15 @@
 import * as THREE from 'three';
-import { angLerp, flat, rand, V } from '../../core/util.js';
+import { lerpAngle, distXZ, rand, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
-import { mat, mesh } from '../../core/materials.js';
-import { G, playing } from '../../core/state.js';
+import { material, mesh } from '../../core/materials.js';
+import { game, isPlaying } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { toast } from '../../core/ui.js';
-import { terrainH } from '../../world/terrain.js';
+import { terrainHeight } from '../../world/terrain.js';
 import { ship } from '../../world/ship.js';
-import { P } from '../../player/player.js';
-import { complete, renderTasks } from '../../game/tasks.js';
+import { player } from '../../player/player.js';
+import { completeTask, renderTasks } from '../../game/tasks.js';
 
 // The red hermit crabs. Hidden ones blow bubbles; walk up or bark to find them, then
 // they parade behind Spartacus (following his trail) and party round the ship at the end.
@@ -24,9 +24,9 @@ export function makeCrab(body, shell, spots) {
   const g = new THREE.Group(),
     inner = new THREE.Group();
   g.add(inner);
-  const B = mat(body),
-    S = mat(shell),
-    I = mat(0x1c2333);
+  const B = material(body),
+    S = material(shell),
+    I = material(0x1c2333);
   const bd = mesh(new THREE.SphereGeometry(0.22, 10, 8), B);
   bd.scale.set(1.3, 0.7, 1);
   bd.position.set(0, 0.18, 0.15);
@@ -105,10 +105,10 @@ export function popCrab(c) {
   const n = crabCount();
   c.j = n - 1;
   sfx.bone();
-  burst(c.g.position.clone().add(V(0, 0.5, 0)), 12, [0xf2545b, 0xffffff], 3, 2, 0.6, 0.8, -0.05);
+  burst(c.g.position.clone().add(vec3(0, 0.5, 0)), 12, [0xf2545b, 0xffffff], 3, 2, 0.6, 0.8, -0.05);
   if (n >= CRABS_TOTAL) {
     toast('All the red hermit crabs found! Look at that parade!', 3200);
-    complete('crabs');
+    completeTask('crabs');
   } else {
     toast(`A red hermit crab! ${n} of ${CRABS_TOTAL}`, 1800);
     renderTasks();
@@ -119,7 +119,7 @@ export function barkCrabs(p) {
   for (const c of crabs)
     if (
       c.state === 'hidden' &&
-      flat(p, c.g.position.x, c.g.position.z) < 5 &&
+      distXZ(p, c.g.position.x, c.g.position.z) < 5 &&
       Math.abs(p.y - c.y) < 2
     )
       popCrab(c);
@@ -128,34 +128,34 @@ export function touchCrabs(p) {
   for (const c of crabs)
     if (
       c.state === 'hidden' &&
-      flat(p, c.g.position.x, c.g.position.z) < 2.2 &&
+      distXZ(p, c.g.position.x, c.g.position.z) < 2.2 &&
       Math.abs(p.y - c.y) < 1.6
     )
       popCrab(c);
 }
 export const crabNear = (p, r) =>
-  crabs.some((c) => (c.state === 'hidden' || c.state === 'inClump') && flat(p, c.x, c.z) < r);
+  crabs.some((c) => (c.state === 'hidden' || c.state === 'inClump') && distXZ(p, c.x, c.z) < r);
 export function crabsParty() {
   for (const c of crabs) if (c.state === 'follow' || c.state === 'pop') c.state = 'party';
 }
 
-export function updCrabs(dt) {
-  const T = G.T;
-  if (playing() && (!trail.length || trail[trail.length - 1].distanceTo(P.pos) > 0.45)) {
-    trail.push(P.pos.clone());
+export function updateCrabs(dt) {
+  const T = game.T;
+  if (isPlaying() && (!trail.length || trail[trail.length - 1].distanceTo(player.pos) > 0.45)) {
+    trail.push(player.pos.clone());
     if (trail.length > 90) trail.shift();
   }
   for (const c of crabs) {
     c.t += dt;
     if (c.state === 'inClump') {
       if (Math.random() < dt * 2.5)
-        burst(V(c.x, c.y + 0.8, c.z), 2, [0xffffff, 0xdff9ff], 0.4, 3, 2.6, 0.9, -0.12);
+        burst(vec3(c.x, c.y + 0.8, c.z), 2, [0xffffff, 0xdff9ff], 0.4, 3, 2.6, 0.9, -0.12);
     } else if (c.state === 'hidden') {
       c.g.position.y = c.y + Math.abs(Math.sin(T * 2 + c.x)) * 0.03;
       c.g.rotation.z = Math.sin(T * 9 + c.x) * (Math.sin(T * 1.3 + c.x) > 0.5 ? 0.18 : 0);
       if (Math.random() < dt * 2.5)
         burst(
-          c.g.position.clone().add(V(0, 0.4, 0)),
+          c.g.position.clone().add(vec3(0, 0.4, 0)),
           2,
           [0xffffff, 0xdff9ff],
           0.4,
@@ -169,20 +169,20 @@ export function updCrabs(dt) {
       if (c.t > 0.6) c.state = 'follow';
     } else if (c.state === 'follow') {
       const idx = trail.length - 1 - (c.j + 1) * 3,
-        tp = trail[Math.max(0, idx)] || P.pos;
+        tp = trail[Math.max(0, idx)] || player.pos;
       const ox = c.g.position.x,
         oz = c.g.position.z;
       c.g.position.lerp(tp, 1 - Math.exp(-dt * 7));
       const mx = c.g.position.x - ox,
         mz = c.g.position.z - oz;
       if (Math.hypot(mx, mz) > 0.005)
-        c.g.rotation.y = angLerp(c.g.rotation.y, Math.atan2(mx, mz), Math.min(1, dt * 10));
+        c.g.rotation.y = lerpAngle(c.g.rotation.y, Math.atan2(mx, mz), Math.min(1, dt * 10));
       c.inner.position.y = Math.abs(Math.sin(T * 12 + c.j)) * 0.04;
     } else if (c.state === 'party') {
       const a = T * 0.6 + (c.j * 6.283) / CRABS_TOTAL;
       c.g.position.set(
         ship.position.x + Math.cos(a) * 5.5,
-        terrainH(ship.position.x + Math.cos(a) * 5.5, ship.position.z + Math.sin(a) * 5.5) +
+        terrainHeight(ship.position.x + Math.cos(a) * 5.5, ship.position.z + Math.sin(a) * 5.5) +
           Math.abs(Math.sin(T * 6 + c.j)) * 0.5,
         ship.position.z + Math.sin(a) * 5.5,
       );

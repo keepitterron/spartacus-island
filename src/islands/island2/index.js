@@ -1,60 +1,60 @@
 import * as THREE from 'three';
-import { flat, lerp, smooth, V } from '../../core/util.js';
-import { scene, LOW } from '../../core/renderer.js';
-import { mat, mesh, canvasTex, paw } from '../../core/materials.js';
+import { distXZ, lerp, smoothstep, vec3 } from '../../core/util.js';
+import { scene, LOW_POWER } from '../../core/renderer.js';
+import { material, mesh, canvasTexture, drawPaw } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
-import { toast, hintOnce, actWord } from '../../core/ui.js';
-import { addCyl } from '../../core/colliders.js';
-import { terrainH, buildGround } from '../../world/terrain.js';
-import { C2, C3 } from '../../world/layout.js';
+import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
+import { addCylinder } from '../../core/colliders.js';
+import { terrainHeight, buildGround } from '../../world/terrain.js';
+import { CENTER_2, CENTER_3 } from '../../world/layout.js';
 import { palm, rock, rockTop, scatter, dock } from '../../world/props.js';
 import { makeTin, makeBone } from '../../models/items.js';
-import { P } from '../../player/player.js';
-import { addItem, carry, useUp } from '../../systems/items.js';
+import { player } from '../../player/player.js';
+import { addItem, carryItem, useUpCarried } from '../../systems/items.js';
 import { addPickup, pickupText } from '../../systems/collect.js';
 import { addFruit } from '../../systems/powers.js';
 import { addDig } from '../../systems/digs.js';
 import { addHook, swingOption } from '../../systems/hooks.js';
 import { mango, placeMango, mangoHop, mangoToShip } from '../../npcs/mango.js';
 import { startSail } from '../../cutscenes/sail.js';
-import { complete } from '../../game/tasks.js';
+import { completeTask } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
-import { tooHigh } from '../../game/interact.js';
+import { hintTooHigh } from '../../game/interact.js';
 
 /* ============ Island 2: Hook Rock Bay ============
    Stretchy fruit + golden hooks. Mango the parrot is stuck (too hungry to fly) on the
    tallest pillar in the lagoon; his snack is buried on a mesa only Boing-Boing reaches. */
 
-const LG = { x: C2.x + 4, z: C2.z - 5 }; // the lagoon
-const W2 = (x, z) => ({ x: C2.x + x, z: C2.z + z }); // island-local -> world
+const LG = { x: CENTER_2.x + 4, z: CENTER_2.z - 5 }; // the lagoon
+const W2 = (x, z) => ({ x: CENTER_2.x + x, z: CENTER_2.z + z }); // island-local -> world
 function edge(a) {
   return 22 + Math.sin(a * 4) * 1.5 + Math.sin(a * 2 + 0.5) * 1.2;
 }
 function height(x, z) {
-  const lx = x - C2.x,
-    lz = z - C2.z,
+  const lx = x - CENTER_2.x,
+    lz = z - CENTER_2.z,
     r = Math.hypot(lx, lz),
     a = Math.atan2(lz, lx),
     e = edge(a);
   let h = 1.1 + 0.3 * Math.sin(x * 0.4) * Math.cos(z * 0.33) + 0.15 * Math.sin(x * 0.9 - z * 0.5);
   const d = Math.hypot(x - LG.x, z - LG.z);
-  if (d < 13) h = d < 11 ? -2 : lerp(-2, h, smooth(11, 13, d));
-  h = lerp(h, 0.35, smooth(e - 5, e - 2, r));
-  return lerp(h, -4, smooth(e, e + 2.5, r));
+  if (d < 13) h = d < 11 ? -2 : lerp(-2, h, smoothstep(11, 13, d));
+  h = lerp(h, 0.35, smoothstep(e - 5, e - 2, r));
+  return lerp(h, -4, smoothstep(e, e + 2.5, r));
 }
 const I2 = {};
 const sailPath = new THREE.CatmullRomCurve3([
-  V(5.6, 0, C2.z + 26.5),
-  V(20, 0, C2.z + 37),
-  V(42, 0, C2.z),
-  V(40, 0, -240),
-  V(24, 0, -288),
-  V(5.6, 0, C3.z + 32),
+  vec3(5.6, 0, CENTER_2.z + 26.5),
+  vec3(20, 0, CENTER_2.z + 37),
+  vec3(42, 0, CENTER_2.z),
+  vec3(40, 0, -240),
+  vec3(24, 0, -288),
+  vec3(5.6, 0, CENTER_3.z + 32),
 ]);
 
 function build() {
-  buildGround(C2.x, C2.z, 64, LOW ? 90 : 140);
+  buildGround(CENTER_2.x, CENTER_2.z, 64, LOW_POWER ? 90 : 140);
   const L = (x, z) => W2(x, z);
   [
     [-16, 4],
@@ -72,30 +72,30 @@ function build() {
     palm(w.x, w.z);
   });
   scatter(
-    C2.x,
-    C2.z,
+    CENTER_2.x,
+    CENTER_2.z,
     16,
     (x, z) =>
       Math.hypot(x - LG.x, z - LG.z) > 14 &&
-      Math.hypot(x - (C2.x - 12), z - (C2.z + 7)) > 5 &&
-      !(Math.abs(x - C2.x) < 3 && z > C2.z + 12),
+      Math.hypot(x - (CENTER_2.x - 12), z - (CENTER_2.z + 7)) > 5 &&
+      !(Math.abs(x - CENTER_2.x) < 3 && z > CENTER_2.z + 12),
     16,
     90,
   );
-  dock(C2.x, C2.z + 16.5, C2.z + 27.5);
-  I.spawn = V(C2.x, 0, C2.z + 13);
-  I.spawn.y = terrainH(I.spawn.x, I.spawn.z);
-  I2.dockZ = C2.z + 20;
+  dock(CENTER_2.x, CENTER_2.z + 16.5, CENTER_2.z + 27.5);
+  I.spawn = vec3(CENTER_2.x, 0, CENTER_2.z + 13);
+  I.spawn.y = terrainHeight(I.spawn.x, I.spawn.z);
+  I2.dockZ = CENTER_2.z + 20;
   // swing pads: two wooden launch platforms on the shore + rock pillars in the lagoon
   const platform = (x, z) => {
-    const gh = terrainH(x, z);
-    const m = mesh(new THREE.CylinderGeometry(1.3, 1.4, 0.3, 12), mat(0xc48a54), true, true);
+    const gh = terrainHeight(x, z);
+    const m = mesh(new THREE.CylinderGeometry(1.3, 1.4, 0.3, 12), material(0xc48a54), true, true);
     m.position.set(x, gh + 0.15, z);
     scene.add(m);
-    const pt = canvasTex(128, 128, (c, w, h) => {
+    const pt = canvasTexture(128, 128, (c, w, h) => {
       c.fillStyle = '#c48a54';
       c.fillRect(0, 0, w, h);
-      paw(c, 64, 62, 30, '#ffd84d');
+      drawPaw(c, 64, 62, 30, '#ffd84d');
     });
     const top = new THREE.Mesh(
       new THREE.CircleGeometry(1.25, 16),
@@ -105,7 +105,7 @@ function build() {
     top.position.set(x, gh + 0.31, z);
     top.receiveShadow = true;
     scene.add(top);
-    addCyl(x, z, 1.3, gh - 1, gh + 0.3);
+    addCylinder(x, z, 1.3, gh - 1, gh + 0.3);
     return { x, z, y: gh + 0.3 };
   };
   const pillar = (dx, dz, r, top) => {
@@ -121,10 +121,10 @@ function build() {
   I2.E = platform(LG.x + 13, LG.z + 2);
   I2.B = pillar(4, 6, 1.05, 6.6);
   // mesa: only reachable with a Boing-Boing jump
-  const mx = C2.x - 12,
-    mz = C2.z + 7;
+  const mx = CENTER_2.x - 12,
+    mz = CENTER_2.z + 7;
   I2.mesa = { x: mx, z: mz, y: rock(mx, mz, 3.4, 4.4, 0xc9a27a) };
-  const nest = mesh(new THREE.TorusGeometry(0.6, 0.22, 6, 12), mat(0x9c6436));
+  const nest = mesh(new THREE.TorusGeometry(0.6, 0.22, 6, 12), material(0x9c6436));
   nest.rotation.x = Math.PI / 2;
   nest.position.set(I2.N.x, I2.N.y + 0.15, I2.N.z);
   scene.add(nest);
@@ -141,23 +141,23 @@ function build() {
 function buildLate() {
   {
     const w = W2(-6, 11);
-    addFruit('boing', w.x, w.z, terrainH(w.x, w.z), true);
+    addFruit('boing', w.x, w.z, terrainHeight(w.x, w.z), true);
   }
   {
     const w = W2(-12, -1);
-    addFruit('stretch', w.x, w.z, terrainH(w.x, w.z), true);
+    addFruit('stretch', w.x, w.z, terrainHeight(w.x, w.z), true);
   }
   addDig(
     I2.mesa.x - 0.5,
     I2.mesa.z - 0.5,
     (d) => {
-      const it = addItem('snack', makeTin(), V(d.x, d.y + 0.2, d.z), false, {
+      const it = addItem('snack', makeTin(), vec3(d.x, d.y + 0.2, d.z), false, {
         name: 'cracker tin',
         lift: 0.15,
       });
-      carry(it);
+      carryItem(it);
       toast('Mango’s cracker tin! Take it to the tall rock.', 3400);
-      complete('snack');
+      completeTask('snack');
     },
     true,
     I2.mesa.y,
@@ -172,17 +172,25 @@ function buildLate() {
 }
 
 function feedMango() {
-  useUp();
+  useUpCarried();
   sfx.parrot();
-  burst(mango.g.position.clone().add(V(0, 1, 0)), 24, [0xff9fb2, 0xffd84d, 0x3fbf5a], 4, 3, 1, 1);
+  burst(
+    mango.g.position.clone().add(vec3(0, 1, 0)),
+    24,
+    [0xff9fb2, 0xffd84d, 0x3fbf5a],
+    4,
+    3,
+    1,
+    1,
+  );
   mangoHop();
   toast('Crunch! Mango hops onto Spartacus’s hat!', 3000);
-  complete('feed');
+  completeTask('feed');
 }
 
 const I = {
   id: 2,
-  center: C2,
+  center: CENTER_2,
   name: 'Hook Rock Bay',
   zMax: -85,
   height,
@@ -214,42 +222,51 @@ const I = {
   sailPath,
   exit: {
     label: 'Sail',
-    at: (p) => p.z > C2.z + 22 && Math.abs(p.x - C2.x) < 1.6 && p.y > 0.5,
+    at: (p) => p.z > CENTER_2.z + 22 && Math.abs(p.x - CENTER_2.x) < 1.6 && p.y > 0.5,
     run: () => startSail(sailPath, () => enterIsland(3, true)),
   },
   build,
   buildLate,
   interact(p) {
-    tooHigh(flat(p, I2.mesa.x, I2.mesa.z) < 5.5, 'Too high! A Boing-Boing fruit grows nearby.');
-    if (!P.stretch && (flat(p, I2.S.x, I2.S.z) < 3 || flat(p, I2.E.x, I2.E.z) < 3))
+    hintTooHigh(
+      distXZ(p, I2.mesa.x, I2.mesa.z) < 5.5,
+      'Too high! A Boing-Boing fruit grows nearby.',
+    );
+    if (!player.stretch && (distXZ(p, I2.S.x, I2.S.z) < 3 || distXZ(p, I2.E.x, I2.E.z) < 3))
       hintOnce('hook', 'Golden hooks! Spartacus needs a Stretchy fruit to swing.', 3400);
-    if (P.stretch && swingOption()) hintOnce('swing', `Press ${actWord()} to swing!`, 2400);
+    if (player.stretch && swingOption())
+      hintOnce('swing', `Press ${actionKeyName()} to swing!`, 2400);
     if (
       mango.state === 'hungry' &&
-      flat(p, I2.N.x, I2.N.z) < 3 &&
-      !(P.carry && P.carry.id === 'snack')
+      distXZ(p, I2.N.x, I2.N.z) < 3 &&
+      !(player.carry && player.carry.id === 'snack')
     )
       hintOnce('mango', 'Mango is too hungry to fly. Find his snack!', 3200);
     // walking onto the dock with Mango on the hat: he flies up to the crow's nest
-    if (mango.state === 'riding' && p.z > I2.dockZ && Math.abs(p.x - C2.x) < 1.6 && p.y > 0.5) {
-      mangoToShip(() => complete('crew'));
+    if (
+      mango.state === 'riding' &&
+      p.z > I2.dockZ &&
+      Math.abs(p.x - CENTER_2.x) < 1.6 &&
+      p.y > 0.5
+    ) {
+      mangoToShip(() => completeTask('crew'));
       toast('Mango flies up to the crow’s nest!', 3000);
     }
   },
   actions(p) {
-    const it = P.carry;
+    const it = player.carry;
     if (
       it &&
       it.id === 'snack' &&
       mango.state === 'hungry' &&
-      flat(p, I2.N.x, I2.N.z) < 2.6 &&
+      distXZ(p, I2.N.x, I2.N.z) < 2.6 &&
       Math.abs(p.y - I2.N.y) < 1.5
     )
       return { label: 'Give', fn: feedMango };
     return null;
   },
   bark(p) {
-    if (mango.state === 'hungry' && flat(p, I2.N.x, I2.N.z) < 8) {
+    if (mango.state === 'hungry' && distXZ(p, I2.N.x, I2.N.z) < 8) {
       sfx.parrot();
       toast('Mango: “Snack? Snack?”', 2000);
     }

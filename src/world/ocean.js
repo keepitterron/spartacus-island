@@ -1,15 +1,15 @@
 import * as THREE from 'three';
-import { scene, LOW, ambience } from '../core/renderer.js';
-import { mat, mesh } from '../core/materials.js';
-import { G } from '../core/state.js';
+import { scene, LOW_POWER, ambience } from '../core/renderer.js';
+import { material, mesh } from '../core/materials.js';
+import { game } from '../core/state.js';
 
 // One sea floor and one animated water surface under all the land islands.
 // (The underwater island is out at z=-720, beyond the edge of this plane.)
-const floor = mesh(new THREE.PlaneGeometry(700, 700), mat(0x1d7f9c), false);
+const floor = mesh(new THREE.PlaneGeometry(700, 700), material(0x1d7f9c), false);
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, -4.2, -130);
 scene.add(floor);
-const wGeo = new THREE.PlaneGeometry(660, 660, LOW ? 50 : 90, LOW ? 50 : 90);
+const wGeo = new THREE.PlaneGeometry(660, 660, LOW_POWER ? 50 : 90, LOW_POWER ? 50 : 90);
 wGeo.rotateX(-Math.PI / 2);
 wGeo.translate(0, 0, -130);
 scene.add(
@@ -27,9 +27,9 @@ scene.add(
   ),
 );
 
-export function updOcean() {
+export function updateOcean() {
   if (ambience.under) return; // can't be seen from the sea floor, skip the per-vertex work
-  const T = G.T,
+  const T = game.T,
     wp = wGeo.attributes.position;
   for (let i = 0; i < wp.count; i++) {
     const x = wp.getX(i),

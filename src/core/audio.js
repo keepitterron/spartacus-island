@@ -1,7 +1,7 @@
 // Every sound is synthesised with WebAudio, so there are no audio files to load.
 let AC = null;
 // browsers only allow audio after a user gesture: call ac() from input handlers to unlock it
-export function ac() {
+export function audioContext() {
   if (!AC) {
     try {
       AC = new (window.AudioContext || window.webkitAudioContext)();
@@ -11,7 +11,7 @@ export function ac() {
   return AC;
 }
 function tone(f0, f1, dur, type = 'sine', vol = 0.2, delay = 0) {
-  const a = ac();
+  const a = audioContext();
   if (!a) return;
   const t = a.currentTime + delay,
     o = a.createOscillator(),
@@ -27,7 +27,7 @@ function tone(f0, f1, dur, type = 'sine', vol = 0.2, delay = 0) {
   o.stop(t + dur + 0.05);
 }
 function noise(dur, freq, vol, delay = 0) {
-  const a = ac();
+  const a = audioContext();
   if (!a) return;
   const t = a.currentTime + delay,
     n = Math.floor(a.sampleRate * dur),

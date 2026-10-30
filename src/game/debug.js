@@ -1,9 +1,9 @@
-import { G, cam, cur } from '../core/state.js';
+import { game, followCam, currentIsland } from '../core/state.js';
 import { colliders } from '../core/colliders.js';
-import { terrainH } from '../world/terrain.js';
-import { P } from '../player/player.js';
+import { terrainHeight } from '../world/terrain.js';
+import { player } from '../player/player.js';
 import { setPower } from '../systems/powers.js';
-import { complete, renderTasks } from './tasks.js';
+import { completeTask, renderTasks } from './tasks.js';
 import { currentAction, doAction } from './actions.js';
 import { startGame, enterIsland } from './flow.js';
 
@@ -16,37 +16,37 @@ import { startGame, enterIsland } from './flow.js';
 //   __g.where()             current island-local position
 export function installDebug() {
   const local = () => {
-    const c = cur().center;
+    const c = currentIsland().center;
     return { ox: c.x, oz: c.z };
   };
   window.__g = {
-    G,
-    P,
-    cam,
+    game,
+    player,
+    followCam,
     colliders,
     go(n) {
-      if (G.state === 'start') startGame(n);
+      if (game.state === 'start') startGame(n);
       else enterIsland(n, false);
     },
     tp(x, z, y) {
       const { ox, oz } = local();
-      P.pos.set(ox + x, y ?? terrainH(ox + x, oz + z) + 0.05, oz + z);
-      P.vel.set(0, 0, 0);
+      player.pos.set(ox + x, y ?? terrainHeight(ox + x, oz + z) + 0.05, oz + z);
+      player.vel.set(0, 0, 0);
     },
     where() {
       const { ox, oz } = local();
       return {
-        x: +(P.pos.x - ox).toFixed(2),
-        y: +P.pos.y.toFixed(2),
-        z: +(P.pos.z - oz).toFixed(2),
-        state: G.state,
-        island: G.island,
+        x: +(player.pos.x - ox).toFixed(2),
+        y: +player.pos.y.toFixed(2),
+        z: +(player.pos.z - oz).toFixed(2),
+        state: game.state,
+        island: game.island,
       };
     },
     power: setPower,
-    done: complete,
+    done: completeTask,
     doneAll() {
-      for (const k of cur().tasks.list) complete(k.id);
+      for (const k of currentIsland().tasks.list) completeTask(k.id);
       renderTasks();
     },
     action() {

@@ -4,7 +4,7 @@ import { $ } from './util.js';
 
 export const isTouch = () => document.body.classList.contains('touch');
 // how to name the action button in messages
-export const actWord = () => (isTouch() ? 'the green button' : 'F');
+export const actionKeyName = () => (isTouch() ? 'the green button' : 'F');
 
 let toastTimer;
 export function toast(msg, ms = 2600) {
@@ -21,7 +21,7 @@ export function hintOnce(id, msg, ms) {
   seen[id] = 1;
   toast(msg, ms);
 }
-export function showCard(small, big) {
+export function showTitleCard(small, big) {
   $('#cardSmall').textContent = small;
   $('#cardBig').textContent = big;
   $('#card').classList.add('show');

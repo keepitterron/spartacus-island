@@ -1,17 +1,17 @@
 import { $ } from '../core/util.js';
-import { G, cur } from '../core/state.js';
+import { game, currentIsland } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 
 // Each island has tasks:{title, list:[{id, ic, t:()=>text, power?}]} and a matching
 // done:{id:bool}. Task ids are unique across the whole game, so complete(id) finds its island.
-export const allDone = (isl) => Object.values(isl.done).every(Boolean);
+export const allTasksDone = (isl) => Object.values(isl.done).every(Boolean);
 export function initTasks(isl) {
   isl.done = {};
   for (const k of isl.tasks.list) isl.done[k.id] = false;
 }
 
 export function renderTasks(popId) {
-  const I = cur(),
+  const I = currentIsland(),
     T = I.tasks;
   $('#listTitle').textContent = T.title;
   $('#tasks').innerHTML = T.list
@@ -23,21 +23,21 @@ export function renderTasks(popId) {
   $('#count').textContent = `${Object.values(I.done).filter(Boolean).length}/${T.list.length}`;
 }
 
-export function complete(id) {
-  const I = Object.values(G.islands).find((i) => id in i.done);
+export function completeTask(id) {
+  const I = Object.values(game.islands).find((i) => id in i.done);
   if (!I || I.done[id]) return;
   I.done[id] = true;
-  if (I === cur()) renderTasks(id);
-  if (allDone(I)) {
+  if (I === currentIsland()) renderTasks(id);
+  if (allTasksDone(I)) {
     I.onAllDone?.();
     celebrate(I);
   }
 }
 // spin + confetti, then the island's win panel (shown from the main loop after ~2.8 s)
 export function celebrate(I) {
-  G.celebT = 0;
-  G.celebIsland = I;
-  G.spin = Math.PI * 4;
+  game.celebT = 0;
+  game.celebIsland = I;
+  game.spin = Math.PI * 4;
   sfx.win();
 }
 

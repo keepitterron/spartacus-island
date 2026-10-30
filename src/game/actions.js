@@ -1,40 +1,48 @@
-import { $, clamp, V } from '../core/util.js';
+import { $, clamp, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { G, cur, playing, inCutscene } from '../core/state.js';
-import { sfx, ac } from '../core/audio.js';
+import { game, currentIsland, isPlaying, isInCutscene } from '../core/state.js';
+import { sfx, audioContext } from '../core/audio.js';
 import { textSprite } from '../core/fx.js';
-import { P } from '../player/player.js';
-import { drop, grabAction } from '../systems/items.js';
+import { player } from '../player/player.js';
+import { dropCarried, grabAction } from '../systems/items.js';
 import { digAction } from '../systems/digs.js';
 import { swingAction } from '../systems/hooks.js';
-import { allDone } from './tasks.js';
+import { allTasksDone } from './tasks.js';
 
 // The context button (F / green button). Whatever is first in this list wins:
 //   1. the island's exit (Sail / Dive / Ride), once its to-do list is done
 //   2. the island's own actions(p)  (give an item, open a gate, grow, chop…)
 //   3. swing, drop, grab, dig
 export function currentAction() {
-  if (!playing() || P.digT > 0 || P.placing || P.swing || P.climb || P.zip) return null;
-  const I = cur(),
-    p = P.pos;
-  if (I.exit && allDone(I) && I.exit.at(p)) return { label: I.exit.label, fn: I.exit.run };
+  if (
+    !isPlaying() ||
+    player.digT > 0 ||
+    player.placing ||
+    player.swing ||
+    player.climb ||
+    player.zip
+  )
+    return null;
+  const I = currentIsland(),
+    p = player.pos;
+  if (I.exit && allTasksDone(I) && I.exit.at(p)) return { label: I.exit.label, fn: I.exit.run };
   return (
     I.actions?.(p) ||
     swingAction() ||
-    (P.carry ? { label: 'Drop', fn: drop } : null) ||
+    (player.carry ? { label: 'Drop', fn: dropCarried } : null) ||
     grabAction(p) ||
     digAction(p)
   );
 }
 export function doAction() {
-  if (G.state === 'start') return;
-  ac();
+  if (game.state === 'start') return;
+  audioContext();
   const a = currentAction();
   if (a) a.fn();
 }
 
 let lastLabel;
-export function updPrompt() {
+export function updatePrompt() {
   const a = currentAction(),
     label = a ? a.label : null;
   if (label !== lastLabel) {
@@ -48,7 +56,7 @@ export function updPrompt() {
       btn.classList.remove('off');
     } else {
       pr.classList.remove('show');
-      btn.textContent = P.carry ? 'Drop' : 'Grab';
+      btn.textContent = player.carry ? 'Drop' : 'Grab';
       btn.classList.add('off');
     }
   }
@@ -58,9 +66,9 @@ export function updPrompt() {
 let woof = null,
   woofT = 0;
 export function bark() {
-  if (G.state === 'start' || inCutscene() || P.barkCd > 0) return;
-  P.barkCd = 0.45;
-  P.barkT = 0.35;
+  if (game.state === 'start' || isInCutscene() || player.barkCd > 0) return;
+  player.barkCd = 0.45;
+  player.barkT = 0.35;
   sfx.bark();
   if (!woof) {
     woof = textSprite('WOOF!', '#ffd84d');
@@ -68,13 +76,13 @@ export function bark() {
     scene.add(woof);
   }
   woofT = 0.8;
-  cur().bark?.(P.pos);
+  currentIsland().bark?.(player.pos);
 }
-export function updWoof(dt) {
+export function updateWoof(dt) {
   if (woof && woofT > 0) {
     woofT -= dt;
     woof.visible = true;
-    woof.position.copy(P.pos).add(V(0, 2.6 + (0.8 - woofT) * 1.2, 0));
+    woof.position.copy(player.pos).add(vec3(0, 2.6 + (0.8 - woofT) * 1.2, 0));
     woof.material.opacity = clamp(woofT / 0.4, 0, 1);
     const s = 1.6 + (0.8 - woofT);
     woof.scale.set(s * 2, s / 2, 1);

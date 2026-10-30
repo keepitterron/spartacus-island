@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { lerp, V } from '../core/util.js';
+import { lerp, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { mat, mesh } from '../core/materials.js';
-import { G } from '../core/state.js';
+import { material, mesh } from '../core/materials.js';
+import { game } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { burst, textSprite, onFontsReady } from '../core/fx.js';
 import { ship } from '../world/ship.js';
@@ -12,10 +12,10 @@ import { ship } from '../world/ship.js';
 export const gull = { g: new THREE.Group(), state: 'sleep', t: 0, ang: 0, post: null };
 let zzz = null;
 {
-  const W = mat(0xffffff),
-    Gr = mat(0xb8c2cc),
-    O = mat(0xffa53d),
-    I = mat(0x2b2b38);
+  const W = material(0xffffff),
+    Gr = material(0xb8c2cc),
+    O = material(0xffa53d),
+    I = material(0x2b2b38);
   const b = mesh(new THREE.SphereGeometry(0.3, 10, 8), W);
   b.scale.set(1, 0.85, 1.4);
   b.position.y = 0.32;
@@ -80,7 +80,7 @@ export function wakeGull() {
   gull.t = 0;
   sfx.gull();
   openEyes();
-  burst(gull.g.position.clone().add(V(0, 0.5, 0)), 14, 0xffffff, 4, 3, 0.8, 0.8);
+  burst(gull.g.position.clone().add(vec3(0, 0.5, 0)), 14, 0xffffff, 4, 3, 0.8, 0.8);
 }
 // if it's still asleep when we leave, it just appears circling the ship
 export function gullJoinsShip() {
@@ -90,9 +90,9 @@ export function gullJoinsShip() {
   gull.g.position.set(ship.position.x, 8, ship.position.z);
 }
 
-export function updGull(dt) {
+export function updateGull(dt) {
   const g = gull.g,
-    T = G.T,
+    T = game.T,
     post = gull.post;
   gull.t += dt;
   if (gull.state === 'sleep') {

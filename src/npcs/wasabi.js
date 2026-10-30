@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { lerp, angLerp, V } from '../core/util.js';
+import { lerp, lerpAngle, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { mat, mesh } from '../core/materials.js';
-import { G } from '../core/state.js';
-import { P } from '../player/player.js';
+import { material, mesh } from '../core/materials.js';
+import { game } from '../core/state.js';
+import { player } from '../player/player.js';
 
 // Wasabi the blue axolotl. Rescued on island 3 (her spring dried up), rides in the bucket
 // on deck, and underwater (island 4) floats next to Spartacus as his breathing bubble.
@@ -11,11 +11,11 @@ import { P } from '../player/player.js';
 //        crew (in the bucket) | follow (swimming beside Spartacus)
 export const wasabi = { g: new THREE.Group(), state: 'stuck', t: 0 };
 {
-  const B = mat(0x6fb6ff),
-    D = mat(0x4a8fe0),
-    Gl = mat(0xb59cff),
-    I = mat(0x1c2333),
-    Pk = mat(0xff8fa3),
+  const B = material(0x6fb6ff),
+    D = material(0x4a8fe0),
+    Gl = material(0xb59cff),
+    I = material(0x1c2333),
+    Pk = material(0xff8fa3),
     g = wasabi.g;
   const bd = mesh(new THREE.CapsuleGeometry(0.2, 0.55, 4, 8), B);
   bd.rotation.x = Math.PI / 2;
@@ -65,23 +65,23 @@ export function wasabiFollow() {
   scene.add(wasabi.g);
   wasabi.g.scale.setScalar(1);
   wasabi.state = 'follow';
-  wasabi.g.position.copy(P.pos).add(V(1, 1.3, 0));
+  wasabi.g.position.copy(player.pos).add(vec3(1, 1.3, 0));
 }
 
-export function updWasabi(dt) {
+export function updateWasabi(dt) {
   const w = wasabi,
     g = w.g,
-    T = G.T;
+    T = game.T;
   w.t += dt;
   w.tail.rotation.y = Math.sin(T * (w.state === 'stuck' ? 3 : 9)) * 0.45;
   if (w.state === 'crew') g.rotation.y = Math.sin(T * 0.7) * 0.8;
   else if (w.state === 'follow') {
-    const sy = Math.sin(P.yaw),
-      cy = Math.cos(P.yaw),
+    const sy = Math.sin(player.yaw),
+      cy = Math.cos(player.yaw),
       kk = 1 - Math.exp(-dt * 5);
-    const tx = P.pos.x - sy * 0.9 + cy * 1.0,
-      tz = P.pos.z - cy * 0.9 - sy * 1.0,
-      ty = P.pos.y + 1.3 + Math.sin(T * 2) * 0.15,
+    const tx = player.pos.x - sy * 0.9 + cy * 1.0,
+      tz = player.pos.z - cy * 0.9 - sy * 1.0,
+      ty = player.pos.y + 1.3 + Math.sin(T * 2) * 0.15,
       ox = g.position.x,
       oz = g.position.z;
     g.position.x = lerp(g.position.x, tx, kk);
@@ -90,6 +90,6 @@ export function updWasabi(dt) {
     const mx = g.position.x - ox,
       mz = g.position.z - oz;
     if (Math.hypot(mx, mz) > 0.01)
-      g.rotation.y = angLerp(g.rotation.y, Math.atan2(mx, mz), Math.min(1, dt * 8));
+      g.rotation.y = lerpAngle(g.rotation.y, Math.atan2(mx, mz), Math.min(1, dt * 8));
   }
 }

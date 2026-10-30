@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { lerp } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { mat, mesh, canvasTex, paw } from '../core/materials.js';
-import { G } from '../core/state.js';
+import { material, mesh, canvasTexture, drawPaw } from '../core/materials.js';
+import { game } from '../core/state.js';
 
 // The crew's ship. It moves between islands; rescued friends ride on it.
 export const ship = new THREE.Group();
@@ -30,29 +30,29 @@ let flag;
   });
   hg.translate(0, 0, -1.15);
   hg.rotateY(-Math.PI / 2);
-  ship.add(mesh(hg, mat(0x8b5a3c), true, true));
-  const stripe = mesh(new THREE.BoxGeometry(2.75, 0.18, 5.4), mat(0xf2545b));
+  ship.add(mesh(hg, material(0x8b5a3c), true, true));
+  const stripe = mesh(new THREE.BoxGeometry(2.75, 0.18, 5.4), material(0xf2545b));
   stripe.position.set(0, 0.75, 0.1);
   ship.add(stripe);
-  const deck = mesh(new THREE.BoxGeometry(2.2, 0.12, 5.6), mat(0xd9a46a), true, true);
+  const deck = mesh(new THREE.BoxGeometry(2.2, 0.12, 5.6), material(0xd9a46a), true, true);
   deck.position.set(0, 1.1, 0.1);
   ship.add(deck);
-  const cab = mesh(new THREE.BoxGeometry(1.7, 1, 1.4), mat(0xfffaf0));
+  const cab = mesh(new THREE.BoxGeometry(1.7, 1, 1.4), material(0xfffaf0));
   cab.position.set(0, 1.65, -1.8);
   ship.add(cab);
-  const roof = mesh(new THREE.BoxGeometry(1.95, 0.18, 1.65), mat(0x2fa4c7));
+  const roof = mesh(new THREE.BoxGeometry(1.95, 0.18, 1.65), material(0x2fa4c7));
   roof.position.set(0, 2.22, -1.8);
   ship.add(roof);
-  const mast = mesh(new THREE.CylinderGeometry(0.11, 0.14, 6.4, 6), mat(0x7a4a2a));
+  const mast = mesh(new THREE.CylinderGeometry(0.11, 0.14, 6.4, 6), material(0x7a4a2a));
   mast.position.set(0, 4.2, 0.4);
   ship.add(mast);
-  const nest = mesh(new THREE.CylinderGeometry(0.45, 0.35, 0.4, 8), mat(0x9c6436));
+  const nest = mesh(new THREE.CylinderGeometry(0.45, 0.35, 0.4, 8), material(0x9c6436));
   nest.position.set(0, 6.4, 0.4);
   ship.add(nest);
-  const sailTex = canvasTex(256, 220, (x, w, h) => {
+  const sailTex = canvasTexture(256, 220, (x, w, h) => {
     x.fillStyle = '#fff6e2';
     x.fillRect(0, 0, w, h);
-    paw(x, w / 2, h / 2, 52, '#f2545b');
+    drawPaw(x, w / 2, h / 2, 52, '#f2545b');
   });
   const sail = mesh(
     new THREE.BoxGeometry(3, 2.5, 0.06),
@@ -60,11 +60,11 @@ let flag;
   );
   sail.position.set(0, 4.1, 0.55);
   ship.add(sail);
-  const yard = mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.3, 5), mat(0x7a4a2a));
+  const yard = mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.3, 5), material(0x7a4a2a));
   yard.rotation.z = Math.PI / 2;
   yard.position.set(0, 5.4, 0.55);
   ship.add(yard);
-  const flagTex = canvasTex(128, 86, (x, w, h) => {
+  const flagTex = canvasTexture(128, 86, (x, w, h) => {
     x.fillStyle = '#f2545b';
     x.fillRect(0, 0, w, h);
     x.fillStyle = '#fff';
@@ -79,7 +79,7 @@ let flag;
       x.arc(a, b, 9, 0, 7);
       x.fill();
     });
-    paw(x, 64, 20, 13, '#fff');
+    drawPaw(x, 64, 20, 13, '#fff');
   });
   const fg = new THREE.PlaneGeometry(1.2, 0.8);
   fg.translate(0.6, 0, 0);
@@ -94,19 +94,19 @@ let flag;
   const fh = new THREE.Group();
   fh.position.set(0, 1.55, 3.55);
   ship.add(fh);
-  fh.add(mesh(new THREE.SphereGeometry(0.42, 10, 8), mat(0x2a2a33)));
-  const bzf = mesh(new THREE.BoxGeometry(0.027, 0.3, 0.05), mat(0xffffff));
+  fh.add(mesh(new THREE.SphereGeometry(0.42, 10, 8), material(0x2a2a33)));
+  const bzf = mesh(new THREE.BoxGeometry(0.027, 0.3, 0.05), material(0xffffff));
   bzf.position.set(0, 0.16, 0.38);
   bzf.rotation.x = -0.4;
   fh.add(bzf);
-  const sn = mesh(new THREE.SphereGeometry(0.22, 8, 6), mat(0x2a2a33));
+  const sn = mesh(new THREE.SphereGeometry(0.22, 8, 6), material(0x2a2a33));
   sn.position.set(0, -0.1, 0.36);
   fh.add(sn);
-  const nz = mesh(new THREE.SphereGeometry(0.08, 6, 5), mat(0x0c0c10));
+  const nz = mesh(new THREE.SphereGeometry(0.08, 6, 5), material(0x0c0c10));
   nz.position.set(0, -0.03, 0.58);
   fh.add(nz);
   for (const k of [-1, 1]) {
-    const e = mesh(new THREE.BoxGeometry(0.13, 0.42, 0.26), mat(0x1f1f27));
+    const e = mesh(new THREE.BoxGeometry(0.13, 0.42, 0.26), material(0x1f1f27));
     e.position.set(k * 0.38, -0.12, 0);
     e.rotation.z = k * 0.3;
     fh.add(e);
@@ -146,23 +146,23 @@ export const onDeck = () => {
 // a water bucket on deck for Wasabi
 export function addBucket() {
   if (ship.userData.bucket) return;
-  const b = mesh(new THREE.CylinderGeometry(0.36, 0.3, 0.45, 10), mat(0x9aa6b8));
+  const b = mesh(new THREE.CylinderGeometry(0.36, 0.3, 0.45, 10), material(0x9aa6b8));
   b.position.set(0.65, 1.38, 1.4);
   ship.add(b);
-  const w = mesh(new THREE.CircleGeometry(0.32, 10), mat(0x4cc3e6), false);
+  const w = mesh(new THREE.CircleGeometry(0.32, 10), material(0x4cc3e6), false);
   w.rotation.x = -Math.PI / 2;
   w.position.set(0.65, 1.58, 1.4);
   ship.add(w);
   ship.userData.bucket = b;
 }
 
-export function updShip(dt, cutscene) {
-  const T = G.T;
+export function updateShip(dt, cutscene) {
+  const T = game.T;
   ship.position.y = shipState.baseY + Math.sin(T * 1.2) * 0.12 - shipState.depth;
   if (shipBubble.visible && !cutscene)
     shipBubble.position.copy(ship.position).add(new THREE.Vector3(0, 2.8, 0));
   ship.rotation.z = Math.sin(T * 0.9) * 0.04;
   ship.rotation.x = Math.sin(T * 0.7) * 0.02;
   flag.rotation.y = Math.sin(T * 4) * 0.25;
-  flag.position.y = lerp(flag.position.y, G.flagUp ? 6.9 : flag.userData.y, dt * 1.2);
+  flag.position.y = lerp(flag.position.y, game.flagUp ? 6.9 : flag.userData.y, dt * 1.2);
 }

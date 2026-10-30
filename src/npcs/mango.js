@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { clamp, V } from '../core/util.js';
+import { clamp, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { mat, mesh } from '../core/materials.js';
-import { G } from '../core/state.js';
+import { material, mesh } from '../core/materials.js';
+import { game } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { textSprite, onFontsReady } from '../core/fx.js';
-import { supportAt } from '../core/colliders.js';
+import { supportHeight } from '../core/colliders.js';
 import { ship } from '../world/ship.js';
-import { P, fwd } from '../player/player.js';
+import { player, forwardDir } from '../player/player.js';
 import { dog } from '../player/dog.js';
 
 // Mango the parrot. Rescued on island 2 (too hungry to fly), lives in the crow's nest,
@@ -22,14 +22,14 @@ export const mango = {
   island: 0,
   fetch: null,
 };
-const NEST = V(0, 6.6, 0.4); // crow's nest, ship-local
+const NEST = vec3(0, 6.6, 0.4); // crow's nest, ship-local
 let hungry = null;
 {
-  const Gr = mat(0x3fbf5a),
-    R = mat(0xf2545b),
-    Y = mat(0xffd84d),
-    O = mat(0xffa53d),
-    I = mat(0x2b2b38),
+  const Gr = material(0x3fbf5a),
+    R = material(0xf2545b),
+    Y = material(0xffd84d),
+    O = material(0xffa53d),
+    I = material(0x2b2b38),
     Wt = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const b = mesh(new THREE.SphereGeometry(0.3, 10, 8), Gr);
   b.scale.set(1, 1.15, 1);
@@ -97,7 +97,7 @@ export function mangoHop() {
 }
 // riding the hat -> fly up to the crow's nest; onArrive when he lands
 function detach() {
-  const w = V();
+  const w = vec3();
   mango.g.getWorldPosition(w);
   mango.g.parent.remove(mango.g);
   scene.add(mango.g);
@@ -139,9 +139,9 @@ function landOnShip() {
   g.rotation.set(0, 0, 0);
   mango.state = 'crew';
 }
-export function updMango(dt) {
+export function updateMango(dt) {
   const g = mango.g,
-    T = G.T;
+    T = game.T;
   mango.t += dt;
   const flap = (a) =>
     mango.wings.forEach(
@@ -160,13 +160,13 @@ export function updMango(dt) {
     g.position.y = n.y + 0.2 + Math.abs(Math.sin(T * 2.2)) * 0.08;
     flap(0.1);
     if (hungry) {
-      hungry.visible = G.island === mango.island;
+      hungry.visible = game.island === mango.island;
       hungry.position.set(n.x, n.y + 2 + Math.sin(T * 2) * 0.1, n.z);
     }
   } else if (mango.state === 'hop') {
     if (hungry) hungry.visible = false;
     const k = clamp(mango.t / 0.8, 0, 1);
-    const to = V();
+    const to = vec3();
     dog.head.localToWorld(to.set(0, 0.75, -0.05));
     g.position.lerpVectors(mango.from, to, k);
     g.position.y += Math.sin(Math.PI * k) * 1.2;
@@ -180,8 +180,8 @@ export function updMango(dt) {
       mango.state = 'riding';
     }
   } else if (mango.state === 'riding') {
-    flap(P.grounded ? 0.05 : 0.9);
-    g.position.y = 0.66 + (P.grounded ? Math.abs(Math.sin(P.phase)) * 0.03 : 0);
+    flap(player.grounded ? 0.05 : 0.9);
+    g.position.y = 0.66 + (player.grounded ? Math.abs(Math.sin(player.phase)) * 0.03 : 0);
   } else if (mango.state === 'fly') {
     if (flyTo(ship.localToWorld(NEST.clone().setY(6.65)), 1.6, 3) >= 1) {
       landOnShip();
@@ -193,7 +193,7 @@ export function updMango(dt) {
     g.rotation.y = Math.sin(T * 0.6) * 0.8;
   } else if (mango.state === 'fetchGo') {
     const f = mango.fetch;
-    if (flyTo(V(f.to.x, f.to.y + 0.25, f.to.z), 2.2, 3) >= 1) {
+    if (flyTo(vec3(f.to.x, f.to.y + 0.25, f.to.z), 2.2, 3) >= 1) {
       scene.remove(f.mesh);
       g.add(f.mesh);
       f.mesh.position.set(0, -0.15, 0.3);
@@ -205,16 +205,16 @@ export function updMango(dt) {
   } else if (mango.state === 'fetchDrop') {
     const f = mango.fetch,
       k = clamp(mango.t / 1.6, 0, 1),
-      fw = fwd(),
-      to = V(P.pos.x + fw.x * 1.2, P.pos.y + 2.2, P.pos.z + fw.z * 1.2);
+      fw = forwardDir(),
+      to = vec3(player.pos.x + fw.x * 1.2, player.pos.y + 2.2, player.pos.z + fw.z * 1.2);
     g.position.lerpVectors(mango.from, to, k);
     g.position.y += Math.sin(Math.PI * k) * 1.5;
     flap(1.2);
     g.rotation.y = Math.atan2(to.x - g.position.x, to.z - g.position.z) || g.rotation.y;
     if (k >= 1) {
       g.remove(f.mesh);
-      const sy = Math.max(supportAt(to.x, to.z, P.pos.y + 0.6), P.pos.y);
-      f.onDrop(V(to.x, sy, to.z));
+      const sy = Math.max(supportHeight(to.x, to.z, player.pos.y + 0.6), player.pos.y);
+      f.onDrop(vec3(to.x, sy, to.z));
       mango.state = 'fetchHome';
       mango.t = 0;
       mango.from = g.position.clone();

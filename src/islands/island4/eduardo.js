@@ -1,14 +1,14 @@
-import { clamp, flat, V } from '../../core/util.js';
+import { clamp, distXZ, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
-import { G } from '../../core/state.js';
+import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst, textSprite, onFontsReady } from '../../core/fx.js';
 import { toast } from '../../core/ui.js';
-import { terrainH } from '../../world/terrain.js';
+import { terrainHeight } from '../../world/terrain.js';
 import { ship } from '../../world/ship.js';
-import { P } from '../../player/player.js';
+import { player } from '../../player/player.js';
 import { dog } from '../../player/dog.js';
-import { complete } from '../../game/tasks.js';
+import { completeTask } from '../../game/tasks.js';
 import { makeCrab } from './crabs.js';
 import { octo } from './octopus.js';
 import { LU, lanePt, EDBEHIND } from './geo.js';
@@ -25,7 +25,7 @@ export function buildEduardo(hideIn) {
   hides = hideIn;
   const c = makeCrab(0x8a5cf6, 0xb59cff, true);
   const q = lanePt(3.5, 0);
-  c.g.position.set(q.x, terrainH(q.x, q.z), q.z);
+  c.g.position.set(q.x, terrainHeight(q.x, q.z), q.z);
   c.g.rotation.y = Math.atan2(-LU.x, -LU.z);
   c.g.scale.setScalar(1.6);
   scene.add(c.g);
@@ -47,7 +47,7 @@ export function eduardoToShip() {
   const e = eduardo;
   e.state = 'toShip';
   e.t = 0;
-  const w = V();
+  const w = vec3();
   e.g.getWorldPosition(w);
   dog.head.remove(e.g);
   scene.add(e.g);
@@ -56,10 +56,10 @@ export function eduardoToShip() {
   e.from = w;
 }
 
-export function updEduardo(dt) {
+export function updateEduardo(dt) {
   const e = eduardo,
     eg = e.g,
-    T = G.T;
+    T = game.T;
   e.t += dt;
   if (e.state === 'idle0') {
     e.inner.children.forEach((ch, i) => {
@@ -67,7 +67,8 @@ export function updEduardo(dt) {
     });
   } else if (e.state === 'eek') {
     eg.rotation.z = Math.sin(T * 40) * 0.15;
-    eg.position.y = terrainH(eg.position.x, eg.position.z) + Math.abs(Math.sin(e.t * 14)) * 0.3;
+    eg.position.y =
+      terrainHeight(eg.position.x, eg.position.z) + Math.abs(Math.sin(e.t * 14)) * 0.3;
     if (sharkTxt) {
       sharkTxt.visible = true;
       sharkTxt.position.set(eg.position.x, eg.position.y + 2.6, eg.position.z);
@@ -88,7 +89,8 @@ export function updEduardo(dt) {
       const st = Math.min(d, dt * 7);
       eg.position.x += (dx / d) * st;
       eg.position.z += (dz / d) * st;
-      eg.position.y = terrainH(eg.position.x, eg.position.z) + Math.abs(Math.sin(T * 18)) * 0.12;
+      eg.position.y =
+        terrainHeight(eg.position.x, eg.position.z) + Math.abs(Math.sin(T * 18)) * 0.12;
       eg.rotation.y = Math.atan2(dx, dz);
       if (Math.random() < dt * 12) burst(eg.position.clone(), 1, 0xf0d9a0, 1, 1, 0.4, 0.6);
     } else if (e.stage <= hides.length) {
@@ -109,19 +111,19 @@ export function updEduardo(dt) {
   } else if (e.state === 'inClump') {
     const c = e.target;
     c.g.rotation.z += Math.sin(T * 22) * 0.06;
-    if (Math.random() < dt * 4) burst(V(c.x, c.y + 1, c.z), 1, 0xdff9ff, 0.6, 2, 1.5, 0.8, -0.2);
+    if (Math.random() < dt * 4) burst(vec3(c.x, c.y + 1, c.z), 1, 0xdff9ff, 0.6, 2, 1.5, 0.8, -0.2);
   } else if (e.state === 'behind') {
     eg.rotation.z = Math.sin(T * 30) * 0.06;
-    if (octo.moved && flat(P.pos, eg.position.x, eg.position.z) < 2.8) {
+    if (octo.moved && distXZ(player.pos, eg.position.x, eg.position.z) < 2.8) {
       e.state = 'recognize';
       e.t = 0;
       eg.rotation.z = 0;
       sfx.parrot();
-      eg.rotation.y = Math.atan2(P.pos.x - eg.position.x, P.pos.z - eg.position.z);
+      eg.rotation.y = Math.atan2(player.pos.x - eg.position.x, player.pos.z - eg.position.z);
       toast('Eduardo: “Oh! It’s just Spartacus! Not a shark at all!”', 3400);
     }
   } else if (e.state === 'recognize') {
-    eg.position.y = terrainH(eg.position.x, eg.position.z) + Math.abs(Math.sin(e.t * 8)) * 0.4;
+    eg.position.y = terrainHeight(eg.position.x, eg.position.z) + Math.abs(Math.sin(e.t * 8)) * 0.4;
     if (e.t > 1.4) {
       e.state = 'hop';
       e.t = 0;
@@ -129,7 +131,7 @@ export function updEduardo(dt) {
     }
   } else if (e.state === 'hop') {
     const k = clamp(e.t / 0.8, 0, 1),
-      to = dog.head.localToWorld(V(0, 0.72, -0.05));
+      to = dog.head.localToWorld(vec3(0, 0.72, -0.05));
     eg.position.lerpVectors(e.from, to, k);
     eg.position.y += Math.sin(Math.PI * k) * 1.2;
     if (k >= 1) {
@@ -140,7 +142,7 @@ export function updEduardo(dt) {
       eg.scale.setScalar(0.95);
       e.state = 'riding';
       toast('Eduardo climbs onto Spartacus’s hat!', 2600);
-      complete('eduardo');
+      completeTask('eduardo');
     }
   } else if (e.state === 'riding') {
     e.inner.children.forEach((ch, i) => {
@@ -148,7 +150,7 @@ export function updEduardo(dt) {
     });
   } else if (e.state === 'toShip') {
     const k = clamp(e.t / 1, 0, 1),
-      to = ship.localToWorld(V(-0.6, 1.2, 1));
+      to = ship.localToWorld(vec3(-0.6, 1.2, 1));
     eg.position.lerpVectors(e.from, to, k);
     eg.position.y += Math.sin(Math.PI * k) * 2;
     if (k >= 1) {
@@ -159,7 +161,7 @@ export function updEduardo(dt) {
       eg.scale.setScalar(1.3);
       e.state = 'crew';
       sfx.bone();
-      complete('ship4');
+      completeTask('ship4');
     }
   }
 }

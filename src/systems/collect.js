@@ -1,11 +1,11 @@
-import { flat, V } from '../core/util.js';
+import { distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { G } from '../core/state.js';
+import { game } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
 import { toast } from '../core/ui.js';
-import { terrainH } from '../world/terrain.js';
-import { complete, renderTasks } from '../game/tasks.js';
+import { terrainHeight } from '../world/terrain.js';
+import { completeTask, renderTasks } from '../game/tasks.js';
 
 // Spinning collectibles (bones, golden acorns…). Each island describes its own in
 //   collect:{total, taskId, name, all, model}
@@ -13,16 +13,16 @@ import { complete, renderTasks } from '../game/tasks.js';
 const pickups = [];
 // pop>0 makes it jump out of the ground first (from a dig spot)
 export function addPickup(x, z, y, isl, pop = 0) {
-  const c = G.islands[isl].collect,
+  const c = game.islands[isl].collect,
     g = c.model();
-  const base = (y !== undefined ? y : terrainH(x, z)) + 0.6;
+  const base = (y !== undefined ? y : terrainHeight(x, z)) + 0.6;
   g.position.set(x, base, z);
   scene.add(g);
   pickups.push({ g, x, z, y: base, got: false, pop, isl });
 }
 
-export function updPickups(dt) {
-  const T = G.T;
+export function updatePickups(dt) {
+  const T = game.T;
   for (const b of pickups)
     if (!b.got) {
       b.g.rotation.y += dt * 2;
@@ -32,16 +32,16 @@ export function updPickups(dt) {
 }
 export function grabPickups(p) {
   for (const b of pickups)
-    if (!b.got && b.pop <= 0 && flat(p, b.x, b.z) < 1.15 && Math.abs(p.y + 0.6 - b.y) < 1.3) {
+    if (!b.got && b.pop <= 0 && distXZ(p, b.x, b.z) < 1.15 && Math.abs(p.y + 0.6 - b.y) < 1.3) {
       b.got = true;
       scene.remove(b.g);
       sfx.bone();
       burst(b.g.position.clone(), 14, [0xffd84d, 0xffffff], 4, 3, 0.7, 0.9);
-      const c = G.islands[b.isl].collect,
+      const c = game.islands[b.isl].collect,
         n = ++c.count;
       if (n >= c.total) {
         toast(c.all);
-        complete(c.taskId);
+        completeTask(c.taskId);
       } else {
         toast(`${c.name}! ${n} of ${c.total}`, 1600);
         renderTasks();
@@ -50,6 +50,6 @@ export function grabPickups(p) {
 }
 // "Find 6 bones (2/6)" for the to-do list
 export const pickupText = (isl, what) => {
-  const c = G.islands[isl].collect;
+  const c = game.islands[isl].collect;
   return `Find ${c.total} ${what} (${c.count}/${c.total})`;
 };

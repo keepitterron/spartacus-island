@@ -1,8 +1,8 @@
-import { clamp, flat, V } from '../core/util.js';
+import { clamp, distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
-import { P } from '../player/player.js';
+import { player } from '../player/player.js';
 import { dog } from '../player/dog.js';
 
 // Chop-Chop: Spartacus throws his hat like a frisbee at the nearest choppable thing.
@@ -17,12 +17,12 @@ export const addChoppable = (c) => {
 const hatFly = { flying: false, t: 0, target: null, from: null, hit: false };
 
 export function chopAction(p) {
-  if (P.power !== 'chop' || hatFly.flying) return null;
+  if (player.power !== 'chop' || hatFly.flying) return null;
   let best = null,
     bd = 3.4;
   for (const c of choppables)
     if (!c.cut) {
-      const d = flat(p, c.x, c.z);
+      const d = distXZ(p, c.x, c.z);
       if (d < bd && Math.abs(p.y - c.y) < 2.5) {
         bd = d;
         best = c;
@@ -32,7 +32,7 @@ export function chopAction(p) {
     ? {
         label: 'Chop',
         fn: () => {
-          P.yaw = Math.atan2(best.x - P.pos.x, best.z - P.pos.z);
+          player.yaw = Math.atan2(best.x - player.pos.x, best.z - player.pos.z);
           throwHat(best);
         },
       }
@@ -46,13 +46,13 @@ function throwHat(c) {
   Object.assign(hatFly, { flying: true, t: 0, target: c, from: h.position.clone(), hit: false });
   sfx.zip();
 }
-export function updHat(dt) {
+export function updateHat(dt) {
   if (!hatFly.flying) return;
   const h = dog.hat,
     c = hatFly.target;
   hatFly.t += dt;
   h.rotation.y += dt * 30;
-  const tp = V(c.x, c.y + 1.2, c.z),
+  const tp = vec3(c.x, c.y + 1.2, c.z),
     out = 0.32;
   if (hatFly.t < out) h.position.lerpVectors(hatFly.from, tp, hatFly.t / out);
   else {
@@ -74,6 +74,6 @@ export function updHat(dt) {
 function chop(c) {
   c.cut = true;
   sfx.chop();
-  burst(V(c.x, c.y + 1.2, c.z), 20, [0xb8d84a, 0x9ccf3a, 0xffffff], 4, 2, 0.8, 0.9, -0.05);
+  burst(vec3(c.x, c.y + 1.2, c.z), 20, [0xb8d84a, 0x9ccf3a, 0xffffff], 4, 2, 0.8, 0.9, -0.05);
   c.onChop?.(c);
 }

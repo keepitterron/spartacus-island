@@ -1,14 +1,14 @@
 import * as THREE from 'three';
-import { lerp, V } from '../../core/util.js';
+import { lerp, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
-import { mat, mesh } from '../../core/materials.js';
-import { G } from '../../core/state.js';
+import { material, mesh } from '../../core/materials.js';
+import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst, textSprite, onFontsReady } from '../../core/fx.js';
 import { toast } from '../../core/ui.js';
-import { addCyl } from '../../core/colliders.js';
-import { release } from '../../systems/items.js';
-import { complete } from '../../game/tasks.js';
+import { addCylinder } from '../../core/colliders.js';
+import { releaseCarried } from '../../systems/items.js';
+import { completeTask } from '../../game/tasks.js';
 import { OCTO, LU, LN } from './geo.js';
 
 // The grumpy octopus. Not a villain: he's just tired. Chopping the forest seaweed wakes
@@ -17,9 +17,9 @@ export const octo = { g: new THREE.Group(), moveT: 0, moved: false, hmphT: 0 };
 let octoZzz = null,
   hmph = null;
 export function buildOcto() {
-  const O = mat(0xff7a59),
-    O2 = mat(0xffa07a),
-    I = mat(0x1c2333),
+  const O = material(0xff7a59),
+    O2 = material(0xffa07a),
+    I = material(0x1c2333),
     Wt = new THREE.MeshBasicMaterial({ color: 0xffffff }),
     g = octo.g;
   const head = mesh(new THREE.SphereGeometry(1.5, 14, 12), O);
@@ -81,7 +81,7 @@ export function buildOcto() {
   g.position.set(OCTO.x, OCTO.y, OCTO.z);
   g.rotation.y = Math.atan2(-LU.x, -LU.z);
   scene.add(g);
-  octo.col = addCyl(OCTO.x, OCTO.z, 1.8, OCTO.y - 1, OCTO.y + 3.5);
+  octo.col = addCylinder(OCTO.x, OCTO.z, 1.8, OCTO.y - 1, OCTO.y + 3.5);
   onFontsReady(() => {
     octoZzz = textSprite('Zzz', '#ffffff');
     octoZzz.scale.set(3, 0.75, 1);
@@ -102,7 +102,7 @@ export function wakeOcto(asleepForGood) {
   }, 400);
 }
 export function givePillow() {
-  const it = release();
+  const it = releaseCarried();
   it.state = 'used';
   octo.g.attach(it.mesh);
   it.mesh.position.set(0, 0.6, 1.7);
@@ -110,13 +110,13 @@ export function givePillow() {
   OCTO.awake = false;
   octo.moveT = 0.001;
   sfx.creak();
-  burst(V(OCTO.x, OCTO.y + 3, OCTO.z), 24, [0xffb3d1, 0xffffff, 0xffd84d], 4, 3, 1, 1);
+  burst(vec3(OCTO.x, OCTO.y + 3, OCTO.z), 24, [0xffb3d1, 0xffffff, 0xffd84d], 4, 3, 1, 1);
   toast('Ahh… the octopus hugs his pillow and shuffles off to bed!', 3600);
-  complete('sleep');
+  completeTask('sleep');
 }
 
-export function updOcto(dt) {
-  const T = G.T;
+export function updateOcto(dt) {
+  const T = game.T;
   // shuffle aside to bed (and take his collider with him)
   if (octo.moveT > 0 && octo.moveT < 1) {
     octo.moveT = Math.min(1, octo.moveT + dt / 2.5);
@@ -143,7 +143,7 @@ export function updOcto(dt) {
   octo.snore.scale.setScalar(asleep ? 0.3 + 0.9 * ((T * 0.45) % 1) : 0.01);
   if (!asleep && Math.random() < dt * 5)
     burst(
-      octo.g.position.clone().add(V((Math.random() - 0.5) * 1.6, 3.7, 0)),
+      octo.g.position.clone().add(vec3((Math.random() - 0.5) * 1.6, 3.7, 0)),
       1,
       0xffffff,
       0.6,

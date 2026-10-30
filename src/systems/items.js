@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { clamp, angLerp, flat, V } from '../core/util.js';
+import { clamp, lerpAngle, distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
 import { toast } from '../core/ui.js';
-import { supportAt } from '../core/colliders.js';
-import { P, fwd, physics } from '../player/player.js';
+import { supportHeight } from '../core/colliders.js';
+import { player, forwardDir, physics } from '../player/player.js';
 import { dog } from '../player/dog.js';
 
 // Things Spartacus carries in his mouth. One at a time.
@@ -31,7 +31,7 @@ export function addItem(id, m, pos, heavy, opts = {}) {
       state: 'ground',
       reach: 1.6,
       lift: 0.12,
-      carryPos: V(0, -0.05, 0.12),
+      carryPos: vec3(0, -0.05, 0.12),
       carryRot: 0,
     },
     opts,
@@ -40,41 +40,41 @@ export function addItem(id, m, pos, heavy, opts = {}) {
   return it;
 }
 
-export function carry(it) {
+export function carryItem(it) {
   it.state = 'carried';
   scene.remove(it.mesh);
   dog.mouth.add(it.mesh);
   it.mesh.position.copy(it.carryPos);
   it.mesh.rotation.set(0, it.carryRot, 0);
-  P.carry = it;
+  player.carry = it;
   sfx.grab();
   it.onCarry?.(it);
 }
 // take the carried item out of the mouth (it stays where it was in the world)
-export function release() {
-  const it = P.carry;
-  P.carry = null;
-  const w = V();
+export function releaseCarried() {
+  const it = player.carry;
+  player.carry = null;
+  const w = vec3();
   it.mesh.getWorldPosition(w);
   dog.mouth.remove(it.mesh);
   scene.add(it.mesh);
   it.mesh.position.copy(w);
-  it.mesh.rotation.set(0, P.yaw, 0);
+  it.mesh.rotation.set(0, player.yaw, 0);
   return it;
 }
 // release and get rid of it (given to someone, used up)
-export function useUp() {
-  const it = release();
+export function useUpCarried() {
+  const it = releaseCarried();
   scene.remove(it.mesh);
   it.state = 'used';
   return it;
 }
-export function drop() {
-  const it = release();
-  const f = fwd();
-  const x = P.pos.x + f.x * 1.1,
-    z = P.pos.z + f.z * 1.1;
-  const s = supportAt(x, z, P.pos.y + 0.6);
+export function dropCarried() {
+  const it = releaseCarried();
+  const f = forwardDir();
+  const x = player.pos.x + f.x * 1.1,
+    z = player.pos.z + f.z * 1.1;
+  const s = supportHeight(x, z, player.pos.y + 0.6);
   sfx.drop();
   if (physics().water && s < 0) {
     it.mesh.position.set(x, 0.2, z);
@@ -88,10 +88,10 @@ export function grabAction(p) {
   for (const it of items)
     if (
       it.state === 'ground' &&
-      flat(p, it.mesh.position.x, it.mesh.position.z) < it.reach &&
+      distXZ(p, it.mesh.position.x, it.mesh.position.z) < it.reach &&
       Math.abs(p.y - it.mesh.position.y) < 1.5
     )
-      return { label: 'Grab', fn: () => carry(it) };
+      return { label: 'Grab', fn: () => carryItem(it) };
   return null;
 }
 
@@ -115,7 +115,7 @@ function floatBack(it) {
   sfx.splash();
   toast(`Splash! The ${it.name} floats away in a bubble…`, 3000);
 }
-export function updFloaters(dt) {
+export function updateFloaters(dt) {
   for (let i = floaters.length - 1; i >= 0; i--) {
     const f = floaters[i];
     f.t += dt;
@@ -145,7 +145,7 @@ export function updFloaters(dt) {
     b.t -= dt;
     if (Math.random() < dt * 25)
       burst(
-        b.p.clone().add(V((Math.random() - 0.5) * 0.8, 0.2, (Math.random() - 0.5) * 0.8)),
+        b.p.clone().add(vec3((Math.random() - 0.5) * 0.8, 0.2, (Math.random() - 0.5) * 0.8)),
         1,
         [0xffd84d, 0xffffff],
         0.6,
@@ -160,9 +160,9 @@ export function updFloaters(dt) {
 
 /* put the carried item into place (e.g. the plank into the bridge); movement is locked meanwhile */
 export function placeItem(to, onDone) {
-  const it = release();
+  const it = releaseCarried();
   it.state = 'placed';
-  P.placing = {
+  player.placing = {
     it,
     from: it.mesh.position.clone(),
     to: to.clone(),
@@ -171,8 +171,8 @@ export function placeItem(to, onDone) {
     onDone,
   };
 }
-export function updPlacing(dt) {
-  const pl = P.placing;
+export function updatePlacing(dt) {
+  const pl = player.placing;
   if (!pl) return;
   pl.t += dt;
   const k = clamp(pl.t / 0.7, 0, 1),
@@ -180,11 +180,11 @@ export function updPlacing(dt) {
   const m = pl.it.mesh;
   m.position.lerpVectors(pl.from, pl.to, e);
   m.position.y += Math.sin(Math.PI * k) * 1.5;
-  m.rotation.y = angLerp(pl.yaw0, 0, e);
+  m.rotation.y = lerpAngle(pl.yaw0, 0, e);
   if (k >= 1) {
     m.position.copy(pl.to);
     m.rotation.set(0, 0, 0);
-    P.placing = null;
+    player.placing = null;
     pl.onDone?.(pl.it);
   }
 }
