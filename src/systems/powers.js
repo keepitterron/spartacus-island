@@ -110,7 +110,7 @@ export const POWERS = {
 
 const fruits = [];
 // a fruit at (x,y,z): on a bush with a name sign, or on its own (e.g. on a rock)
-export function addFruit(type, x, z, y, bush) {
+export function addFruit(x, z, { type, y, bush }) {
   const g = new THREE.Group();
   g.add(
     mesh(
@@ -155,7 +155,14 @@ export function updateFruits(dt) {
       f.regrow -= dt;
       if (f.regrow <= 0) {
         f.m.visible = true;
-        burst(f.m.position.clone(), 10, POWERS[f.type].col, 2, 2, 0.5, 0.8);
+        burst(f.m.position.clone(), {
+          count: 10,
+          color: POWERS[f.type].col,
+          speed: 2,
+          up: 2,
+          life: 0.5,
+          size: 0.8,
+        });
       }
     }
   }
@@ -172,7 +179,14 @@ export function eatFruits(p) {
       f.m.visible = false;
       f.regrow = 4;
       sfx.fruit();
-      burst(f.m.position.clone(), 30, POWERS[f.type].col, 5, 3, 1, 1);
+      burst(f.m.position.clone(), {
+        count: 30,
+        color: POWERS[f.type].col,
+        speed: 5,
+        up: 3,
+        life: 1,
+        size: 1,
+      });
       setPower(f.type);
     }
 }

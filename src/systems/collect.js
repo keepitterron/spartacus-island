@@ -12,7 +12,7 @@ import { completeTask, renderTasks } from '../game/tasks.js';
 // and the count lives on collect.count. Walk into one to pick it up.
 const pickups = [];
 // pop>0 makes it jump out of the ground first (from a dig spot)
-export function addPickup(x, z, y, isl, pop = 0) {
+export function addPickup(x, z, { y, island: isl, pop = 0 }) {
   const c = game.islands[isl].collect,
     g = c.model();
   const base = (y !== undefined ? y : terrainHeight(x, z)) + 0.6;
@@ -36,7 +36,14 @@ export function grabPickups(p) {
       b.got = true;
       scene.remove(b.g);
       sfx.bone();
-      burst(b.g.position.clone(), 14, [0xffd84d, 0xffffff], 4, 3, 0.7, 0.9);
+      burst(b.g.position.clone(), {
+        count: 14,
+        color: [0xffd84d, 0xffffff],
+        speed: 4,
+        up: 3,
+        life: 0.7,
+        size: 0.9,
+      });
       const c = game.islands[b.isl].collect,
         n = ++c.count;
       if (n >= c.total) {

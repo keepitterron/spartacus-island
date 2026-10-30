@@ -44,32 +44,33 @@ export function palm(x, z) {
     crown.add(c);
   }
   scene.add(g);
-  addCylinder(x, z, 0.35, gh - 1, gh + 4.8);
+  addCylinder(x, z, { r: 0.35, bottom: gh - 1, top: gh + 4.8 });
 }
-// a mossy rock h tall; returns its top height (something to stand on)
-export function rock(x, z, r, h, col = 0xa3acb8) {
+// a mossy rock; returns its top height (something to stand on)
+export function rock(x, z, { radius: r, height: h, color: col = 0xa3acb8 }) {
   const gh = terrainHeight(x, z);
-  const m = mesh(new THREE.CylinderGeometry(r * 0.88, r * 1.12, h, 7), material(col), true, true);
+  const m = mesh(new THREE.CylinderGeometry(r * 0.88, r * 1.12, h, 7), material(col), {
+    receiveShadow: true,
+  });
   m.position.set(x, gh + h / 2, z);
   m.rotation.y = rand() * 3;
   scene.add(m);
-  const moss = mesh(
-    new THREE.CylinderGeometry(r * 0.9, r * 0.9, 0.14, 7),
-    material(0x7cc86a),
-    false,
-    true,
-  );
+  const moss = mesh(new THREE.CylinderGeometry(r * 0.9, r * 0.9, 0.14, 7), material(0x7cc86a), {
+    castShadow: false,
+    receiveShadow: true,
+  });
   moss.position.set(x, gh + h + 0.03, z);
   moss.rotation.y = m.rotation.y;
   scene.add(moss);
-  addCylinder(x, z, r * 0.95, gh - 1, gh + h + 0.1);
+  addCylinder(x, z, { r: r * 0.95, bottom: gh - 1, top: gh + h + 0.1 });
   return gh + h + 0.1;
 }
 // a rock whose top is at an absolute height
-export const rockTop = (x, z, r, top, col) => rock(x, z, r, top - terrainHeight(x, z) - 0.1, col);
-export function crate(x, z, s = 1.1) {
+export const rockTop = (x, z, { radius, top, color }) =>
+  rock(x, z, { radius, height: top - terrainHeight(x, z) - 0.1, color });
+export function crate(x, z, { size: s = 1.1 } = {}) {
   const gh = terrainHeight(x, z);
-  const m = mesh(new THREE.BoxGeometry(s, s, s), material(0xd4955a), true, true);
+  const m = mesh(new THREE.BoxGeometry(s, s, s), material(0xd4955a), { receiveShadow: true });
   m.position.set(x, gh + s / 2, z);
   scene.add(m);
   for (const k of [-1, 1]) {
@@ -77,11 +78,11 @@ export function crate(x, z, s = 1.1) {
     sl.position.set(x, gh + s / 2 + k * s * 0.36, z);
     scene.add(sl);
   }
-  addBox(x, z, s / 2, s / 2, gh - 1, gh + s);
+  addBox(x, z, { hw: s / 2, hd: s / 2, bottom: gh - 1, top: gh + s });
   return gh + s;
 }
-// bushes and flowers around (cx,cz); ok(x,z) keeps them off paths and puzzles
-export function scatter(cx, cz, maxR, ok, nBush, nFlower) {
+// bushes and flowers around (cx,cz); allowed(x,z) keeps them off paths and puzzles
+export function scatter(cx, cz, { radius: maxR, allowed: ok, bushes: nBush, flowers: nFlower }) {
   for (let i = 0, n = 0; i < nBush * 4 && n < nBush; i++) {
     const a = rand() * 6.28,
       r = 3 + rand() * maxR,
@@ -102,21 +103,20 @@ export function scatter(cx, cz, maxR, ok, nBush, nFlower) {
       z = cz + Math.sin(a) * r;
     if (!ok(x, z) || terrainHeight(x, z) < 0.6) continue;
     n++;
-    const f = mesh(new THREE.IcosahedronGeometry(0.11, 0), material(fcols[n % 4]), false);
+    const f = mesh(new THREE.IcosahedronGeometry(0.11, 0), material(fcols[n % 4]), {
+      castShadow: false,
+    });
     f.position.set(x, terrainHeight(x, z) + 0.12, z);
     scene.add(f);
   }
 }
-// a wooden dock along +z at x=cx, deck height .78
-export function dock(cx, z0, z1) {
+// a wooden dock running along +z from zFrom to zTo at x=cx, deck height .78
+export function dock(cx, { zFrom: z0, zTo: z1 }) {
   const top = 0.78;
   for (let z = z0, i = 0; z < z1; z += 0.9, i++) {
-    const p = mesh(
-      new THREE.BoxGeometry(2.4, 0.14, 0.82),
-      material(i % 2 ? 0xc48a54 : 0xb57b46),
-      true,
-      true,
-    );
+    const p = mesh(new THREE.BoxGeometry(2.4, 0.14, 0.82), material(i % 2 ? 0xc48a54 : 0xb57b46), {
+      receiveShadow: true,
+    });
     p.position.set(cx, top - 0.07, z + 0.45);
     scene.add(p);
   }
@@ -126,5 +126,5 @@ export function dock(cx, z0, z1) {
       p.position.set(cx + x, -0.75, z);
       scene.add(p);
     }
-  addBox(cx, (z0 + z1) / 2, 1.2, (z1 - z0) / 2, -3, top);
+  addBox(cx, (z0 + z1) / 2, { hw: 1.2, hd: (z1 - z0) / 2, bottom: -3, top });
 }

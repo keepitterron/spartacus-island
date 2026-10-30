@@ -26,9 +26,10 @@ export function seededRandom(seed) {
 export const rand = seededRandom(42);
 export const vec3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 export const distXZ = (a, x, z) => Math.hypot(a.x - x, a.z - z);
-export function distToSegmentXZ(px, pz, a, b) {
+// distance from p to the segment a-b, ignoring height
+export function distToSegmentXZ(p, a, b) {
   const vx = b.x - a.x,
     vz = b.z - a.z,
-    t = clamp(((px - a.x) * vx + (pz - a.z) * vz) / (vx * vx + vz * vz), 0, 1);
-  return Math.hypot(px - (a.x + vx * t), pz - (a.z + vz * t));
+    t = clamp(((p.x - a.x) * vx + (p.z - a.z) * vz) / (vx * vx + vz * vz), 0, 1);
+  return Math.hypot(p.x - (a.x + vx * t), p.z - (a.z + vz * t));
 }

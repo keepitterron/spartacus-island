@@ -10,10 +10,10 @@ export function material(c, o = {}) {
     );
   return MC[k];
 }
-export function mesh(g, m, cast = true, recv = false) {
-  const o = new THREE.Mesh(g, m);
-  o.castShadow = cast;
-  o.receiveShadow = recv;
+export function mesh(geometry, mat, { castShadow = true, receiveShadow = false } = {}) {
+  const o = new THREE.Mesh(geometry, mat);
+  o.castShadow = castShadow;
+  o.receiveShadow = receiveShadow;
   return o;
 }
 export function canvasTexture(w, h, draw) {
@@ -26,19 +26,19 @@ export function canvasTexture(w, h, draw) {
   return t;
 }
 // paw print drawn into a 2D canvas (sail, landing pads)
-export function drawPaw(x, cx, cy, s, col) {
-  x.fillStyle = col;
-  x.beginPath();
-  x.ellipse(cx, cy + s * 0.35, s * 0.55, s * 0.45, 0, 0, 7);
-  x.fill();
+export function drawPaw(ctx, { x: cx, y: cy, size: s, color }) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + s * 0.35, s * 0.55, s * 0.45, 0, 0, 7);
+  ctx.fill();
   [
     [-0.62, -0.25],
     [-0.22, -0.62],
     [0.22, -0.62],
     [0.62, -0.25],
   ].forEach(([dx, dy]) => {
-    x.beginPath();
-    x.ellipse(cx + dx * s, cy + dy * s, s * 0.2, s * 0.26, dx * 0.5, 0, 7);
-    x.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + dx * s, cy + dy * s, s * 0.2, s * 0.26, dx * 0.5, 0, 7);
+    ctx.fill();
   });
 }

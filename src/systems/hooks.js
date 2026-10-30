@@ -21,7 +21,9 @@ export function addHook(a, b) {
   pole.position.set(x, -2 + ph / 2, z);
   scene.add(pole);
   for (let k = 1; k < ph / 1.6; k++) {
-    const n = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 6), material(0x7fb456), false);
+    const n = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 6), material(0x7fb456), {
+      castShadow: false,
+    });
     n.position.set(x, -2 + k * 1.6, z);
     scene.add(n);
   }
@@ -74,7 +76,15 @@ function startSwing(o) {
   player.grounded = false;
   player.vel.set(0, 0, 0);
   sfx.stretch();
-  burst(vec3(o.h.x, o.h.y, o.h.z), 10, POWERS.stretch.col, 3, 1, 0.5, 0.8, 0.3);
+  burst(vec3(o.h.x, o.h.y, o.h.z), {
+    count: 10,
+    color: POWERS.stretch.col,
+    speed: 3,
+    up: 1,
+    life: 0.5,
+    size: 0.8,
+    gravity: 0.3,
+  });
 }
 // a quadratic arc from start to landing, dipping under the hook
 export function updateSwing(dt) {
@@ -99,7 +109,14 @@ export function updateSwing(dt) {
     player.vel.set(0, 0, 0);
     player.grounded = false;
     player.sqv = -4;
-    burst(player.pos.clone(), 10, POWERS.stretch.col, 2.5, 1.5, 0.5, 0.8);
+    burst(player.pos.clone(), {
+      count: 10,
+      color: POWERS.stretch.col,
+      speed: 2.5,
+      up: 1.5,
+      life: 0.5,
+      size: 0.8,
+    });
   }
 }
 

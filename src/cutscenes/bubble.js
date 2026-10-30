@@ -40,13 +40,7 @@ game.cutscenes.bubble = {
         ship.position
           .clone()
           .add(vec3((Math.random() - 0.5) * 8, Math.random() * 5, (Math.random() - 0.5) * 8)),
-        1,
-        0xdff9ff,
-        1,
-        2,
-        1.2,
-        1.2,
-        -0.2,
+        { count: 1, color: 0xdff9ff, speed: 1, up: 2, life: 1.2, size: 1.2, gravity: -0.2 },
       );
     const a = T * 0.25,
       want = vec3(

@@ -74,6 +74,14 @@ export function updateHat(dt) {
 function chop(c) {
   c.cut = true;
   sfx.chop();
-  burst(vec3(c.x, c.y + 1.2, c.z), 20, [0xb8d84a, 0x9ccf3a, 0xffffff], 4, 2, 0.8, 0.9, -0.05);
+  burst(vec3(c.x, c.y + 1.2, c.z), {
+    count: 20,
+    color: [0xb8d84a, 0x9ccf3a, 0xffffff],
+    speed: 4,
+    up: 2,
+    life: 0.8,
+    size: 0.9,
+    gravity: -0.05,
+  });
   c.onChop?.(c);
 }

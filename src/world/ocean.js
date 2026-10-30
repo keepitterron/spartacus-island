@@ -5,7 +5,7 @@ import { game } from '../core/state.js';
 
 // One sea floor and one animated water surface under all the land islands.
 // (The underwater island is out at z=-720, beyond the edge of this plane.)
-const floor = mesh(new THREE.PlaneGeometry(700, 700), material(0x1d7f9c), false);
+const floor = mesh(new THREE.PlaneGeometry(700, 700), material(0x1d7f9c), { castShadow: false });
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, -4.2, -130);
 scene.add(floor);
@@ -22,8 +22,7 @@ scene.add(
       flatShading: true,
       roughness: 0.35,
     }),
-    false,
-    true,
+    { castShadow: false, receiveShadow: true },
   ),
 );
 

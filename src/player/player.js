@@ -99,7 +99,14 @@ export function stepPlayer(dt) {
     player.sqv = 4;
     if (sup) {
       sfx.boing();
-      burst(p.clone().add(vec3(0, 0.2, 0)), 14, POWERS.boing.col, 4, 1, 0.7, 0.9);
+      burst(p.clone().add(vec3(0, 0.2, 0)), {
+        count: 14,
+        color: POWERS.boing.col,
+        speed: 4,
+        up: 1,
+        life: 0.7,
+        size: 0.9,
+      });
     } else sfx.jump();
   }
   const prevY = p.y;
@@ -119,17 +126,17 @@ export function stepPlayer(dt) {
           return;
         }
       }
-      pushOut(c, p, v, RADIUS);
+      pushOut(c, { pos: p, vel: v, radius: RADIUS });
     }
   // feet: terrain or the top of anything we stepped onto
   let sup = terrainHeight(p.x, p.z);
   for (const c of colliders)
-    if (c.top <= prevY + STEP_HEIGHT && inFootprint(c, p.x, p.z, 0.15)) sup = Math.max(sup, c.top);
+    if (c.top <= prevY + STEP_HEIGHT && inFootprint(c, p, 0.15)) sup = Math.max(sup, c.top);
   if (p.y <= sup) {
     if (v.y <= 0) {
       if (!player.grounded && v.y < -9) {
         player.sqv = -Math.min(9, -v.y * 0.45);
-        burst(p.clone(), 8, 0xfff0c8, 2.5, 1.5, 0.5, 0.8);
+        burst(p.clone(), { count: 8, color: 0xfff0c8, speed: 2.5, up: 1.5, life: 0.5, size: 0.8 });
       }
       p.y = sup;
       v.y = 0;
@@ -182,7 +189,14 @@ export function startRescue() {
   safeHist.length = 0;
   player.vel.set(0, 0, 0);
   sfx.splash();
-  burst(vec3(player.pos.x, 0, player.pos.z), 22, [0xffffff, 0xbff3ff, 0x7fd8ee], 5, 5, 0.9, 1.2);
+  burst(vec3(player.pos.x, 0, player.pos.z), {
+    count: 22,
+    color: [0xffffff, 0xbff3ff, 0x7fd8ee],
+    speed: 5,
+    up: 5,
+    life: 0.9,
+    size: 1.2,
+  });
   bubble.visible = true;
   toast(player.power ? 'Fruit pups can’t swim! Bubble rescue!' : 'Splash! Bubble rescue!');
 }
@@ -199,7 +213,14 @@ export function updateRescue(dt) {
   if (k >= 1) {
     bubble.visible = false;
     sfx.pop();
-    burst(bubble.position.clone(), 16, 0xdff9ff, 4, 2, 0.5, 0.9);
+    burst(bubble.position.clone(), {
+      count: 16,
+      color: 0xdff9ff,
+      speed: 4,
+      up: 2,
+      life: 0.5,
+      size: 0.9,
+    });
     player.grounded = false;
     player.vel.set(0, 2, 0);
     game.state = 'play';

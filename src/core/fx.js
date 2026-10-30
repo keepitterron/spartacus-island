@@ -2,29 +2,21 @@ import * as THREE from 'three';
 import { clamp, vec3 } from './util.js';
 import { scene } from './renderer.js';
 
-// Particles: little icosahedrons (or paper confetti). grav<0 makes them rise (bubbles).
+// Particles: little icosahedrons (or paper confetti). gravity<0 makes them rise (bubbles).
 const parts = [];
 const pGeo = new THREE.IcosahedronGeometry(0.1, 0),
   cGeo = new THREE.PlaneGeometry(0.18, 0.28);
 export function burst(
-  p,
-  n,
-  color,
-  speed,
-  up,
-  life,
-  size = 1,
-  grav = 1,
-  confetti = false,
-  dir = null,
+  pos,
+  { count, color, speed, up, life, size = 1, gravity = 1, confetti = false, dir = null },
 ) {
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < count; i++) {
     const col = Array.isArray(color) ? color[i % color.length] : color;
     const m = new THREE.Mesh(
       confetti ? cGeo : pGeo,
       new THREE.MeshBasicMaterial({ color: col, transparent: true, side: THREE.DoubleSide }),
     );
-    m.position.copy(p);
+    m.position.copy(pos);
     m.scale.setScalar(size * (0.6 + Math.random() * 0.8));
     const a = Math.random() * 6.283,
       e = Math.random() * 1.2 - 0.2;
@@ -41,7 +33,7 @@ export function burst(
       v,
       life,
       max: life,
-      grav,
+      gravity,
       spin: confetti ? vec3(Math.random() * 8, Math.random() * 8, Math.random() * 8) : null,
     });
   }
@@ -50,7 +42,7 @@ export function updateParticles(dt) {
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i];
     p.life -= dt;
-    p.v.y -= 20 * p.grav * dt;
+    p.v.y -= 20 * p.gravity * dt;
     if (p.spin) {
       p.v.multiplyScalar(Math.exp(-dt * 1.5));
       p.m.rotation.x += p.spin.x * dt;

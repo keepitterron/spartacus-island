@@ -92,7 +92,15 @@ export function updateEduardo(dt) {
       eg.position.y =
         terrainHeight(eg.position.x, eg.position.z) + Math.abs(Math.sin(T * 18)) * 0.12;
       eg.rotation.y = Math.atan2(dx, dz);
-      if (Math.random() < dt * 12) burst(eg.position.clone(), 1, 0xf0d9a0, 1, 1, 0.4, 0.6);
+      if (Math.random() < dt * 12)
+        burst(eg.position.clone(), {
+          count: 1,
+          color: 0xf0d9a0,
+          speed: 1,
+          up: 1,
+          life: 0.4,
+          size: 0.6,
+        });
     } else if (e.stage <= hides.length) {
       eg.visible = false;
       e.target.edInside = true;
@@ -111,7 +119,16 @@ export function updateEduardo(dt) {
   } else if (e.state === 'inClump') {
     const c = e.target;
     c.g.rotation.z += Math.sin(T * 22) * 0.06;
-    if (Math.random() < dt * 4) burst(vec3(c.x, c.y + 1, c.z), 1, 0xdff9ff, 0.6, 2, 1.5, 0.8, -0.2);
+    if (Math.random() < dt * 4)
+      burst(vec3(c.x, c.y + 1, c.z), {
+        count: 1,
+        color: 0xdff9ff,
+        speed: 0.6,
+        up: 2,
+        life: 1.5,
+        size: 0.8,
+        gravity: -0.2,
+      });
   } else if (e.state === 'behind') {
     eg.rotation.z = Math.sin(T * 30) * 0.06;
     if (octo.moved && distXZ(player.pos, eg.position.x, eg.position.z) < 2.8) {

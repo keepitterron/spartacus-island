@@ -13,29 +13,28 @@ import { dog } from '../player/dog.js';
 // opts: name (for messages), heavy (slower, lower jumps), reach, lift (height above ground
 //       when dropped), carryPos/carryRot (in the mouth), yaw, onCarry(it)
 export const items = [];
-export function addItem(id, m, pos, heavy, opts = {}) {
+// opts can override any field of the item record below (name, reach, carryPos, onGrab…)
+export function addItem(id, { model: m, pos, heavy = false, ...opts }) {
   m.position.copy(pos);
   m.rotation.y = opts.yaw || 0;
   scene.add(m);
   m.traverse((o) => {
     if (o.isMesh) o.castShadow = true;
   });
-  const it = Object.assign(
-    {
-      id,
-      name: 'thing',
-      mesh: m,
-      heavy,
-      home: pos.clone(),
-      homeYaw: opts.yaw || 0,
-      state: 'ground',
-      reach: 1.6,
-      lift: 0.12,
-      carryPos: vec3(0, -0.05, 0.12),
-      carryRot: 0,
-    },
-    opts,
-  );
+  const it = {
+    id,
+    name: 'thing',
+    mesh: m,
+    heavy,
+    home: pos.clone(),
+    homeYaw: opts.yaw || 0,
+    state: 'ground',
+    reach: 1.6,
+    lift: 0.12,
+    carryPos: vec3(0, -0.05, 0.12),
+    carryRot: 0,
+    ...opts,
+  };
   items.push(it);
   return it;
 }
@@ -128,7 +127,15 @@ export function updateFloaters(dt) {
     m.rotation.y += dt * 1.5;
     f.b.position.copy(m.position);
     f.b.scale.setScalar(1 + Math.sin(f.t * 8) * 0.05);
-    if (Math.random() < dt * 10) burst(m.position.clone(), 1, 0xdff9ff, 0.5, 1, 0.8, 0.7);
+    if (Math.random() < dt * 10)
+      burst(m.position.clone(), {
+        count: 1,
+        color: 0xdff9ff,
+        speed: 0.5,
+        up: 1,
+        life: 0.8,
+        size: 0.7,
+      });
     if (k >= 1) {
       scene.remove(f.b);
       m.position.copy(f.it.home);
@@ -144,16 +151,15 @@ export function updateFloaters(dt) {
     const b = beacons[i];
     b.t -= dt;
     if (Math.random() < dt * 25)
-      burst(
-        b.p.clone().add(vec3((Math.random() - 0.5) * 0.8, 0.2, (Math.random() - 0.5) * 0.8)),
-        1,
-        [0xffd84d, 0xffffff],
-        0.6,
-        6,
-        1,
-        0.9,
-        -0.05,
-      );
+      burst(b.p.clone().add(vec3((Math.random() - 0.5) * 0.8, 0.2, (Math.random() - 0.5) * 0.8)), {
+        count: 1,
+        color: [0xffd84d, 0xffffff],
+        speed: 0.6,
+        up: 6,
+        life: 1,
+        size: 0.9,
+        gravity: -0.05,
+      });
     if (b.t <= 0) beacons.splice(i, 1);
   }
 }

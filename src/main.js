@@ -174,33 +174,31 @@ function update(dt) {
     player.sparkT -= dt;
     if (player.sparkT < 0) {
       player.sparkT = 0.12;
-      burst(
-        player.pos.clone().add(vec3(0, 0.3, 0)),
-        2,
-        POWERS[player.power].col.slice(1),
-        1,
-        1.5,
-        0.6,
-        0.7,
-        0.2,
-      );
+      burst(player.pos.clone().add(vec3(0, 0.3, 0)), {
+        count: 2,
+        color: POWERS[player.power].col.slice(1),
+        speed: 1,
+        up: 1.5,
+        life: 0.6,
+        size: 0.7,
+        gravity: 0.2,
+      });
     }
   }
   // celebration: confetti for ~2.4 s, then the island's win panel
   if (game.celebT >= 0) {
     game.celebT += dt;
     if (game.celebT < 2.4 && Math.floor(game.celebT * 4) !== Math.floor((game.celebT - dt) * 4))
-      burst(
-        player.pos.clone().add(vec3(0, 3, 0)),
-        26,
-        [0xff9fb2, 0xffd84d, 0x7fd8ee, 0x8a5cf6, 0x6ccb5f],
-        7,
-        5,
-        2.2,
-        1.4,
-        0.25,
-        true,
-      );
+      burst(player.pos.clone().add(vec3(0, 3, 0)), {
+        count: 26,
+        color: [0xff9fb2, 0xffd84d, 0x7fd8ee, 0x8a5cf6, 0x6ccb5f],
+        speed: 7,
+        up: 5,
+        life: 2.2,
+        size: 1.4,
+        gravity: 0.25,
+        confetti: true,
+      });
     if (game.celebT > 2.8) {
       showWin(game.celebIsland);
       game.celebT = -1;

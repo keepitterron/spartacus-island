@@ -40,13 +40,13 @@ let zzz = null;
   tl.position.set(0, 0.35, -0.45);
   gull.g.add(tl);
   gull.closed = [-1, 1].map((k) => {
-    const e = mesh(new THREE.BoxGeometry(0.09, 0.02, 0.02), I, false);
+    const e = mesh(new THREE.BoxGeometry(0.09, 0.02, 0.02), I, { castShadow: false });
     e.position.set(k * 0.1, 0.64, 0.47);
     gull.g.add(e);
     return e;
   });
   gull.open = [-1, 1].map((k) => {
-    const e = mesh(new THREE.SphereGeometry(0.04, 6, 5), I, false);
+    const e = mesh(new THREE.SphereGeometry(0.04, 6, 5), I, { castShadow: false });
     e.position.set(k * 0.1, 0.65, 0.46);
     e.visible = false;
     gull.g.add(e);
@@ -80,7 +80,14 @@ export function wakeGull() {
   gull.t = 0;
   sfx.gull();
   openEyes();
-  burst(gull.g.position.clone().add(vec3(0, 0.5, 0)), 14, 0xffffff, 4, 3, 0.8, 0.8);
+  burst(gull.g.position.clone().add(vec3(0, 0.5, 0)), {
+    count: 14,
+    color: 0xffffff,
+    speed: 4,
+    up: 3,
+    life: 0.8,
+    size: 0.8,
+  });
 }
 // if it's still asleep when we leave, it just appears circling the ship
 export function gullJoinsShip() {

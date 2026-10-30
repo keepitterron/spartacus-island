@@ -18,7 +18,11 @@ export function terrainHeight(x, z) {
 
 // Island ground mesh. Colours are painted into a texture rather than vertex colours,
 // because some phone GPUs drew vertex-coloured meshes black.
-export function buildGround(cx, cz, S, N, pal = { g: 0x6ccb5f, g2: 0x92dc6c }) {
+export function buildGround(
+  cx,
+  cz,
+  { size: S, segments: N, palette: pal = { g: 0x6ccb5f, g2: 0x92dc6c } },
+) {
   const g = new THREE.PlaneGeometry(S, S, N, N);
   g.rotateX(-Math.PI / 2);
   g.translate(cx, 0, cz);
@@ -64,11 +68,9 @@ export function buildGround(cx, cz, S, N, pal = { g: 0x6ccb5f, g2: 0x92dc6c }) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   scene.add(
-    mesh(
-      g,
-      new THREE.MeshStandardMaterial({ map: tex, flatShading: true, roughness: 0.95 }),
-      false,
-      true,
-    ),
+    mesh(g, new THREE.MeshStandardMaterial({ map: tex, flatShading: true, roughness: 0.95 }), {
+      castShadow: false,
+      receiveShadow: true,
+    }),
   );
 }

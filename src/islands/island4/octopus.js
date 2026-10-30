@@ -44,25 +44,25 @@ export function buildOcto() {
     const e = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), Wt);
     e.position.set(sd * 0.55, 2.25, 1.45);
     g.add(e);
-    const pu = mesh(new THREE.SphereGeometry(0.15, 8, 6), I, false);
+    const pu = mesh(new THREE.SphereGeometry(0.15, 8, 6), I, { castShadow: false });
     pu.position.set(sd * 0.55, 2.2, 1.74);
     g.add(pu);
     octo.open.push(e, pu);
-    const cl = mesh(new THREE.TorusGeometry(0.24, 0.06, 5, 10, Math.PI), I, false);
+    const cl = mesh(new THREE.TorusGeometry(0.24, 0.06, 5, 10, Math.PI), I, { castShadow: false });
     cl.rotation.z = Math.PI;
     cl.position.set(sd * 0.55, 2.3, 1.7);
     g.add(cl);
     octo.closed.push(cl);
-    const br = mesh(new THREE.BoxGeometry(0.55, 0.1, 0.1), I, false);
+    const br = mesh(new THREE.BoxGeometry(0.55, 0.1, 0.1), I, { castShadow: false });
     br.position.set(sd * 0.55, 2.75, 1.6);
     br.rotation.z = sd * -0.45;
     g.add(br);
     octo.brows.push(br);
   }
-  octo.frown = mesh(new THREE.TorusGeometry(0.25, 0.05, 5, 10, Math.PI), I, false);
+  octo.frown = mesh(new THREE.TorusGeometry(0.25, 0.05, 5, 10, Math.PI), I, { castShadow: false });
   octo.frown.position.set(0, 1.62, 1.68);
   g.add(octo.frown);
-  octo.smile = mesh(new THREE.TorusGeometry(0.25, 0.05, 5, 10, Math.PI), I, false);
+  octo.smile = mesh(new THREE.TorusGeometry(0.25, 0.05, 5, 10, Math.PI), I, { castShadow: false });
   octo.smile.rotation.z = Math.PI;
   octo.smile.position.set(0, 1.78, 1.68);
   octo.smile.visible = false;
@@ -81,7 +81,7 @@ export function buildOcto() {
   g.position.set(OCTO.x, OCTO.y, OCTO.z);
   g.rotation.y = Math.atan2(-LU.x, -LU.z);
   scene.add(g);
-  octo.col = addCylinder(OCTO.x, OCTO.z, 1.8, OCTO.y - 1, OCTO.y + 3.5);
+  octo.col = addCylinder(OCTO.x, OCTO.z, { r: 1.8, bottom: OCTO.y - 1, top: OCTO.y + 3.5 });
   onFontsReady(() => {
     octoZzz = textSprite('Zzz', '#ffffff');
     octoZzz.scale.set(3, 0.75, 1);
@@ -110,7 +110,14 @@ export function givePillow() {
   OCTO.awake = false;
   octo.moveT = 0.001;
   sfx.creak();
-  burst(vec3(OCTO.x, OCTO.y + 3, OCTO.z), 24, [0xffb3d1, 0xffffff, 0xffd84d], 4, 3, 1, 1);
+  burst(vec3(OCTO.x, OCTO.y + 3, OCTO.z), {
+    count: 24,
+    color: [0xffb3d1, 0xffffff, 0xffd84d],
+    speed: 4,
+    up: 3,
+    life: 1,
+    size: 1,
+  });
   toast('Ahh… the octopus hugs his pillow and shuffles off to bed!', 3600);
   completeTask('sleep');
 }
@@ -142,16 +149,15 @@ export function updateOcto(dt) {
   octo.snore.visible = asleep;
   octo.snore.scale.setScalar(asleep ? 0.3 + 0.9 * ((T * 0.45) % 1) : 0.01);
   if (!asleep && Math.random() < dt * 5)
-    burst(
-      octo.g.position.clone().add(vec3((Math.random() - 0.5) * 1.6, 3.7, 0)),
-      1,
-      0xffffff,
-      0.6,
-      3,
-      0.8,
-      1,
-      -0.2,
-    );
+    burst(octo.g.position.clone().add(vec3((Math.random() - 0.5) * 1.6, 3.7, 0)), {
+      count: 1,
+      color: 0xffffff,
+      speed: 0.6,
+      up: 3,
+      life: 0.8,
+      size: 1,
+      gravity: -0.2,
+    });
   if (octoZzz) {
     octoZzz.visible = asleep;
     const c = (T * 0.4) % 1;

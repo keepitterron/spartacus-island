@@ -37,11 +37,11 @@ function makeDog() {
     sk.scale.set(1.12, 0.95, 1);
     head.add(sk);
   }
-  const bz1 = mesh(new THREE.BoxGeometry(0.03, 0.28, 0.06), cream, false);
+  const bz1 = mesh(new THREE.BoxGeometry(0.03, 0.28, 0.06), cream, { castShadow: false });
   bz1.position.set(0, 0.2, 0.4);
   bz1.rotation.x = -0.4;
   head.add(bz1);
-  const bz2 = mesh(new THREE.BoxGeometry(0.027, 0.04, 0.26), cream, false);
+  const bz2 = mesh(new THREE.BoxGeometry(0.027, 0.04, 0.26), cream, { castShadow: false });
   bz2.position.set(0, 0.06, 0.47);
   bz2.rotation.x = 0.28;
   head.add(bz2);
@@ -55,21 +55,21 @@ function makeDog() {
   const shine = new THREE.MeshBasicMaterial({ color: 0xffffff });
   // hazel eyes: golden-brown iris with a dark pupil so the colour reads at this size
   for (const s of [-1, 1]) {
-    const e = mesh(new THREE.SphereGeometry(0.08, 10, 8), iris, false);
+    const e = mesh(new THREE.SphereGeometry(0.08, 10, 8), iris, { castShadow: false });
     e.position.set(s * 0.17, 0.07, 0.37);
     head.add(e);
-    const pu = mesh(new THREE.SphereGeometry(0.042, 8, 6), pupil, false);
+    const pu = mesh(new THREE.SphereGeometry(0.042, 8, 6), pupil, { castShadow: false });
     pu.position.set(s * 0.17, 0.068, 0.425);
     head.add(pu);
     const sh = new THREE.Mesh(new THREE.SphereGeometry(0.024, 6, 4), shine);
     sh.position.set(s * 0.17 + 0.025, 0.1, 0.455);
     head.add(sh);
-    const ch = mesh(new THREE.SphereGeometry(0.07, 6, 5), pink, false);
+    const ch = mesh(new THREE.SphereGeometry(0.07, 6, 5), pink, { castShadow: false });
     ch.scale.set(1, 0.5, 0.6);
     ch.position.set(s * 0.27, -0.09, 0.3);
     head.add(ch);
   }
-  const tongue = mesh(new THREE.BoxGeometry(0.13, 0.03, 0.2), pink, false);
+  const tongue = mesh(new THREE.BoxGeometry(0.13, 0.03, 0.2), pink, { castShadow: false });
   tongue.position.set(0, -0.26, 0.46);
   tongue.visible = false;
   head.add(tongue);

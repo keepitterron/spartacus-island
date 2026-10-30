@@ -50,7 +50,7 @@ let hungry = null;
     const e = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 6), Wt);
     e.position.set(s * 0.1, 0.77, 0.18);
     mango.g.add(e);
-    const pu = mesh(new THREE.SphereGeometry(0.035, 6, 5), I, false);
+    const pu = mesh(new THREE.SphereGeometry(0.035, 6, 5), I, { castShadow: false });
     pu.position.set(s * 0.1, 0.77, 0.235);
     mango.g.add(pu);
   }

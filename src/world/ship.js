@@ -30,11 +30,13 @@ let flag;
   });
   hg.translate(0, 0, -1.15);
   hg.rotateY(-Math.PI / 2);
-  ship.add(mesh(hg, material(0x8b5a3c), true, true));
+  ship.add(mesh(hg, material(0x8b5a3c), { receiveShadow: true }));
   const stripe = mesh(new THREE.BoxGeometry(2.75, 0.18, 5.4), material(0xf2545b));
   stripe.position.set(0, 0.75, 0.1);
   ship.add(stripe);
-  const deck = mesh(new THREE.BoxGeometry(2.2, 0.12, 5.6), material(0xd9a46a), true, true);
+  const deck = mesh(new THREE.BoxGeometry(2.2, 0.12, 5.6), material(0xd9a46a), {
+    receiveShadow: true,
+  });
   deck.position.set(0, 1.1, 0.1);
   ship.add(deck);
   const cab = mesh(new THREE.BoxGeometry(1.7, 1, 1.4), material(0xfffaf0));
@@ -52,7 +54,7 @@ let flag;
   const sailTex = canvasTexture(256, 220, (x, w, h) => {
     x.fillStyle = '#fff6e2';
     x.fillRect(0, 0, w, h);
-    drawPaw(x, w / 2, h / 2, 52, '#f2545b');
+    drawPaw(x, { x: w / 2, y: h / 2, size: 52, color: '#f2545b' });
   });
   const sail = mesh(
     new THREE.BoxGeometry(3, 2.5, 0.06),
@@ -79,7 +81,7 @@ let flag;
       x.arc(a, b, 9, 0, 7);
       x.fill();
     });
-    drawPaw(x, 64, 20, 13, '#fff');
+    drawPaw(x, { x: 64, y: 20, size: 13, color: '#fff' });
   });
   const fg = new THREE.PlaneGeometry(1.2, 0.8);
   fg.translate(0.6, 0, 0);
@@ -149,7 +151,7 @@ export function addBucket() {
   const b = mesh(new THREE.CylinderGeometry(0.36, 0.3, 0.45, 10), material(0x9aa6b8));
   b.position.set(0.65, 1.38, 1.4);
   ship.add(b);
-  const w = mesh(new THREE.CircleGeometry(0.32, 10), material(0x4cc3e6), false);
+  const w = mesh(new THREE.CircleGeometry(0.32, 10), material(0x4cc3e6), { castShadow: false });
   w.rotation.x = -Math.PI / 2;
   w.position.set(0.65, 1.58, 1.4);
   ship.add(w);

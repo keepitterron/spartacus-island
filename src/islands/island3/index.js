@@ -46,7 +46,7 @@ const STREAM = [
 function streamDist(x, z) {
   let d = 1e9;
   for (let i = 0; i < STREAM.length - 1; i++)
-    d = Math.min(d, distToSegmentXZ(x, z, STREAM[i], STREAM[i + 1]));
+    d = Math.min(d, distToSegmentXZ({ x, z }, STREAM[i], STREAM[i + 1]));
   return d;
 }
 function edge(a) {
@@ -77,12 +77,13 @@ function bigTree(lx, lz, top, smoothBark) {
   const trunk = mesh(
     new THREE.CylinderGeometry(1.0, 1.35, H, 9),
     material(smoothBark ? 0x9a7a5e : 0x6e4a30),
-    true,
-    true,
+    { receiveShadow: true },
   );
   trunk.position.set(x, gh + H / 2, z);
   scene.add(trunk);
-  const deck = mesh(new THREE.CylinderGeometry(3.2, 2.9, 0.5, 14), material(0x5ea84c), true, true);
+  const deck = mesh(new THREE.CylinderGeometry(3.2, 2.9, 0.5, 14), material(0x5ea84c), {
+    receiveShadow: true,
+  });
   deck.position.set(x, top - 0.25, z);
   scene.add(deck);
   for (let k = 0; k < 11; k++) {
@@ -100,9 +101,9 @@ function bigTree(lx, lz, top, smoothBark) {
     p.position.set(x + Math.cos(a) * 2.3, top - 1.5, z + Math.sin(a) * 2.3);
     scene.add(p);
   }
-  t.col = addCylinder(x, z, 1.2, gh - 1, top - 0.6);
+  t.col = addCylinder(x, z, { r: 1.2, bottom: gh - 1, top: top - 0.6 });
   t.col.tree = t;
-  addCylinder(x, z, 3.2, top - 0.6, top);
+  addCylinder(x, z, { r: 3.2, bottom: top - 0.6, top });
   return t;
 }
 function forestTree(x, z) {
@@ -137,7 +138,7 @@ function forestTree(x, z) {
       scene.add(c);
     }
   }
-  addCylinder(x, z, 0.4, gh - 1, gh + 3);
+  addCylinder(x, z, { r: 0.4, bottom: gh - 1, top: gh + 3 });
 }
 
 let T1,
@@ -159,10 +160,14 @@ const HIVE = {},
 const BUSH3 = { grow: W3(5, 9), boing: W3(11, 1), stretch: W3(9, -2) };
 
 function build() {
-  buildGround(CENTER_3.x, CENTER_3.z, 68, LOW_POWER ? 90 : 140, { g: 0x4fa84a, g2: 0x6fbf55 });
+  buildGround(CENTER_3.x, CENTER_3.z, {
+    size: 68,
+    segments: LOW_POWER ? 90 : 140,
+    palette: { g: 0x4fa84a, g2: 0x6fbf55 },
+  });
   I.spawn = vec3(CENTER_3.x, 0, CENTER_3.z + 15);
   I.spawn.y = terrainHeight(I.spawn.x, I.spawn.z);
-  dock(CENTER_3.x, CENTER_3.z + 18, CENTER_3.z + 33);
+  dock(CENTER_3.x, { zFrom: CENTER_3.z + 18, zTo: CENTER_3.z + 33 });
   // T1 has a magic seed at its roots; T2/T3/T4 have bark too smooth to climb
   T1 = bigTree(-2, 2, 10);
   T2 = bigTree(6, -6, 8.5, true);
@@ -196,10 +201,12 @@ function build() {
     core.scale.y = 1.1;
     core.position.y = 0.55;
     g.add(core);
-    const door = mesh(new THREE.CircleGeometry(0.16, 10), material(0x3a2a1a), false);
+    const door = mesh(new THREE.CircleGeometry(0.16, 10), material(0x3a2a1a), {
+      castShadow: false,
+    });
     door.position.set(0, 0.3, 0.71);
     g.add(door);
-    addCylinder(HIVE.x, HIVE.z, 0.75, HIVE.y - 0.5, HIVE.y + 1.3);
+    addCylinder(HIVE.x, HIVE.z, { r: 0.75, bottom: HIVE.y - 0.5, top: HIVE.y + 1.3 });
     HIVE.bees = [];
     const wm = new THREE.MeshBasicMaterial({
       color: 0xffffff,
@@ -209,10 +216,14 @@ function build() {
     });
     for (let i = 0; i < 7; i++) {
       const b = new THREE.Group();
-      const bd = mesh(new THREE.SphereGeometry(0.09, 6, 5), material(0xffd84d), false);
+      const bd = mesh(new THREE.SphereGeometry(0.09, 6, 5), material(0xffd84d), {
+        castShadow: false,
+      });
       bd.scale.z = 1.3;
       b.add(bd);
-      const st = mesh(new THREE.TorusGeometry(0.085, 0.022, 4, 10), material(0x2b2b38), false);
+      const st = mesh(new THREE.TorusGeometry(0.085, 0.022, 4, 10), material(0x2b2b38), {
+        castShadow: false,
+      });
       b.add(st);
       for (const sd of [-1, 1]) {
         const w = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.08), wm);
@@ -233,22 +244,28 @@ function build() {
     GATE.fx = GATE.x;
     GATE.fz = GATE.z + 1.8;
     for (const sd of [-1, 1]) {
-      const w = mesh(new THREE.BoxGeometry(3, 2.4, 1.3), material(0x9aa6b8), true, true);
+      const w = mesh(new THREE.BoxGeometry(3, 2.4, 1.3), material(0x9aa6b8), {
+        receiveShadow: true,
+      });
       w.position.set(GATE.x + sd * 2.6, gh + 1.2, GATE.z);
       scene.add(w);
-      addBox(GATE.x + sd * 2.6, GATE.z, 1.5, 0.65, gh - 1, gh + 2.4);
-      const moss = mesh(new THREE.BoxGeometry(3.05, 0.2, 1.35), material(0x7cc86a), false);
+      addBox(GATE.x + sd * 2.6, GATE.z, { hw: 1.5, hd: 0.65, bottom: gh - 1, top: gh + 2.4 });
+      const moss = mesh(new THREE.BoxGeometry(3.05, 0.2, 1.35), material(0x7cc86a), {
+        castShadow: false,
+      });
       moss.position.set(GATE.x + sd * 2.6, gh + 2.45, GATE.z);
       scene.add(moss);
     }
     GATE.doors = [-1, 1].map((sd) => {
       const pv = new THREE.Group();
       pv.position.set(GATE.x + sd * 1.1, gh, GATE.z);
-      const dr = mesh(new THREE.BoxGeometry(1.1, 1.9, 0.16), material(0x9c6436), true);
+      const dr = mesh(new THREE.BoxGeometry(1.1, 1.9, 0.16), material(0x9c6436));
       dr.position.set(-sd * 0.55, 0.95, 0);
       pv.add(dr);
       for (const y of [0.4, 1.5]) {
-        const b = mesh(new THREE.BoxGeometry(1.12, 0.12, 0.18), material(0x6e4a30), false);
+        const b = mesh(new THREE.BoxGeometry(1.12, 0.12, 0.18), material(0x6e4a30), {
+          castShadow: false,
+        });
         b.position.set(-sd * 0.55, y, 0);
         pv.add(b);
       }
@@ -262,7 +279,7 @@ function build() {
     );
     GATE.lock.position.set(GATE.x, gh + 1.05, GATE.z + 0.15);
     scene.add(GATE.lock);
-    GATE.col = addBox(GATE.x, GATE.z, 1.1, 0.25, gh - 1, gh + 1.9);
+    GATE.col = addBox(GATE.x, GATE.z, { hw: 1.1, hd: 0.25, bottom: gh - 1, top: gh + 1.9 });
     const res = new THREE.Mesh(
       new THREE.CircleGeometry(3.2, 18),
       new THREE.MeshStandardMaterial({
@@ -322,7 +339,7 @@ function build() {
     const tr = mesh(new THREE.CylinderGeometry(0.4, 0.55, 6.5, 7), material(0x6e4a30));
     tr.position.set(tx, gh + 3.25, tz);
     scene.add(tr);
-    addCylinder(tx, tz, 0.55, gh - 1, gh + 6);
+    addCylinder(tx, tz, { r: 0.55, bottom: gh - 1, top: gh + 6 });
     for (let k = 0; k < 5; k++) {
       const c = mesh(
         new THREE.IcosahedronGeometry(1.5 + rand() * 0.4, 0),
@@ -350,14 +367,15 @@ function build() {
   {
     const gh = terrainHeight(MUSH.x, MUSH.z),
       H = 3.1;
-    const st = mesh(new THREE.CylinderGeometry(0.75, 1, H, 10), material(0xfff3df), true, true);
+    const st = mesh(new THREE.CylinderGeometry(0.75, 1, H, 10), material(0xfff3df), {
+      receiveShadow: true,
+    });
     st.position.set(MUSH.x, gh + H / 2, MUSH.z);
     scene.add(st);
     const cap = mesh(
       new THREE.SphereGeometry(2.4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
       material(0xf2545b),
-      true,
-      true,
+      { receiveShadow: true },
     );
     cap.scale.y = 0.55;
     cap.position.set(MUSH.x, gh + H - 0.1, MUSH.z);
@@ -365,7 +383,9 @@ function build() {
     for (let k = 0; k < 7; k++) {
       const a = (k / 7) * 6.283,
         r = k ? 1.5 : 0;
-      const sp = mesh(new THREE.SphereGeometry(0.26, 6, 5), material(0xffffff), false);
+      const sp = mesh(new THREE.SphereGeometry(0.26, 6, 5), material(0xffffff), {
+        castShadow: false,
+      });
       sp.scale.y = 0.4;
       sp.position.set(
         MUSH.x + Math.cos(a) * r,
@@ -374,8 +394,8 @@ function build() {
       );
       scene.add(sp);
     }
-    addCylinder(MUSH.x, MUSH.z, 1, gh - 1, gh + H);
-    addCylinder(MUSH.x, MUSH.z, 2.3, gh + H - 0.3, gh + H + 1.2);
+    addCylinder(MUSH.x, MUSH.z, { r: 1, bottom: gh - 1, top: gh + H });
+    addCylinder(MUSH.x, MUSH.z, { r: 2.3, bottom: gh + H - 0.3, top: gh + H + 1.2 });
     MUSH.top = gh + H + 1.2;
   }
 
@@ -412,28 +432,32 @@ function build() {
     if (!okForest(x, z)) continue;
     n++;
     const gh = terrainHeight(x, z);
-    const st = mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.3, 5), material(0xfff3df), false);
+    const st = mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.3, 5), material(0xfff3df), {
+      castShadow: false,
+    });
     st.position.set(x, gh + 0.15, z);
     scene.add(st);
     const cp = mesh(
       new THREE.SphereGeometry(0.2, 7, 5, 0, Math.PI * 2, 0, Math.PI / 2),
       material(n % 3 ? 0xf2545b : 0xffa53d),
-      false,
+      { castShadow: false },
     );
     cp.position.set(x, gh + 0.28, z);
     scene.add(cp);
   }
-  scatter(CENTER_3.x, CENTER_3.z, 18, okForest, 10, 70);
+  scatter(CENTER_3.x, CENTER_3.z, { radius: 18, allowed: okForest, bushes: 10, flowers: 70 });
 
   // golden acorns
-  addPickup(T1.x - 1.5, T1.z + 0.4, T1.top, 3);
-  addPickup(T4.x, T4.z, T4.top, 3);
-  addPickup(MUSH.x, MUSH.z, MUSH.top, 3);
+  addPickup(T1.x - 1.5, T1.z + 0.4, { y: T1.top, island: 3 });
+  addPickup(T4.x, T4.z, { y: T4.top, island: 3 });
+  addPickup(MUSH.x, MUSH.z, { y: MUSH.top, island: 3 });
   {
     const w = W3(-16, 9);
-    addDig(w.x, w.z, (d) => {
-      addPickup(d.x, d.z, d.y, 3, 0.6);
-      toast('A buried golden acorn!', 1800);
+    addDig(w.x, w.z, {
+      reward: (d) => {
+        addPickup(d.x, d.z, { y: d.y, island: 3, pop: 0.6 });
+        toast('A buried golden acorn!', 1800);
+      },
     });
   }
   wasabi.g.position.set(POOL3.x, 0.5, POOL3.z);
@@ -447,16 +471,26 @@ function build() {
   });
 }
 function buildLate() {
-  for (const [t, w] of Object.entries(BUSH3)) addFruit(t, w.x, w.z, terrainHeight(w.x, w.z), true);
+  for (const [t, w] of Object.entries(BUSH3))
+    addFruit(w.x, w.z, { type: t, y: terrainHeight(w.x, w.z), bush: true });
 }
 
 function giveFlower() {
   useUpCarried();
   sfx.buzz();
   HIVE.excite = 1.5;
-  burst(vec3(HIVE.x, HIVE.y + 1.2, HIVE.z), 24, [0xffd84d, 0xffffff, 0xff9fb2], 4, 3, 1, 1);
+  burst(vec3(HIVE.x, HIVE.y + 1.2, HIVE.z), {
+    count: 24,
+    color: [0xffd84d, 0xffffff, 0xff9fb2],
+    speed: 4,
+    up: 3,
+    life: 1,
+    size: 1,
+  });
   setTimeout(() => {
-    const k = addItem('key3', makeKey(), vec3(HIVE.x, HIVE.y + 0.6, HIVE.z), false, {
+    const k = addItem('key3', {
+      model: makeKey(),
+      pos: vec3(HIVE.x, HIVE.y + 0.6, HIVE.z),
       name: 'key',
     });
     if (!player.carry && game.state === 'play') carryItem(k); // if busy, the key just waits on the hive
@@ -470,7 +504,14 @@ function openGate() {
   GATE.col.top = -99;
   scene.remove(GATE.lock);
   sfx.creak();
-  burst(vec3(GATE.x, GATE.y + 1.2, GATE.z + 0.5), 24, [0xffd84d, 0x7fd8ee, 0xffffff], 4, 3, 1, 1);
+  burst(vec3(GATE.x, GATE.y + 1.2, GATE.z + 0.5), {
+    count: 24,
+    color: [0xffd84d, 0x7fd8ee, 0xffffff],
+    speed: 4,
+    up: 3,
+    life: 1,
+    size: 1,
+  });
   toast('The gate is open! Here comes the water!', 3000);
   completeTask('gate');
 }
@@ -495,15 +536,14 @@ function updWasabi3(dt) {
     g.position.y = poolWater.position.y - 0.05 + Math.abs(Math.sin(w.t * 5)) * 0.7;
     g.rotation.y += dt * 4;
     if (Math.random() < dt * 6)
-      burst(
-        vec3(g.position.x, poolWater.position.y, g.position.z),
-        3,
-        [0xffffff, 0x7fd8ee],
-        2,
-        3,
-        0.5,
-        0.8,
-      );
+      burst(vec3(g.position.x, poolWater.position.y, g.position.z), {
+        count: 3,
+        color: [0xffffff, 0x7fd8ee],
+        speed: 2,
+        up: 3,
+        life: 0.5,
+        size: 0.8,
+      });
     if (w.t > 2.4) {
       w.state = 'swim';
       w.t = 0;
@@ -526,7 +566,15 @@ function updWasabi3(dt) {
     g.position.copy(pt);
     g.position.y += Math.sin(T * 6) * 0.05;
     g.rotation.y = Math.atan2(tg.x, tg.z);
-    if (Math.random() < dt * 5) burst(vec3(pt.x, pt.y + 0.1, pt.z), 1, 0xffffff, 1, 1, 0.5, 0.6);
+    if (Math.random() < dt * 5)
+      burst(vec3(pt.x, pt.y + 0.1, pt.z), {
+        count: 1,
+        color: 0xffffff,
+        speed: 1,
+        up: 1,
+        life: 0.5,
+        size: 0.6,
+      });
     if (u >= 1) {
       scene.remove(g);
       ship.add(g);
@@ -535,7 +583,14 @@ function updWasabi3(dt) {
       g.scale.setScalar(0.75);
       w.state = 'crew';
       sfx.splashy();
-      burst(ship.localToWorld(vec3(0.65, 2, 1.4)), 24, [0x6fb6ff, 0xb59cff, 0xffffff], 4, 3, 1, 1);
+      burst(ship.localToWorld(vec3(0.65, 2, 1.4)), {
+        count: 24,
+        color: [0x6fb6ff, 0xb59cff, 0xffffff],
+        speed: 4,
+        up: 3,
+        life: 1,
+        size: 1,
+      });
       toast('Wasabi hopped into the bucket on the ship!', 3000);
       completeTask('wasabi');
     }
@@ -610,7 +665,14 @@ const I = {
       poolWater.position.y = lerp(0.52, 0.82, pk);
       if (Math.random() < dt * 10) {
         const pt = flowCurve.getPointAt(flowK);
-        burst(vec3(pt.x, 0.85, pt.z), 2, [0xffffff, 0xbff3ff], 2, 2, 0.5, 0.8);
+        burst(vec3(pt.x, 0.85, pt.z), {
+          count: 2,
+          color: [0xffffff, 0xbff3ff],
+          speed: 2,
+          up: 2,
+          life: 0.5,
+          size: 0.8,
+        });
       }
     }
     updWasabi3(dt);
@@ -667,7 +729,9 @@ const I = {
       flowerCalled = true;
       toast('Mango heard you! Here he comes…', 2400);
       mangoFetch(FLW, flowerMesh, (pos) => {
-        addItem('flower', flowerMesh, vec3(pos.x, pos.y + 0.05, pos.z), false, {
+        addItem('flower', {
+          model: flowerMesh,
+          pos: vec3(pos.x, pos.y + 0.05, pos.z),
           name: 'flower',
           lift: 0.05,
         });

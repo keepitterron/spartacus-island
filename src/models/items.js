@@ -7,7 +7,9 @@ export function makePlank(len) {
   const g = new THREE.Group();
   g.add(mesh(new THREE.BoxGeometry(len + 0.3, 0.16, 0.75), material(0xd09a5e)));
   for (const x of [-2, 0, 2]) {
-    const l = mesh(new THREE.BoxGeometry(0.06, 0.17, 0.76), material(0x9c6436), false);
+    const l = mesh(new THREE.BoxGeometry(0.06, 0.17, 0.76), material(0x9c6436), {
+      castShadow: false,
+    });
     l.position.x = x;
     g.add(l);
   }
@@ -45,7 +47,9 @@ export function makeTin() {
   l.position.y = 0.13;
   g.add(l);
   for (let k = 0; k < 3; k++) {
-    const c = mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.03, 8), material(0xe0a95a), false);
+    const c = mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.03, 8), material(0xe0a95a), {
+      castShadow: false,
+    });
     c.position.set(Math.cos(k * 2.1) * 0.1, 0.18, Math.sin(k * 2.1) * 0.1);
     g.add(c);
   }
@@ -112,7 +116,7 @@ export function makePillow() {
       c.position.set(sx * 0.5, 0, sz * 0.35);
       g.add(c);
     }
-  const st = mesh(new THREE.OctahedronGeometry(0.12, 0), material(0xffd84d), false);
+  const st = mesh(new THREE.OctahedronGeometry(0.12, 0), material(0xffd84d), { castShadow: false });
   st.position.set(0, 0.19, 0);
   g.add(st);
   return g;
@@ -134,12 +138,15 @@ export function makeSeed() {
   s.position.y = 0.3;
   g.add(s);
   for (const k of [-1, 1]) {
-    const l = mesh(leafGeo, material(0x4cc05a), false);
+    const l = mesh(leafGeo, material(0x4cc05a), { castShadow: false });
     l.position.set(k * 0.2, 0.5, 0);
     l.rotation.z = k * 0.6;
     g.add(l);
   }
-  const mound = mesh(new THREE.SphereGeometry(0.45, 8, 5), material(0x7a5a3a), false, true);
+  const mound = mesh(new THREE.SphereGeometry(0.45, 8, 5), material(0x7a5a3a), {
+    castShadow: false,
+    receiveShadow: true,
+  });
   mound.scale.y = 0.3;
   g.add(mound);
   return g;

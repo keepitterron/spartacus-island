@@ -54,7 +54,7 @@ const sailPath = new THREE.CatmullRomCurve3([
 ]);
 
 function build() {
-  buildGround(CENTER_2.x, CENTER_2.z, 64, LOW_POWER ? 90 : 140);
+  buildGround(CENTER_2.x, CENTER_2.z, { size: 64, segments: LOW_POWER ? 90 : 140 });
   const L = (x, z) => W2(x, z);
   [
     [-16, 4],
@@ -71,31 +71,31 @@ function build() {
     const w = L(x, z);
     palm(w.x, w.z);
   });
-  scatter(
-    CENTER_2.x,
-    CENTER_2.z,
-    16,
-    (x, z) =>
+  scatter(CENTER_2.x, CENTER_2.z, {
+    radius: 16,
+    allowed: (x, z) =>
       Math.hypot(x - LG.x, z - LG.z) > 14 &&
       Math.hypot(x - (CENTER_2.x - 12), z - (CENTER_2.z + 7)) > 5 &&
       !(Math.abs(x - CENTER_2.x) < 3 && z > CENTER_2.z + 12),
-    16,
-    90,
-  );
-  dock(CENTER_2.x, CENTER_2.z + 16.5, CENTER_2.z + 27.5);
+    bushes: 16,
+    flowers: 90,
+  });
+  dock(CENTER_2.x, { zFrom: CENTER_2.z + 16.5, zTo: CENTER_2.z + 27.5 });
   I.spawn = vec3(CENTER_2.x, 0, CENTER_2.z + 13);
   I.spawn.y = terrainHeight(I.spawn.x, I.spawn.z);
   I2.dockZ = CENTER_2.z + 20;
   // swing pads: two wooden launch platforms on the shore + rock pillars in the lagoon
   const platform = (x, z) => {
     const gh = terrainHeight(x, z);
-    const m = mesh(new THREE.CylinderGeometry(1.3, 1.4, 0.3, 12), material(0xc48a54), true, true);
+    const m = mesh(new THREE.CylinderGeometry(1.3, 1.4, 0.3, 12), material(0xc48a54), {
+      receiveShadow: true,
+    });
     m.position.set(x, gh + 0.15, z);
     scene.add(m);
     const pt = canvasTexture(128, 128, (c, w, h) => {
       c.fillStyle = '#c48a54';
       c.fillRect(0, 0, w, h);
-      drawPaw(c, 64, 62, 30, '#ffd84d');
+      drawPaw(c, { x: 64, y: 62, size: 30, color: '#ffd84d' });
     });
     const top = new THREE.Mesh(
       new THREE.CircleGeometry(1.25, 16),
@@ -105,13 +105,13 @@ function build() {
     top.position.set(x, gh + 0.31, z);
     top.receiveShadow = true;
     scene.add(top);
-    addCylinder(x, z, 1.3, gh - 1, gh + 0.3);
+    addCylinder(x, z, { r: 1.3, bottom: gh - 1, top: gh + 0.3 });
     return { x, z, y: gh + 0.3 };
   };
   const pillar = (dx, dz, r, top) => {
     const x = LG.x + dx,
       z = LG.z + dz;
-    const y = rockTop(x, z, r, top, 0x9aa6b8);
+    const y = rockTop(x, z, { radius: r, top, color: 0x9aa6b8 });
     return { x, z, y };
   };
   I2.S = platform(LG.x - 13, LG.z);
@@ -123,7 +123,7 @@ function build() {
   // mesa: only reachable with a Boing-Boing jump
   const mx = CENTER_2.x - 12,
     mz = CENTER_2.z + 7;
-  I2.mesa = { x: mx, z: mz, y: rock(mx, mz, 3.4, 4.4, 0xc9a27a) };
+  I2.mesa = { x: mx, z: mz, y: rock(mx, mz, { radius: 3.4, height: 4.4, color: 0xc9a27a }) };
   const nest = mesh(new THREE.TorusGeometry(0.6, 0.22, 6, 12), material(0x9c6436));
   nest.rotation.x = Math.PI / 2;
   nest.position.set(I2.N.x, I2.N.y + 0.15, I2.N.z);
@@ -134,24 +134,24 @@ function build() {
   addHook(I2.P2, I2.N);
   addHook(I2.N, I2.E);
   addHook(I2.P1, I2.B);
-  addPickup(I2.P2.x, I2.P2.z, I2.P2.y, 2);
-  addPickup(I2.B.x, I2.B.z, I2.B.y, 2);
-  addPickup(I2.mesa.x + 1.6, I2.mesa.z + 0.6, I2.mesa.y, 2);
+  addPickup(I2.P2.x, I2.P2.z, { y: I2.P2.y, island: 2 });
+  addPickup(I2.B.x, I2.B.z, { y: I2.B.y, island: 2 });
+  addPickup(I2.mesa.x + 1.6, I2.mesa.z + 0.6, { y: I2.mesa.y, island: 2 });
 }
 function buildLate() {
   {
     const w = W2(-6, 11);
-    addFruit('boing', w.x, w.z, terrainHeight(w.x, w.z), true);
+    addFruit(w.x, w.z, { type: 'boing', y: terrainHeight(w.x, w.z), bush: true });
   }
   {
     const w = W2(-12, -1);
-    addFruit('stretch', w.x, w.z, terrainHeight(w.x, w.z), true);
+    addFruit(w.x, w.z, { type: 'stretch', y: terrainHeight(w.x, w.z), bush: true });
   }
-  addDig(
-    I2.mesa.x - 0.5,
-    I2.mesa.z - 0.5,
-    (d) => {
-      const it = addItem('snack', makeTin(), vec3(d.x, d.y + 0.2, d.z), false, {
+  addDig(I2.mesa.x - 0.5, I2.mesa.z - 0.5, {
+    reward: (d) => {
+      const it = addItem('snack', {
+        model: makeTin(),
+        pos: vec3(d.x, d.y + 0.2, d.z),
         name: 'cracker tin',
         lift: 0.15,
       });
@@ -159,14 +159,16 @@ function buildLate() {
       toast('Mango’s cracker tin! Take it to the tall rock.', 3400);
       completeTask('snack');
     },
-    true,
-    I2.mesa.y,
-  );
+    marked: true,
+    y: I2.mesa.y,
+  });
   {
     const w = W2(-15, -9);
-    addDig(w.x, w.z, (d) => {
-      addPickup(d.x, d.z, d.y, 2, 0.6);
-      toast('A buried bone!', 1800);
+    addDig(w.x, w.z, {
+      reward: (d) => {
+        addPickup(d.x, d.z, { y: d.y, island: 2, pop: 0.6 });
+        toast('A buried bone!', 1800);
+      },
     });
   }
 }
@@ -174,15 +176,14 @@ function buildLate() {
 function feedMango() {
   useUpCarried();
   sfx.parrot();
-  burst(
-    mango.g.position.clone().add(vec3(0, 1, 0)),
-    24,
-    [0xff9fb2, 0xffd84d, 0x3fbf5a],
-    4,
-    3,
-    1,
-    1,
-  );
+  burst(mango.g.position.clone().add(vec3(0, 1, 0)), {
+    count: 24,
+    color: [0xff9fb2, 0xffd84d, 0x3fbf5a],
+    speed: 4,
+    up: 3,
+    life: 1,
+    size: 1,
+  });
   mangoHop();
   toast('Crunch! Mango hops onto Spartacus’s hat!', 3000);
   completeTask('feed');

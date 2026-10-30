@@ -37,11 +37,11 @@ export function buildWhale() {
     fin.position.set(sd * 3.2, -1, 1.5);
     fin.rotation.z = sd * -0.4;
     whale.add(fin);
-    const e = mesh(new THREE.SphereGeometry(0.32, 8, 6), I, false);
+    const e = mesh(new THREE.SphereGeometry(0.32, 8, 6), I, { castShadow: false });
     e.position.set(sd * 2.3, 0.3, 4.6);
     whale.add(e);
   }
-  const sm = mesh(new THREE.TorusGeometry(1, 0.1, 5, 14, Math.PI), I, false);
+  const sm = mesh(new THREE.TorusGeometry(1, 0.1, 5, 14, Math.PI), I, { castShadow: false });
   sm.rotation.z = Math.PI;
   sm.position.set(0, -0.3, 5.85);
   whale.add(sm);
@@ -91,21 +91,27 @@ game.cutscenes.whale = {
       wh.popT = 0;
       shipBubble.visible = false;
       sfx.pop();
-      burst(ship.position.clone().add(vec3(0, 3, 0)), 40, [0xdff9ff, 0xffffff], 7, 4, 1.2, 1.3);
+      burst(ship.position.clone().add(vec3(0, 3, 0)), {
+        count: 40,
+        color: [0xdff9ff, 0xffffff],
+        speed: 7,
+        up: 4,
+        life: 1.2,
+        size: 1.3,
+      });
       sfx.splashy();
     }
     if (wh.popped) {
       wh.popT += dt;
       if (Math.random() < dt * 14)
-        burst(
-          vec3(whale.position.x, 0.3, whale.position.z + 5),
-          2,
-          [0xffffff, 0xbff3ff],
-          2,
-          9,
-          1,
-          1,
-        );
+        burst(vec3(whale.position.x, 0.3, whale.position.z + 5), {
+          count: 2,
+          color: [0xffffff, 0xbff3ff],
+          speed: 2,
+          up: 9,
+          life: 1,
+          size: 1,
+        });
       if (wh.popT > 2.5 && !wh.shown) {
         wh.shown = true;
         sfx.win();

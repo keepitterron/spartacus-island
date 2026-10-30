@@ -35,7 +35,7 @@ export function makeCrab(body, shell, spots) {
     const st = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.22, 4), B);
     st.position.set(sd * 0.09, 0.36, 0.28);
     inner.add(st);
-    const e = mesh(new THREE.SphereGeometry(0.05, 6, 5), I, false);
+    const e = mesh(new THREE.SphereGeometry(0.05, 6, 5), I, { castShadow: false });
     e.position.set(sd * 0.09, 0.48, 0.28);
     inner.add(e);
     const cl = mesh(new THREE.SphereGeometry(0.11, 7, 5), B);
@@ -43,7 +43,7 @@ export function makeCrab(body, shell, spots) {
     cl.position.set(sd * 0.26, 0.14, 0.38);
     inner.add(cl);
     for (let k = 0; k < 3; k++) {
-      const l = mesh(new THREE.BoxGeometry(0.22, 0.04, 0.04), B, false);
+      const l = mesh(new THREE.BoxGeometry(0.22, 0.04, 0.04), B, { castShadow: false });
       l.position.set(sd * 0.28, 0.08, 0.1 - k * 0.12);
       l.rotation.z = sd * -0.5;
       inner.add(l);
@@ -60,7 +60,7 @@ export function makeCrab(body, shell, spots) {
   if (spots)
     for (let k = 0; k < 9; k++) {
       const a = k * 2.4,
-        d = mesh(new THREE.SphereGeometry(0.045, 5, 4), I, false);
+        d = mesh(new THREE.SphereGeometry(0.045, 5, 4), I, { castShadow: false });
       if (k < 5)
         d.position.set(
           Math.cos(a) * 0.24,
@@ -73,7 +73,7 @@ export function makeCrab(body, shell, spots) {
   return { g, inner };
 }
 // inClump: a seaweed clump that hides it (chop to reveal)
-export function addCrab(x, z, y, inClump) {
+export function addCrab(x, z, { y, inClump }) {
   const c = makeCrab(0xf2545b, 0xf3d9a4, false);
   c.g.position.set(x, y, z);
   c.g.rotation.y = rand() * 6;
@@ -105,7 +105,15 @@ export function popCrab(c) {
   const n = crabCount();
   c.j = n - 1;
   sfx.bone();
-  burst(c.g.position.clone().add(vec3(0, 0.5, 0)), 12, [0xf2545b, 0xffffff], 3, 2, 0.6, 0.8, -0.05);
+  burst(c.g.position.clone().add(vec3(0, 0.5, 0)), {
+    count: 12,
+    color: [0xf2545b, 0xffffff],
+    speed: 3,
+    up: 2,
+    life: 0.6,
+    size: 0.8,
+    gravity: -0.05,
+  });
   if (n >= CRABS_TOTAL) {
     toast('All the red hermit crabs found! Look at that parade!', 3200);
     completeTask('crabs');
@@ -149,21 +157,28 @@ export function updateCrabs(dt) {
     c.t += dt;
     if (c.state === 'inClump') {
       if (Math.random() < dt * 2.5)
-        burst(vec3(c.x, c.y + 0.8, c.z), 2, [0xffffff, 0xdff9ff], 0.4, 3, 2.6, 0.9, -0.12);
+        burst(vec3(c.x, c.y + 0.8, c.z), {
+          count: 2,
+          color: [0xffffff, 0xdff9ff],
+          speed: 0.4,
+          up: 3,
+          life: 2.6,
+          size: 0.9,
+          gravity: -0.12,
+        });
     } else if (c.state === 'hidden') {
       c.g.position.y = c.y + Math.abs(Math.sin(T * 2 + c.x)) * 0.03;
       c.g.rotation.z = Math.sin(T * 9 + c.x) * (Math.sin(T * 1.3 + c.x) > 0.5 ? 0.18 : 0);
       if (Math.random() < dt * 2.5)
-        burst(
-          c.g.position.clone().add(vec3(0, 0.4, 0)),
-          2,
-          [0xffffff, 0xdff9ff],
-          0.4,
-          3,
-          2.6,
-          0.9,
-          -0.12,
-        );
+        burst(c.g.position.clone().add(vec3(0, 0.4, 0)), {
+          count: 2,
+          color: [0xffffff, 0xdff9ff],
+          speed: 0.4,
+          up: 3,
+          life: 2.6,
+          size: 0.9,
+          gravity: -0.12,
+        });
     } else if (c.state === 'pop') {
       c.g.position.y = c.y + Math.sin(Math.min(1, c.t / 0.5) * Math.PI) * 0.8;
       if (c.t > 0.6) c.state = 'follow';

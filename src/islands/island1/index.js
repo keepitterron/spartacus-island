@@ -74,7 +74,7 @@ const sailPath = new THREE.CatmullRomCurve3([
 ]);
 
 function build() {
-  buildGround(0, 0, 100, LOW_POWER ? 120 : 200);
+  buildGround(0, 0, { size: 100, segments: LOW_POWER ? 120 : 200 });
   I.spawn = vec3(0, 0, 21);
   I.spawn.y = terrainHeight(I.spawn.x, I.spawn.z);
   [
@@ -97,24 +97,22 @@ function build() {
     [18, -16],
     [-9, 4],
   ].forEach((p) => palm(p[0], p[1]));
-  scatter(
-    0,
-    0,
-    20,
-    (x, z) =>
+  scatter(0, 0, {
+    radius: 20,
+    allowed: (x, z) =>
       Math.hypot(x - POND.x, z - POND.z) > 15 &&
       Math.hypot(x + 19, z + 3) > 5 &&
       Math.hypot(x - HILL.x, z - HILL.z) > 3 &&
       !(Math.abs(x) < 3 && z > 17),
-    26,
-    140,
-  );
-  dock(0, 25, 36);
+    bushes: 26,
+    flowers: 140,
+  });
+  dock(0, { zFrom: 25, zTo: 36 });
   {
     const p = mesh(new THREE.CylinderGeometry(0.24, 0.26, 4, 7), material(0x8b5a3c));
     p.position.set(GPOST.x, GPOST.top - 2, GPOST.z);
     scene.add(p);
-    addCylinder(GPOST.x, GPOST.z, 0.26, -3, GPOST.top);
+    addCylinder(GPOST.x, GPOST.z, { r: 0.26, bottom: -3, top: GPOST.top });
   }
   perchGull(GPOST);
   crate(3.1, 20.2);
@@ -133,8 +131,7 @@ function build() {
       const m = mesh(
         new THREE.CylinderGeometry(r1, r0, 2, 16),
         material(i % 2 ? 0xf2545b : 0xfffaf0),
-        true,
-        true,
+        { receiveShadow: true },
       );
       m.position.y = 2 * i + 1;
       g.add(m);
@@ -147,12 +144,9 @@ function build() {
       w.position.set(0, y, lerp(1.9, 1.5, y / 8) - 0.02);
       g.add(w);
     }
-    const deck = mesh(
-      new THREE.CylinderGeometry(2.3, 2.3, 0.4, 16),
-      material(0xc48a54),
-      true,
-      true,
-    );
+    const deck = mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.4, 16), material(0xc48a54), {
+      receiveShadow: true,
+    });
     deck.position.y = 8.2;
     g.add(deck);
     for (let k = 0; k < 14; k++) {
@@ -199,12 +193,16 @@ function build() {
     LH.bell.add(cl);
     LH.deckTop = gh + 8.4;
     LH.swing = 0;
-    addCylinder(LH.x, LH.z, 1.9, gh - 2, gh + 8);
-    addCylinder(LH.x, LH.z, 2.3, gh + 8, gh + 8.4);
+    addCylinder(LH.x, LH.z, { r: 1.9, bottom: gh - 2, top: gh + 8 });
+    addCylinder(LH.x, LH.z, { r: 2.3, bottom: gh + 8, top: gh + 8.4 });
     const ca = Math.cos(g.rotation.y),
       sa = Math.sin(g.rotation.y);
     for (const k of [-1, 1])
-      addCylinder(LH.x + k * 0.78 * ca, LH.z - k * 0.78 * sa, 0.12, gh + 8.3, gh + 10.4);
+      addCylinder(LH.x + k * 0.78 * ca, LH.z - k * 0.78 * sa, {
+        r: 0.12,
+        bottom: gh + 8.3,
+        top: gh + 10.4,
+      });
   }
   {
     const dx = -LH.x,
@@ -212,12 +210,12 @@ function build() {
       d = Math.hypot(dx, dz);
     LH.rockX = LH.x + (dx / d) * 4.4;
     LH.rockZ = LH.z + (dz / d) * 4.4;
-    LH.rockTop = rock(LH.rockX, LH.rockZ, 1.55, 4.35);
+    LH.rockTop = rock(LH.rockX, LH.rockZ, { radius: 1.55, height: 4.35 });
   }
-  FR.top = rock(FR.x, FR.z, 1.1, 1.15);
-  rock(-23, 18, 1.3, 0.8);
-  rock(14, 20, 0.9, 0.6);
-  rock(-6, -26, 1.4, 1.2);
+  FR.top = rock(FR.x, FR.z, { radius: 1.1, height: 1.15 });
+  rock(-23, 18, { radius: 1.3, height: 0.8 });
+  rock(14, 20, { radius: 0.9, height: 0.6 });
+  rock(-6, -26, { radius: 1.4, height: 1.2 });
 
   /* pond: a bridge with a gap (fix it with the plank) + lily pads to hop across */
   const bridgePart = (x0, x1) => {
@@ -227,8 +225,7 @@ function build() {
       const p = mesh(
         new THREE.BoxGeometry(((x1 - x0) / n) * 0.9, 0.16, 1.8),
         material(i % 2 ? 0xc48a54 : 0xb57b46),
-        true,
-        true,
+        { receiveShadow: true },
       );
       p.position.set(x, BR.y - 0.08, BR.z);
       p.rotation.x = (rand() - 0.5) * 0.04;
@@ -251,7 +248,7 @@ function build() {
         scene.add(q);
       }
     }
-    addBox((x0 + x1) / 2, BR.z, (x1 - x0) / 2, 0.9, -3, BR.y);
+    addBox((x0 + x1) / 2, BR.z, { hw: (x1 - x0) / 2, hd: 0.9, bottom: -3, top: BR.y });
   };
   bridgePart(-7.5, BR.gap0);
   bridgePart(BR.gap1, 6.2);
@@ -263,7 +260,7 @@ function build() {
       opacity: 0.28,
       depthWrite: false,
     }),
-    false,
+    { castShadow: false },
   );
   ghost.position.set((BR.gap0 + BR.gap1) / 2, BR.y - 0.08, BR.z);
   scene.add(ghost);
@@ -276,21 +273,20 @@ function build() {
     const g = new THREE.Group();
     g.position.set(x, 0.16, z);
     g.add(
-      mesh(
-        new THREE.CylinderGeometry(r, r, 0.12, 12, 1, false, 0.4, 5.8),
-        material(0x5fbf5a),
-        true,
-        true,
-      ),
+      mesh(new THREE.CylinderGeometry(r, r, 0.12, 12, 1, false, 0.4, 5.8), material(0x5fbf5a), {
+        receiveShadow: true,
+      }),
     );
     if (i % 2 === 0 || last) {
-      const fl = mesh(new THREE.IcosahedronGeometry(0.18, 0), material(0xff9fb2), false);
+      const fl = mesh(new THREE.IcosahedronGeometry(0.18, 0), material(0xff9fb2), {
+        castShadow: false,
+      });
       fl.position.set(r * 0.4, 0.15, -r * 0.3);
       g.add(fl);
     }
     scene.add(g);
     lilies.push({ g, phase: i });
-    addCylinder(x, z, r, -3, 0.22);
+    addCylinder(x, z, { r, bottom: -3, top: 0.22 });
   });
 
   /* treasure chest on the hill */
@@ -301,7 +297,9 @@ function build() {
     g.position.set(CHEST.x, gh, CHEST.z);
     g.rotation.y = Math.atan2(-CHEST.x, -CHEST.z);
     scene.add(g);
-    const base = mesh(new THREE.BoxGeometry(1.5, 0.85, 1.05), material(0xb5743e), true, true);
+    const base = mesh(new THREE.BoxGeometry(1.5, 0.85, 1.05), material(0xb5743e), {
+      receiveShadow: true,
+    });
     base.position.y = 0.43;
     g.add(base);
     for (const x of [-0.55, 0.55]) {
@@ -329,7 +327,7 @@ function build() {
     g.add(lock);
     CHEST.open = 0;
     CHEST.opening = false;
-    addBox(CHEST.x, CHEST.z, 0.8, 0.8, gh - 1, gh + 0.9);
+    addBox(CHEST.x, CHEST.z, { hw: 0.8, hd: 0.8, bottom: gh - 1, top: gh + 0.9 });
     const pole = mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.4, 5), material(0x7a4a2a));
     pole.position.set(1.3, 1.2, -0.3);
     g.add(pole);
@@ -368,60 +366,63 @@ function build() {
       );
       scene.add(l);
     }
-    addBox(WOOD.x - 0.6, WOOD.z - 2.2, 1, 1.1, gh - 1, gh + 1.05);
+    addBox(WOOD.x - 0.6, WOOD.z - 2.2, { hw: 1, hd: 1.1, bottom: gh - 1, top: gh + 1.05 });
   }
 
-  addItem(
-    'plank',
-    makePlank(BR.gap1 - BR.gap0),
-    vec3(WOOD.x + 1.8, terrainHeight(WOOD.x + 1.8, WOOD.z) + 0.1, WOOD.z),
-    true,
-    {
-      name: 'plank',
-      yaw: 0.3,
-      reach: 2.6,
-      lift: 0.1,
-      carryPos: vec3(0, -0.02, 0.18),
-      onCarry: () => hintOnce('plank', 'A long plank! It’s heavy, so Spartacus is slower.', 3000),
-    },
-  );
-  addPickup(4.35, 19.8, crateTop, 1);
-  addPickup(-12, 13, undefined, 1);
-  addPickup(LH.rockX, LH.rockZ, LH.rockTop, 1);
+  addItem('plank', {
+    model: makePlank(BR.gap1 - BR.gap0),
+    pos: vec3(WOOD.x + 1.8, terrainHeight(WOOD.x + 1.8, WOOD.z) + 0.1, WOOD.z),
+    heavy: true,
+    name: 'plank',
+    yaw: 0.3,
+    reach: 2.6,
+    lift: 0.1,
+    carryPos: vec3(0, -0.02, 0.18),
+    onCarry: () => hintOnce('plank', 'A long plank! It’s heavy, so Spartacus is slower.', 3000),
+  });
+  addPickup(4.35, 19.8, { y: crateTop, island: 1 });
+  addPickup(-12, 13, { island: 1 });
+  addPickup(LH.rockX, LH.rockZ, { y: LH.rockTop, island: 1 });
   {
     const l = lilies[lilies.length - 1].g.position;
-    addPickup(l.x, l.z, 0.22, 1);
+    addPickup(l.x, l.z, { y: 0.22, island: 1 });
   }
 }
 // fruit and dig spots are added after every island is built (they don't affect scenery)
 function buildLate() {
-  addFruit('boing', FR.x, FR.z, FR.top, false);
+  addFruit(FR.x, FR.z, { type: 'boing', y: FR.top, bush: false });
   const bone = (d) => {
-    addPickup(d.x, d.z, d.y, 1, 0.6);
+    addPickup(d.x, d.z, { y: d.y, island: 1, pop: 0.6 });
     toast('A buried bone!', 1800);
   };
-  addDig(18, 15, bone);
-  addDig(-22, 15, bone);
-  addDig(
-    POND.x + 0.6,
-    POND.z - 0.6,
-    (d) => {
-      const it = addItem('key', makeKey(), vec3(d.x, d.y + 0.2, d.z), false, { name: 'key' });
+  addDig(18, 15, { reward: bone });
+  addDig(-22, 15, { reward: bone });
+  addDig(POND.x + 0.6, POND.z - 0.6, {
+    reward: (d) => {
+      const it = addItem('key', {
+        model: makeKey(),
+        pos: vec3(d.x, d.y + 0.2, d.z),
+        name: 'key',
+      });
       carryItem(it);
       toast('An old key! Where could it fit?', 3200);
       completeTask('key');
     },
-    true,
-  );
-  addDig(-4, 6, (d) => {
-    const it = addItem('boot', makeBoot(), vec3(d.x, d.y + 0.25, d.z), false, {
-      name: 'boot',
-      lift: 0.15,
-    });
-    carryItem(it);
-    toast('Just an old boot. Silly Spartacus!', 2800);
+    marked: true,
   });
-  addDig(9, -22, bone);
+  addDig(-4, 6, {
+    reward: (d) => {
+      const it = addItem('boot', {
+        model: makeBoot(),
+        pos: vec3(d.x, d.y + 0.25, d.z),
+        name: 'boot',
+        lift: 0.15,
+      });
+      carryItem(it);
+      toast('Just an old boot. Silly Spartacus!', 2800);
+    },
+  });
+  addDig(9, -22, { reward: bone });
 }
 
 function ringBell() {
@@ -434,9 +435,21 @@ function ringBell() {
 }
 function placePlank() {
   placeItem(ghost.position, () => {
-    addBox((BR.gap0 + BR.gap1) / 2, BR.z, (BR.gap1 - BR.gap0) / 2 + 0.1, 0.9, -3, BR.y);
+    addBox((BR.gap0 + BR.gap1) / 2, BR.z, {
+      hw: (BR.gap1 - BR.gap0) / 2 + 0.1,
+      hd: 0.9,
+      bottom: -3,
+      top: BR.y,
+    });
     sfx.thunk();
-    burst(ghost.position.clone().add(vec3(0, 0.3, 0)), 20, [0xd09a5e, 0xffd84d], 4, 3, 0.7, 1);
+    burst(ghost.position.clone().add(vec3(0, 0.3, 0)), {
+      count: 20,
+      color: [0xd09a5e, 0xffd84d],
+      speed: 4,
+      up: 3,
+      life: 0.7,
+      size: 1,
+    });
     toast('The bridge is fixed!');
     completeTask('bridge');
   });
@@ -445,7 +458,14 @@ function openChest() {
   useUpCarried();
   CHEST.opening = true;
   sfx.creak();
-  burst(vec3(CHEST.x, CHEST.y + 1.2, CHEST.z), 30, [0xffd84d, 0xffffff, 0xff9fb2], 5, 3, 1, 1);
+  burst(vec3(CHEST.x, CHEST.y + 1.2, CHEST.z), {
+    count: 30,
+    color: [0xffd84d, 0xffffff, 0xff9fb2],
+    speed: 5,
+    up: 3,
+    life: 1,
+    size: 1,
+  });
   scroll.visible = true;
   scroll.position.set(CHEST.x, CHEST.y + 1, CHEST.z);
   scroll.userData.t = 0;

@@ -93,7 +93,7 @@ function seaweed(x, z, o = {}) {
     g.add(st);
   }
   scene.add(g);
-  const col = addCylinder(x, z, R0, gh - 1, gh + (o.colH || H));
+  const col = addCylinder(x, z, { r: R0, bottom: gh - 1, top: gh + (o.colH || H) });
   const c = { g, x, z, y: gh, col, forest: !!o.forest, crab: null, ph: rand() * 6, cutT: 0 };
   if (!thick) addChoppable(Object.assign(c, { onChop: onChopClump }));
   sway.push(c);
@@ -117,12 +117,9 @@ function onChopClump(c) {
 function vent(x, z, kind, off, dir) {
   const gh = terrainHeight(x, z),
     lift = kind === 'lift';
-  const ring = mesh(
-    new THREE.TorusGeometry(lift ? 0.9 : 1.3, 0.25, 6, 16),
-    material(0x6f7f94),
-    true,
-    true,
-  );
+  const ring = mesh(new THREE.TorusGeometry(lift ? 0.9 : 1.3, 0.25, 6, 16), material(0x6f7f94), {
+    receiveShadow: true,
+  });
   ring.rotation.x = Math.PI / 2;
   ring.position.set(x, gh + 0.15, z);
   scene.add(ring);
@@ -149,16 +146,20 @@ function pillar(lx, lz, h) {
   const { x, z } = W4(lx, lz),
     gh = terrainHeight(x, z),
     top = gh + h;
-  const m = mesh(new THREE.CylinderGeometry(1.1, 1.35, h, 8), material(0x8fa0b4), true, true);
+  const m = mesh(new THREE.CylinderGeometry(1.1, 1.35, h, 8), material(0x8fa0b4), {
+    receiveShadow: true,
+  });
   m.position.set(x, gh + h / 2, z);
   scene.add(m);
-  const cap = mesh(new THREE.CylinderGeometry(2.2, 1.6, 0.5, 10), material(0x9fb3c6), true, true);
+  const cap = mesh(new THREE.CylinderGeometry(2.2, 1.6, 0.5, 10), material(0x9fb3c6), {
+    receiveShadow: true,
+  });
   cap.position.set(x, top - 0.25, z);
   scene.add(cap);
   const t = { x, z, gh, top, grown: false };
-  t.col = addCylinder(x, z, 1.2, gh - 1, top - 0.6);
+  t.col = addCylinder(x, z, { r: 1.2, bottom: gh - 1, top: top - 0.6 });
   t.col.tree = t;
-  addCylinder(x, z, 2.2, top - 0.6, top);
+  addCylinder(x, z, { r: 2.2, bottom: top - 0.6, top });
   return t;
 }
 
@@ -168,12 +169,24 @@ function bonk(g) {
   player.sqv = -6;
   sfx.boing();
   octo.hmphT = 1.2;
-  burst(player.pos.clone().add(vec3(0, 1, 0)), 10, [0xff7a59, 0xffffff], 3, 2, 0.5, 0.8, -0.05);
+  burst(player.pos.clone().add(vec3(0, 1, 0)), {
+    count: 10,
+    color: [0xff7a59, 0xffffff],
+    speed: 3,
+    up: 2,
+    life: 0.5,
+    size: 0.8,
+    gravity: -0.05,
+  });
   hintOnce('bonk', 'Bonk! Wait for the tentacle to lift up, then run under.', 3200);
 }
 
 function build() {
-  buildGround(CENTER_4.x, CENTER_4.z, 92, LOW_POWER ? 90 : 150, { seabed: SB });
+  buildGround(CENTER_4.x, CENTER_4.z, {
+    size: 92,
+    segments: LOW_POWER ? 90 : 150,
+    palette: { seabed: SB },
+  });
   I.spawn = vec3(CENTER_4.x, 0, CENTER_4.z + 10);
   I.spawn.y = terrainHeight(I.spawn.x, I.spawn.z);
   // the water surface seen from below, and sun rays
@@ -265,11 +278,11 @@ function build() {
   for (let s0 = 0; s0 <= CLEN + 1; s0 += 1.5)
     for (const o of [-2.9, 2.9]) {
       const q = canPt(s0, o);
-      rock(q.x, q.z, 1.15, 6.2 + rand() * 1.5, 0x8fa0b4);
+      rock(q.x, q.z, { radius: 1.15, height: 6.2 + rand() * 1.5, color: 0x8fa0b4 });
     }
   for (const o of [-1.5, 0, 1.5]) {
     const q = canPt(CLEN + 2, o);
-    rock(q.x, q.z, 1.1, 6.5, 0x8fa0b4);
+    rock(q.x, q.z, { radius: 1.1, height: 6.5, color: 0x8fa0b4 });
   }
   [0.3, 0.55, 0.8].forEach((f, i) => {
     const q = canPt(CLEN * f, 0);
@@ -277,8 +290,10 @@ function build() {
   });
   {
     const q = canPt(CLEN, 0);
-    const top = rock(q.x, q.z, 0.85, 0.7, 0x9fb3c6);
-    addItem('pillow', makePillow(), vec3(q.x, top + 0.2, q.z), false, {
+    const top = rock(q.x, q.z, { radius: 0.85, height: 0.7, color: 0x9fb3c6 });
+    addItem('pillow', {
+      model: makePillow(),
+      pos: vec3(q.x, top + 0.2, q.z),
       name: 'pillow',
       lift: 0.2,
       onCarry: () => {
@@ -295,10 +310,10 @@ function build() {
     vent(v.x, v.z, 'lift', 0.4);
   }
   LEDGE = W4(10.9, 0.4);
-  LEDGE.top = rock(LEDGE.x, LEDGE.z, 1.3, 6.3, 0x9fb3c6);
+  LEDGE.top = rock(LEDGE.x, LEDGE.z, { radius: 1.3, height: 6.3, color: 0x9fb3c6 });
   // Boing-Boing shelf
   SHELF = W4(16, 8);
-  SHELF.top = rock(SHELF.x, SHELF.z, 1.6, 4.6, 0xc9b48a);
+  SHELF.top = rock(SHELF.x, SHELF.z, { radius: 1.6, height: 4.6, color: 0xc9b48a });
   // kelp pillar: grow a kelp ladder with Grow-Grow
   KP = pillar(-15, 4, 6.5);
   climbVine(KP, I.spawn.x, I.spawn.z);
@@ -306,15 +321,15 @@ function build() {
   /* hermit crabs: on the sand, on top of the pillar, shelf and ledge, and inside a clump */
   {
     const w = W4(-3, 6);
-    addCrab(w.x, w.z, terrainHeight(w.x, w.z));
+    addCrab(w.x, w.z, { y: terrainHeight(w.x, w.z) });
   }
-  addCrab(KP.x + 1.2, KP.z, KP.top);
-  addCrab(SHELF.x, SHELF.z, SHELF.top);
-  addCrab(LEDGE.x, LEDGE.z, LEDGE.top);
+  addCrab(KP.x + 1.2, KP.z, { y: KP.top });
+  addCrab(SHELF.x, SHELF.z, { y: SHELF.top });
+  addCrab(LEDGE.x, LEDGE.z, { y: LEDGE.top });
   {
     const w = W4(-8, 11);
     const cl = seaweed(w.x, w.z, { r: 1.1 });
-    addCrab(w.x, w.z, terrainHeight(w.x, w.z), cl);
+    addCrab(w.x, w.z, { y: terrainHeight(w.x, w.z), inClump: cl });
   }
   buildEduardo(hides);
   buildWhale();
@@ -323,8 +338,8 @@ function build() {
   function okSea(x, z) {
     if (Math.hypot(x - CENTER_4.x, z - CENTER_4.z) > 27) return false;
     if (
-      distToSegmentXZ(x, z, lanePt(-1, 0), OCTO) < 4.6 ||
-      distToSegmentXZ(x, z, CA, CB) < 4.4 ||
+      distToSegmentXZ({ x, z }, lanePt(-1, 0), OCTO) < 4.6 ||
+      distToSegmentXZ({ x, z }, CA, CB) < 4.4 ||
       Math.hypot(x - SHIP4.x, z - SHIP4.z) < 6 ||
       Math.hypot(x - I.spawn.x, z - I.spawn.z) < 3
     )
@@ -346,12 +361,9 @@ function build() {
       col = cCols[n % cCols.length];
     g.position.set(x, gh, z);
     if (n % 4 === 0) {
-      const b = mesh(
-        new THREE.IcosahedronGeometry(0.6 + rand() * 0.4, 1),
-        material(col),
-        true,
-        true,
-      );
+      const b = mesh(new THREE.IcosahedronGeometry(0.6 + rand() * 0.4, 1), material(col), {
+        receiveShadow: true,
+      });
       b.scale.y = 0.7;
       b.position.y = 0.3;
       g.add(b);
@@ -384,7 +396,7 @@ function build() {
       const arm = mesh(
         new THREE.ConeGeometry(0.12, 0.5, 4),
         material(n % 2 ? 0xffa53d : 0xff6b8a),
-        false,
+        { castShadow: false },
       );
       arm.rotation.z = -Math.PI / 2;
       arm.position.x = 0.25;
@@ -421,7 +433,8 @@ function build() {
   scene.add(breath);
 }
 function buildLate() {
-  for (const [t, w] of Object.entries(BUSH4)) addFruit(t, w.x, w.z, terrainHeight(w.x, w.z), true);
+  for (const [t, w] of Object.entries(BUSH4))
+    addFruit(w.x, w.z, { type: t, y: terrainHeight(w.x, w.z), bush: true });
 }
 
 // the ship rests on the sea floor inside its bubble
@@ -463,18 +476,25 @@ function update(dt) {
     v.on = t < v.onDur;
     const warn = !v.on && t > v.period - 0.7;
     if (v.on && Math.random() < dt * (v.kind === 'lift' ? 30 : 40))
-      burst(
-        vec3(v.x + (Math.random() - 0.5) * v.r, v.y + 0.3, v.z + (Math.random() - 0.5) * v.r),
-        1,
-        [0xffffff, 0xdff9ff],
-        1,
-        v.kind === 'lift' ? 9 : 7,
-        1,
-        1.3,
-        -0.25,
-      );
+      burst(vec3(v.x + (Math.random() - 0.5) * v.r, v.y + 0.3, v.z + (Math.random() - 0.5) * v.r), {
+        count: 1,
+        color: [0xffffff, 0xdff9ff],
+        speed: 1,
+        up: v.kind === 'lift' ? 9 : 7,
+        life: 1,
+        size: 1.3,
+        gravity: -0.25,
+      });
     if (warn && Math.random() < dt * 10)
-      burst(vec3(v.x, v.y + 0.2, v.z), 1, 0xffffff, 0.6, 2, 0.6, 0.6, -0.1);
+      burst(vec3(v.x, v.y + 0.2, v.z), {
+        count: 1,
+        color: 0xffffff,
+        speed: 0.6,
+        up: 2,
+        life: 0.6,
+        size: 0.6,
+        gravity: -0.1,
+      });
   }
   // tentacles: while the octopus is awake they arch over the lane and drop (~60% of the time safe)
   const active = OCTO.awake && !I.done.sleep;
@@ -503,16 +523,15 @@ function update(dt) {
   breath.position.copy(player.pos).add(vec3(0, 1.1, 0));
   breath.scale.setScalar(1 + Math.sin(T * 2.5) * 0.03);
   if (isPlaying() && Math.random() < dt * 3)
-    burst(
-      player.pos.clone().add(vec3((Math.random() - 0.5) * 6, 0.2, (Math.random() - 0.5) * 6)),
-      1,
-      0xdff9ff,
-      0.5,
-      2,
-      2.5,
-      0.8,
-      -0.15,
-    );
+    burst(player.pos.clone().add(vec3((Math.random() - 0.5) * 6, 0.2, (Math.random() - 0.5) * 6)), {
+      count: 1,
+      color: 0xdff9ff,
+      speed: 0.5,
+      up: 2,
+      life: 2.5,
+      size: 0.8,
+      gravity: -0.15,
+    });
 }
 
 function interact(p) {
@@ -524,7 +543,7 @@ function interact(p) {
       3800,
     );
   if (eduardo.state === 'idle0' && distXZ(p, eduardo.g.position.x, eduardo.g.position.z) < 5) eek();
-  if (!OCTO.awake && !I.done.sleep && distToSegmentXZ(p.x, p.z, lanePt(-4, 0), lanePt(0.5, 0)) < 3)
+  if (!OCTO.awake && !I.done.sleep && distToSegmentXZ(p, lanePt(-4, 0), lanePt(0.5, 0)) < 3)
     hintOnce('sleepy', 'Shh… a big octopus is snoring deep in the seaweed.', 3200);
   for (const v of vents)
     if (v.on && distXZ(p, v.x, v.z) < v.r && p.y < v.y + (v.kind === 'lift' ? 7 : 3.5)) {
@@ -555,11 +574,11 @@ function interact(p) {
   }
   if (player.power !== 'chop' && sway.some((c) => !c.cut && c.onChop && distXZ(p, c.x, c.z) < 3))
     hintOnce('chopneed', 'Seaweed in the way! A Chop-Chop fruit could cut through it.', 3400);
-  if (distToSegmentXZ(p.x, p.z, CA, canPt(3, 0)) < 2.5)
+  if (distToSegmentXZ(p, CA, canPt(3, 0)) < 2.5)
     hintOnce('vents', 'Bubble vents! Wait until they stop, then dash through.', 3400);
   if (distXZ(p, vents[3].x, vents[3].z) < 3)
     hintOnce('lift', 'This vent pushes UP! Stand on it when it bubbles.', 3200);
-  if (OCTO.awake && distToSegmentXZ(p.x, p.z, LA, lanePt(4, 0)) < 2.5)
+  if (OCTO.awake && distToSegmentXZ(p, LA, lanePt(4, 0)) < 2.5)
     hintOnce('tent', 'Grumpy tentacles! Run under them when they lift up.', 3400);
   if (
     OCTO.awake &&
@@ -594,7 +613,7 @@ const I = {
     maxY: -1.2,
     // in the seaweed lane, gently turn to look down it (the walls would hide the dog)
     assist(dt) {
-      if (distToSegmentXZ(player.pos.x, player.pos.z, LA, OCTO) < 2.6)
+      if (distToSegmentXZ(player.pos, LA, OCTO) < 2.6)
         followCam.yaw = lerpAngle(followCam.yaw, Math.atan2(-LU.x, -LU.z), Math.min(1, dt * 1.5));
     },
   },

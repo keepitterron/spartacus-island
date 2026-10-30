@@ -49,7 +49,7 @@ export function climbVine(t, tx, tz) {
     mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, 0.11, 5), material(0x3fae4f)),
   );
   for (let i = 2; i < 36; i += 2) {
-    const l = mesh(leafGeo, material(i % 4 ? 0x6cd65a : 0x4cc05a), false);
+    const l = mesh(leafGeo, material(i % 4 ? 0x6cd65a : 0x4cc05a), { castShadow: false });
     l.position.copy(pts[i]).multiply(vec3(1.08, 1, 1.08));
     l.rotation.set(rand() * 2, rand() * 6, rand() * 2);
     vine.add(l);
@@ -142,7 +142,14 @@ function startGrow(g) {
   g.k = 0;
   g.seed.visible = false;
   sfx.grow();
-  burst(vec3(g.x, g.y + 0.4, g.z), 20, POWERS.grow.col, 3, 3, 0.8, 0.9);
+  burst(vec3(g.x, g.y + 0.4, g.z), {
+    count: 20,
+    color: POWERS.grow.col,
+    speed: 3,
+    up: 3,
+    life: 0.8,
+    size: 0.9,
+  });
 }
 export function updateGrowers(dt) {
   const T = game.T;
@@ -234,13 +241,29 @@ export function updateZip(dt) {
     tg = g.curve.getTangentAt(z.u);
   player.pos.set(pt.x, pt.y - 1.55, pt.z);
   player.yaw = Math.atan2(tg.x, tg.z);
-  if (Math.random() < dt * 20) burst(pt.clone(), 1, POWERS.grow.col, 1, 0, 0.4, 0.6, 0.2);
+  if (Math.random() < dt * 20)
+    burst(pt.clone(), {
+      count: 1,
+      color: POWERS.grow.col,
+      speed: 1,
+      up: 0,
+      life: 0.4,
+      size: 0.6,
+      gravity: 0.2,
+    });
   if (z.u >= 1) {
     player.zip = null;
     player.pos.copy(g.end);
     player.vel.set(0, 0, 0);
     player.grounded = false;
     player.sqv = -4;
-    burst(player.pos.clone(), 10, POWERS.grow.col, 2.5, 1.5, 0.5, 0.8);
+    burst(player.pos.clone(), {
+      count: 10,
+      color: POWERS.grow.col,
+      speed: 2.5,
+      up: 1.5,
+      life: 0.5,
+      size: 0.8,
+    });
   }
 }
