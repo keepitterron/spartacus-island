@@ -9,6 +9,8 @@ import { player, SPEED } from './player.js';
 // Spartacus: half pitbull, half labrador. Shiny black coat, thin white stripe down the
 // muzzle, white chest patch and paw tips, floppy ears, straw hat with a red band.
 // Friends who ride along are added to dog.head; carried items go in dog.mouth.
+// dog.hat is the head-slot anchor (the thing Chop-Chop throws); the straw hat inside it is
+// dog.strawHat, hidden when another hat is worn (see systems/outfits.js).
 function makeDog() {
   const fur = material(0x2a2a33),
     white = material(0xffffff),
@@ -104,18 +106,20 @@ function makeDog() {
   hat.rotation.x = -0.15;
   hat.rotation.z = 0.08;
   head.add(hat);
+  const strawHat = new THREE.Group();
+  hat.add(strawHat);
   const brim = mesh(new THREE.CylinderGeometry(0.68, 0.72, 0.05, 18), straw);
-  hat.add(brim);
+  strawHat.add(brim);
   const crown = mesh(new THREE.CylinderGeometry(0.3, 0.33, 0.24, 14), straw);
   crown.position.y = 0.14;
-  hat.add(crown);
+  strawHat.add(crown);
   const hatTop = mesh(new THREE.SphereGeometry(0.3, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), straw);
   hatTop.scale.y = 0.45;
   hatTop.position.y = 0.26;
-  hat.add(hatTop);
+  strawHat.add(hatTop);
   const band = mesh(new THREE.CylinderGeometry(0.335, 0.335, 0.09, 14), ribbon);
   band.position.y = 0.08;
-  hat.add(band);
+  strawHat.add(band);
   // front pair first, then back pair; each is a hip pivot
   const legs = [
     [-1, 1],
@@ -145,7 +149,7 @@ function makeDog() {
   const tailTip = mesh(new THREE.SphereGeometry(0.07, 6, 5), fur);
   tailTip.position.y = 0.5;
   tail.add(tailTip);
-  return { root, body, head, ears, legs, tail, tongue, mouth, hat };
+  return { root, body, head, ears, legs, tail, tongue, mouth, hat, strawHat };
 }
 export const dog = makeDog();
 scene.add(dog.root);

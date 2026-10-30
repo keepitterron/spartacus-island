@@ -7,6 +7,9 @@ import { material, mesh } from '../core/materials.js';
 import { addCylinder, addBox } from '../core/colliders.js';
 import { terrainHeight } from './terrain.js';
 
+// every palm's {x, z, ground, crown, coconuts, shake}, so barking can shake them (systems/reactions.js)
+export const palms = [];
+
 // a leaning palm: six trunk segments, seven fronds and three coconuts
 export function palm(x, z) {
   const ground = terrainHeight(x, z);
@@ -39,12 +42,15 @@ export function palm(x, z) {
     pivot.add(frond);
     crown.add(pivot);
   }
+  const coconuts = [];
   for (let k = 0; k < 3; k++) {
     const coconut = mesh(new THREE.IcosahedronGeometry(0.17, 0), material(0x7a4a2a));
     coconut.position.set(Math.cos(k * 2.1) * 0.25, -0.2, Math.sin(k * 2.1) * 0.25);
     crown.add(coconut);
+    coconuts.push(coconut);
   }
   scene.add(g);
+  palms.push({ x, z, ground, crown, coconuts, shake: 0 });
   addCylinder(x, z, { r: 0.35, bottom: ground - 1, top: ground + 4.8 });
 }
 // a mossy rock; returns its top height (something to stand on)

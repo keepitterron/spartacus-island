@@ -10,7 +10,8 @@ import { game, currentIsland } from './core/state.js';
 import { burst, updateParticles } from './core/fx.js';
 import { overlayOpen, armButton } from './core/ui.js';
 import { bindInput } from './core/input.js';
-import { continueIsland, loadSave } from './core/save.js';
+import { continueIsland, loadSave, writeSave } from './core/save.js';
+import { isMuted, setMuted } from './core/audio.js';
 import { addTerrain } from './world/terrain.js';
 import { updateOcean } from './world/ocean.js';
 import { buildSky, updateSky } from './world/sky.js';
@@ -24,6 +25,9 @@ import { updateFloaters, updatePlacing } from './systems/items.js';
 import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
 import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
 import { updateHat } from './systems/hat.js';
+import { loadOutfit, updateOutfit } from './systems/outfits.js';
+import { buildSecrets, updateSecrets } from './systems/secrets.js';
+import { updateReactions } from './systems/reactions.js';
 import { updateGull } from './npcs/gull.js';
 import { updateMango } from './npcs/mango.js';
 import { updateWasabi } from './npcs/wasabi.js';
@@ -32,6 +36,7 @@ import { bark, doAction, updatePrompt, updateWoof } from './game/actions.js';
 import { checkTriggers } from './game/interact.js';
 import { startGame, restartFromBeginning } from './game/flow.js';
 import { orbitCamera, updateCamera } from './game/camera.js';
+import { installWardrobe, openWardrobe } from './game/wardrobe.js';
 import island1 from './islands/island1/index.js';
 import island2 from './islands/island2/index.js';
 import island3 from './islands/island3/index.js';
@@ -49,6 +54,8 @@ for (const island of ISLANDS) {
 for (const island of ISLANDS) island.build();
 buildSky();
 for (const island of ISLANDS) island.buildLate?.();
+buildSecrets(); // last, so presents can sit on top of everything built above
+loadOutfit();
 player.pos.copy(island1.spawn);
 SPAWN.copy(island1.spawn);
 
@@ -61,6 +68,20 @@ $('#listToggle').addEventListener('click', () => {
 });
 if (innerWidth < 500) $('#list').classList.add('closed'); // task list starts folded on phones
 armButton($('#restartLink'), 'Tap again to restart from island 1', restartFromBeginning);
+installWardrobe();
+
+// sound on/off, remembered in the save
+function showSoundButton() {
+  $('#btnSound').textContent = isMuted() ? '🔇' : '🔊';
+}
+function toggleSound() {
+  setMuted(!isMuted());
+  writeSave({ muted: isMuted() });
+  showSoundButton();
+}
+setMuted(!!loadSave().muted);
+showSoundButton();
+$('#btnSound').addEventListener('click', toggleSound);
 
 const continueTo = continueIsland(ISLANDS.length);
 if (continueTo >= 2) {
@@ -95,6 +116,8 @@ bindInput({
     if (k === ' ') player.jumpBuffer = JUMP_BUFFER;
     if (k === 'b') bark();
     if (k === 'f' || k === 'enter') doAction();
+    if (k === 'o') openWardrobe();
+    if (k === 'm') toggleSound();
   },
   onJump() {
     player.jumpBuffer = JUMP_BUFFER;
@@ -155,6 +178,9 @@ function updateWorld(dt) {
   updateHooks(dt);
   updateGrowers(dt);
   updateHat(dt);
+  updateOutfit();
+  updateSecrets(dt);
+  updateReactions(dt);
   updateGull(dt);
   updateMango(dt);
   updateWasabi(dt);

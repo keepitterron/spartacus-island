@@ -30,6 +30,10 @@
     <div id="power" class="hidden">
       <span><small>Power</small><b id="powerName"></b></span>
     </div>
+    <div class="tools">
+      <button class="tool" id="btnWardrobe" aria-label="Dress up" title="Dress up (O)">👕</button>
+      <button class="tool" id="btnSound" aria-label="Sound on or off" title="Sound (M)">🔊</button>
+    </div>
     <div id="toast" role="status" aria-live="polite"><span></span></div>
     <div id="prompt"><span></span></div>
     <div id="card">
@@ -56,6 +60,8 @@
           <span class="kb">
             <dt>Move</dt>
             <dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</dd>
+            <dt>Run</dt>
+            <dd><kbd>Shift</kbd> or keep going</dd>
             <dt>Jump</dt>
             <dd><kbd>Space</kbd></dd>
             <dt>Grab, dig</dt>
@@ -64,10 +70,14 @@
             <dd><kbd>B</kbd></dd>
             <dt>Look</dt>
             <dd><kbd>Q</kbd><kbd>E</kbd> or drag</dd>
+            <dt>Dress up</dt>
+            <dd><kbd>O</kbd> or 👕</dd>
           </span>
           <span class="tc">
             <dt>Move</dt>
             <dd>Yellow stick</dd>
+            <dt>Run</dt>
+            <dd>Push the stick all the way</dd>
             <dt>Jump</dt>
             <dd>Jump button</dd>
             <dt>Grab, dig</dt>
@@ -76,6 +86,8 @@
             <dd>Woof button</dd>
             <dt>Look</dt>
             <dd>Drag the screen</dd>
+            <dt>Dress up</dt>
+            <dd>👕 button</dd>
           </span>
         </dl>
         <p class="tip">Fell in the water? No problem, a bubble carries you back.</p>
@@ -95,6 +107,18 @@
         <div class="row">
           <button class="cta ghost" id="winExplore">Keep exploring</button>
           <button class="cta" id="winGo"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- dress-up panel; the camera shows Spartacus above it (game/wardrobe.js) -->
+    <div class="overlay hidden" id="wardrobe">
+      <div class="panel">
+        <div class="tabs" id="wardrobeTabs"></div>
+        <div class="grid" id="wardrobeGrid"></div>
+        <div class="row">
+          <button class="cta ghost" id="wardrobeRandom" aria-label="Random outfit">🎲</button>
+          <button class="cta" id="wardrobeDone">Done ✔</button>
         </div>
       </div>
     </div>

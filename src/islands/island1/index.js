@@ -554,6 +554,15 @@ const island = {
     all: 'All the bones! Good boy, Spartacus!',
     model: makeBone,
   },
+  // hidden presents with accessories inside (systems/secrets.js), island-local coordinates
+  secrets: [
+    { id: 'i1-lighthouse', x: -20, z: -3.2, reward: 'sunglasses' }, // on the lighthouse deck
+    { id: 'i1-logs', x: -13, z: 2.4, reward: 'red-bandana' }, // behind the log pile
+    { id: 'i1-islet', x: 9.6, z: -6.6, reward: 'shell-necklace' }, // across the fixed bridge
+    { id: 'i1-shore-rock', x: -6, z: -26, reward: 'flower-crown' }, // on the rock by the sea
+    { id: 'i1-hill', x: -13.6, z: -16.6, reward: 'tricorn' }, // next to the treasure chest
+    { id: 'i1-dig', x: 22, z: -4, reward: 'feather-bow', dig: true },
+  ],
   intro: [[400, 'Check the list. Let’s go, Spartacus!', 2600]],
   win: {
     title: 'Ready to sail!',

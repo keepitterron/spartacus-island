@@ -541,6 +541,121 @@ button:focus-visible {
   outline: 3px dashed #ff6b8a;
   outline-offset: 3px;
 }
+/* round HUD buttons under the power badge (wardrobe, sound) */
+.tools {
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 70px) calc(env(safe-area-inset-right, 0px) + 12px) 0
+    0;
+}
+.tool {
+  font: inherit;
+  font-size: 1.6rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 3px solid var(--edge);
+  box-shadow: 0 4px 0 var(--edge);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+.tool:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--edge);
+}
+
+/* the wardrobe sits at the bottom so Spartacus shows above it */
+#wardrobe {
+  align-items: end;
+  background: none;
+}
+#wardrobe .panel {
+  max-width: 560px;
+  padding: 14px 14px 16px;
+  max-height: 52vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex: none;
+}
+.tab {
+  font: inherit;
+  font-size: 1.7rem;
+  width: 60px;
+  height: 56px;
+  border-radius: 16px;
+  border: 3px solid var(--edge);
+  background: var(--card);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.6;
+}
+.tab.on {
+  background: var(--sun);
+  opacity: 1;
+  box-shadow: 0 4px 0 var(--edge);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  padding: 4px;
+  min-height: 0;
+}
+.cell {
+  font: inherit;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 88px;
+  border-radius: 18px;
+  border: 3px solid var(--edge);
+  background: var(--card);
+  cursor: pointer;
+  padding: 6px 4px;
+}
+.cell span {
+  font-size: 2.2rem;
+  line-height: 1.1;
+}
+.cell small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--muted);
+}
+.cell.on {
+  background: var(--leaf);
+  box-shadow: 0 4px 0 var(--edge);
+}
+.cell.on small {
+  color: #2b3a55;
+}
+.cell.locked {
+  cursor: default;
+  border-style: dashed;
+  opacity: 0.55;
+}
+.cell.locked span {
+  font-weight: 700;
+  color: var(--muted);
+}
 @media (max-width: 420px) {
   .list {
     width: min(240px, 62vw);

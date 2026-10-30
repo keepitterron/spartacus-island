@@ -8,6 +8,7 @@ import { player } from '../player/player.js';
 import { dropCarried, grabAction } from '../systems/items.js';
 import { digAction } from '../systems/digs.js';
 import { swingAction } from '../systems/hooks.js';
+import { barkReactions } from '../systems/reactions.js';
 import { allTasksDone } from './tasks.js';
 
 // Returns {label, fn} or null. Whatever is first in this list wins:
@@ -71,6 +72,7 @@ export function bark() {
     scene.add(woofSprite);
   }
   woofTimer = WOOF_TIME;
+  barkReactions(player.pos);
   currentIsland().bark?.(player.pos);
 }
 // the WOOF! floats up, grows and fades out over the last 0.4 s

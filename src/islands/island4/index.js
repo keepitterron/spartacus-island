@@ -775,6 +775,15 @@ const island = {
       { id: 'ship4', ic: '⛵', t: () => 'Bring Eduardo to the ship' },
     ],
   },
+  // hidden presents with accessories inside (systems/secrets.js), island-local coordinates
+  secrets: [
+    { id: 'i4-ship', x: -14, z: 13, reward: 'goggles' }, // near the ship
+    { id: 'i4-shelf', x: 16.6, z: 8.6, reward: 'coral-crown' }, // Boing-Boing onto the shelf
+    { id: 'i4-ledge', x: 11.4, z: 0.9, reward: 'bubble-helmet' }, // ride the lift vent
+    { id: 'i4-canyon', x: 14, z: -14, reward: 'starfish-brooch' }, // deep in the vent canyon
+    { id: 'i4-kelp', x: -18, z: -4, reward: 'pearl-collar' },
+    { id: 'i4-dig', x: 6, z: 14, reward: 'ink-mustache', dig: true },
+  ],
   intro: [
     [3400, 'The red hermit crabs lost their friend Eduardo!', 3400],
     [7200, 'Mango: “I’ll guard the ship!” Wasabi’s bubble lets Spartacus breathe.', 3800],

@@ -30,6 +30,8 @@ Always on in dev; on the live site add `?debug` to the URL. From the browser con
 | `__g.power('boing')`                                       | Give a power (`boing`, `stretch`, `grow`, `chop`)                                     |
 | `__g.done('bones')` / `__g.doneAll()`                      | Tick one task / the whole list (shows the win panel)                                  |
 | `__g.action()` / `__g.act()`                               | What the action button would do / press it                                            |
+| `__g.secrets()` / `__g.secret(i)`                          | This island's presents / teleport onto one (opens it; dig the buried ones first)      |
+| `__g.dressAll()` / `__g.wear('tricorn')`                   | Own every accessory / put one on                                                      |
 | `__g.game`, `__g.player`, `__g.followCam`, `__g.colliders` | Raw state                                                                             |
 
 In dev you can also import any module from the console, e.g. `(await import('/spartacus-island/src/npcs/wasabi.js')).wasabi.state`.

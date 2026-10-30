@@ -1,10 +1,16 @@
 // Every sound is synthesised with WebAudio, so there are no audio files to load.
 let context = null;
+// every sound goes through this gain node, so muting is one switch
+let master = null;
+const settings = { muted: false };
 // browsers only allow audio after a user gesture: call audioContext() from input handlers to unlock it
 export function audioContext() {
   if (!context) {
     try {
       context = new (window.AudioContext || window.webkitAudioContext)();
+      master = context.createGain();
+      master.gain.value = settings.muted ? 0 : 1;
+      master.connect(context.destination);
     } catch (e) {}
   }
   if (context?.state === 'suspended') context.resume().catch(() => {});
@@ -23,7 +29,7 @@ function tone(from, { to, duration, type = 'sine', volume = 0.2, delay = 0 }) {
   gain.gain.setValueAtTime(0.0001, start);
   gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
   gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-  osc.connect(gain).connect(ac.destination);
+  osc.connect(gain).connect(master);
   osc.start(start);
   osc.stop(start + duration + 0.05);
 }
@@ -43,9 +49,15 @@ function noise(duration, { freq, volume, delay = 0 }) {
   filter.frequency.value = freq;
   const gain = ac.createGain();
   gain.gain.value = volume;
-  source.connect(filter).connect(gain).connect(ac.destination);
+  source.connect(filter).connect(gain).connect(master);
   source.start(start);
 }
+export const isMuted = () => settings.muted;
+export function setMuted(muted) {
+  settings.muted = muted;
+  if (master) master.gain.value = muted ? 0 : 1;
+}
+
 export const sfx = {
   // a big dog's WOOF-WOOF: low growly body + chesty sub + breathy burst, second one a bit lower
   bark() {
@@ -113,6 +125,11 @@ export const sfx = {
   drop() {
     tone(300, { to: 180, duration: 0.1, type: 'triangle', volume: 0.1 });
     noise(0.06, { freq: 700, volume: 0.15 });
+  },
+  // a coconut hitting the sand
+  bonk() {
+    tone(220, { to: 110, duration: 0.12, type: 'triangle', volume: 0.14 });
+    noise(0.06, { freq: 600, volume: 0.2 });
   },
   thunk() {
     tone(160, { to: 90, duration: 0.18, type: 'triangle', volume: 0.18 });
