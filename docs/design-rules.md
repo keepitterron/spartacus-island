@@ -4,7 +4,7 @@ These came from Zoë and are the whole point of the game. Check every new featur
 
 - **No conflict.** No enemies, no damage, no health, no game over. "Grumpy" characters (the octopus) are obstacles with a happy ending, never villains.
 - **Failing costs seconds, never progress.**
-  - Falling in water: a bubble carries you back to where you were ~2 s earlier (`startRescue`).
+  - Water: Spartacus wades in the shallows and paddles in deep water; the open sea gently carries him back to the island. No drowning, no bubble.
   - Tentacles and vents: a soft bonk back a few steps.
   - Items dropped in water float back to where they were found, in a visible bubble, with sparkles.
 - **Cute even when challenging.** Challenge comes from timing, platforming and figuring things out. Her references: Rayman, Sackboy, Humans Fall Flat, Untitled Goose Game.
@@ -13,6 +13,17 @@ These came from Zoë and are the whole point of the game. Check every new featur
 - **Every new thing gets a one-time hint toast** (`hintOnce`). If a kid can't tell what to do, that's a bug.
 - **Zoë writes the story.** Ask her (via Claudio) rather than inventing big story beats. She enjoys story-making more than drawing.
 - **Never lose progress by accident.** Destructive buttons (restart, start over) need a second tap (`armButton`).
+- **Spartacus is Spartacus.** He's the real family dog in his straw hat, and that never changes: no outfits, accessories, skins or dress-up.
+
+## Zoë's play-test feedback
+
+Things she tried and said no to, so we don't build them again. Newest first.
+
+- **Nov 2026:**
+  - **No gifts or dress-up.** Hidden presents with accessories and a wardrobe were built and removed: she doesn't want Spartacus customised, and the presents weren't fun without that.
+  - **No ocean sound.** A swelling waves ambience (and an underwater hum) was unsettling. The island tunes and footsteps are fine.
+  - **No bubble rescue.** Being carried back after falling in the water was frustrating. Wading and paddling replaced it.
+  - The ground-pound animation was too fast to read; it now has a slower wind-up, a visible drop and a landing pause.
 
 ## Audience and platforms
 

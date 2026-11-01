@@ -7,13 +7,11 @@ import { game, currentIsland } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { terrainHeight } from '../world/terrain.js';
 import { player, SPEED } from './player.js';
-import { POUND_HANG } from './pound.js';
+import { poundPose } from './pound.js';
 
 // Spartacus: half pitbull, half labrador. Shiny black coat, thin white stripe down the
 // muzzle, white chest patch and paw tips, floppy ears, straw hat with a red band.
 // Friends who ride along are added to dog.head; carried items go in dog.mouth.
-// dog.hat is the head-slot anchor (the thing Chop-Chop throws); the straw hat inside it is
-// dog.strawHat, hidden when another hat is worn (see systems/outfits.js).
 function makeDog() {
   const fur = material(0x2a2a33),
     white = material(0xffffff),
@@ -109,20 +107,18 @@ function makeDog() {
   hat.rotation.x = -0.15;
   hat.rotation.z = 0.08;
   head.add(hat);
-  const strawHat = new THREE.Group();
-  hat.add(strawHat);
   const brim = mesh(new THREE.CylinderGeometry(0.68, 0.72, 0.05, 18), straw);
-  strawHat.add(brim);
+  hat.add(brim);
   const crown = mesh(new THREE.CylinderGeometry(0.3, 0.33, 0.24, 14), straw);
   crown.position.y = 0.14;
-  strawHat.add(crown);
+  hat.add(crown);
   const hatTop = mesh(new THREE.SphereGeometry(0.3, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), straw);
   hatTop.scale.y = 0.45;
   hatTop.position.y = 0.26;
-  strawHat.add(hatTop);
+  hat.add(hatTop);
   const band = mesh(new THREE.CylinderGeometry(0.335, 0.335, 0.09, 14), ribbon);
   band.position.y = 0.08;
-  strawHat.add(band);
+  hat.add(band);
   // front pair first, then back pair; each is a hip pivot
   const legs = [
     [-1, 1],
@@ -152,7 +148,7 @@ function makeDog() {
   const tailTip = mesh(new THREE.SphereGeometry(0.07, 6, 5), fur);
   tailTip.position.y = 0.5;
   tail.add(tailTip);
-  return { root, body, head, ears, legs, tail, tongue, mouth, hat, strawHat };
+  return { root, body, head, ears, legs, tail, tongue, mouth, hat };
 }
 export const dog = makeDog();
 scene.add(dog.root);
@@ -180,13 +176,14 @@ export function animateDog(dt, speed) {
     sfx.step(surfaceUnderfoot());
   const digging = player.digTimer > 0;
   poseLegs({ time, moving, digging });
-  dog.body.rotation.x = lerp(dog.body.rotation.x, bodyPitch(digging), Math.min(1, dt * 10));
-  // ground pound: a forward flip while hanging in the air
-  if (player.pounding && player.poundHang > 0)
-    dog.body.rotation.x = (1 - player.poundHang / POUND_HANG) * Math.PI * 2;
+  // a ground pound poses the body directly (its somersault must not be smoothed away)
+  const pound = poundPose();
+  dog.body.rotation.x = pound
+    ? pound.pitch
+    : lerp(dog.body.rotation.x, bodyPitch(digging), Math.min(1, dt * 10));
   updateSquash(dt);
-  const bob = player.grounded ? Math.abs(Math.sin(player.gaitPhase)) * 0.08 * moving : 0;
-  const stretchY = player.swing ? 1.12 : 1;
+  const bob = bodyBob(time, moving);
+  const stretchY = pound?.stretch ?? (player.swing ? 1.12 : 1);
   dog.body.scale.set(
     1 / Math.sqrt(player.squash),
     player.squash * stretchY,
@@ -198,7 +195,7 @@ export function animateDog(dt, speed) {
     Math.sin(time * (game.celebrateTime >= 0 || digging || player.swing ? 22 : 12)) *
     (0.5 + moving * 0.2);
   // ears flap up when falling and down when rising; pretend we're rising while carried along
-  const vy = game.state === 'rescue' || player.swing ? 6 : player.vel.y;
+  const vy = player.swing ? 6 : player.vel.y;
   for (const ear of dog.ears) {
     ear.rotation.x = clamp(vy * 0.05, -0.9, 0.9) + Math.sin(player.gaitPhase * 2) * 0.15 * moving;
     ear.rotation.z = ear.userData.side * (0.12 + clamp(-vy * 0.04, -0.1, 0.7));
@@ -221,8 +218,8 @@ function surfaceUnderfoot() {
 // legs 0-1 are the front pair, 2-3 the back pair; rotation.x swings them
 function poseLegs({ time, moving, digging }) {
   const legs = dog.legs;
-  if (game.state === 'rescue' || player.wading) {
-    // paddling in the bubble or in shallow water
+  if (player.wading) {
+    // paddling in the water
     const paddle = Math.sin(player.gaitPhase) * 0.8;
     legs.forEach((leg, i) => {
       leg.rotation.x = i % 2 ? paddle : -paddle;
@@ -264,10 +261,16 @@ function poseLegs({ time, moving, digging }) {
   }
 }
 
+// a trotting bob on land; floating in deep water he bobs gently on the waves
+function bodyBob(time, moving) {
+  if (player.swimming) return Math.sin(time * 2.5) * 0.06;
+  if (!player.grounded) return 0;
+  return Math.abs(Math.sin(player.gaitPhase)) * 0.08 * moving;
+}
+
 // nose-down while digging, nose-up while climbing / zipping / swinging
 function bodyPitch(digging) {
   if (digging) return 0.32;
-  if (player.pounding) return 0.3;
   if (player.climb) return -1.3;
   if (player.zip) return -0.35;
   if (player.swing) return -0.25;

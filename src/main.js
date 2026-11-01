@@ -18,7 +18,7 @@ import { updateOcean } from './world/ocean.js';
 import { buildSky, updateSky } from './world/sky.js';
 import { buildStars, setNight, updateDaylight, daylight } from './world/daylight.js';
 import { updateShip } from './world/ship.js';
-import { player, SPAWN, stepPlayer, updateRescue } from './player/player.js';
+import { player, stepPlayer } from './player/player.js';
 import { animateDog } from './player/dog.js';
 import { POWERS, updateFruits } from './systems/powers.js';
 import { updatePickups } from './systems/collect.js';
@@ -27,8 +27,6 @@ import { updateFloaters, updatePlacing } from './systems/items.js';
 import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
 import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
 import { updateHat } from './systems/hat.js';
-import { loadOutfit, updateOutfit } from './systems/outfits.js';
-import { buildSecrets, updateSecrets } from './systems/secrets.js';
 import { updateReactions } from './systems/reactions.js';
 import { buildBalls, updateBalls } from './systems/balls.js';
 import { buildCritters, updateCritters } from './systems/critters.js';
@@ -40,7 +38,6 @@ import { bark, doAction, updatePrompt, updateWoof } from './game/actions.js';
 import { checkTriggers } from './game/interact.js';
 import { startGame, restartFromBeginning } from './game/flow.js';
 import { orbitCamera, updateCamera } from './game/camera.js';
-import { installWardrobe, openWardrobe } from './game/wardrobe.js';
 import island1 from './islands/island1/index.js';
 import island2 from './islands/island2/index.js';
 import island3 from './islands/island3/index.js';
@@ -59,13 +56,10 @@ for (const island of ISLANDS) island.build();
 buildSky();
 buildStars();
 for (const island of ISLANDS) island.buildLate?.();
-// last, so presents, balls and critters can sit on top of everything built above
-buildSecrets();
+// last, so balls and critters can sit on top of everything built above
 buildBalls();
 buildCritters();
-loadOutfit();
 player.pos.copy(island1.spawn);
-SPAWN.copy(island1.spawn);
 
 /* ---------- HUD + menus ---------- */
 renderTasks();
@@ -76,7 +70,6 @@ $('#listToggle').addEventListener('click', () => {
 });
 if (innerWidth < 500) $('#list').classList.add('closed'); // task list starts folded on phones
 armButton($('#restartLink'), 'Tap again to restart from island 1', restartFromBeginning);
-installWardrobe();
 
 // sound on/off, remembered in the save
 function showSoundButton() {
@@ -112,8 +105,7 @@ function toggleNight() {
   setNight(!daylight.target);
   writeSave({ night: !!daylight.target });
   showNightButton();
-  if (daylight.target)
-    hintOnce('night', 'Night time! Some presents only come out at night ✨', 3200);
+  if (daylight.target) hintOnce('night', 'Night time! Look for the fireflies ✨', 3200);
 }
 if (loadSave().night) {
   setNight(true);
@@ -155,7 +147,6 @@ bindInput({
     if (k === ' ') player.jumpBuffer = JUMP_BUFFER;
     if (k === 'b') bark();
     if (k === 'f' || k === 'enter') doAction();
-    if (k === 'o') openWardrobe();
     if (k === 'm') toggleSound();
     if (k === 'n') toggleMusic();
     if (k === 'l') toggleNight();
@@ -203,7 +194,7 @@ function update(dt) {
   updatePowerSparkles(dt, speed);
   updateCelebration(dt);
   updatePrompt();
-  animateDog(dt, game.state === 'rescue' ? 3 : speed);
+  animateDog(dt, speed);
   updateSwingLine();
   updateCamera(dt);
 }
@@ -220,8 +211,6 @@ function updateWorld(dt) {
   updateHooks(dt);
   updateGrowers(dt);
   updateHat(dt);
-  updateOutfit();
-  updateSecrets(dt);
   updateReactions(dt);
   updateBalls(dt);
   updateCritters(dt);
@@ -234,13 +223,9 @@ function updateWorld(dt) {
   updateWoof(dt);
 }
 
-// move the player the way their current mode moves them (rescue, swinging, climbing,
-// zip line, or ordinary walking, which is the only mode that can dig or place items)
+// move the player the way their current mode moves them (swinging, climbing, zip line,
+// or ordinary walking, which is the only mode that can dig or place items)
 function stepPlayerForState(dt) {
-  if (game.state === 'rescue') {
-    updateRescue(dt);
-    return;
-  }
   const onRopeOrVine = player.swing || player.climb || player.zip; // before this step changes it
   if (player.swing) updateSwing(dt);
   else if (player.climb) updateClimb(dt);
@@ -252,7 +237,7 @@ function stepPlayerForState(dt) {
   updatePlacing(dt);
 }
 
-// horizontal speed while walking freely in play; 0 during rescue, swing, climb or zip
+// horizontal speed while walking freely in play; 0 during swing, climb or zip
 function groundSpeed() {
   const walking = game.state === 'play' && !player.swing && !player.climb && !player.zip;
   return walking ? Math.hypot(player.vel.x, player.vel.z) : 0;

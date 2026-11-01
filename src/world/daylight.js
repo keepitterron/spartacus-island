@@ -1,6 +1,6 @@
 // Day and night. The 🌙 button (or L) fades between them over a couple of seconds:
 // darker sky and fog, moonlight instead of sunshine, stars, fireflies (systems/critters.js),
-// softer music (core/music.js) and presents that only show up at night (systems/secrets.js).
+// and softer music (core/music.js).
 import * as THREE from 'three';
 import { lerp } from '../core/util.js';
 import { scene, camera, sun, hemi, ambience } from '../core/renderer.js';

@@ -704,16 +704,6 @@ const island = {
     all: 'All the golden acorns! Good boy, Spartacus!',
     model: makeAcorn,
   },
-  // hidden presents with accessories inside (systems/secrets.js), island-local coordinates
-  secrets: [
-    { id: 'i3-seed-tree', x: -0.6, z: 3.4, reward: 'acorn-cap' }, // top of the climbing tree
-    { id: 'i3-junction-tree', x: 7.4, z: -4.6, reward: 'mushroom-hat' }, // zip line stop
-    { id: 'i3-hive-tree', x: -1.8, z: -14.5, reward: 'honey-pot' }, // by the bees
-    { id: 'i3-acorn-tree', x: 16.3, z: -11, reward: 'butterfly-wings' }, // Stretchy hook
-    { id: 'i3-spring', x: -16, z: -1, reward: 'vine-scarf' }, // by Wasabi's spring
-    { id: 'i3-dig', x: 12, z: 14, reward: 'leaf-cape', dig: true },
-    { id: 'i3-night-meadow', x: 4, z: 13, reward: 'star-glasses', night: true }, // in the meadow by the dock
-  ],
   // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
   balls: [[3, 12]],
   critters: {

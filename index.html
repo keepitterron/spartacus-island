@@ -31,7 +31,6 @@
       <span><small>Power</small><b id="powerName"></b></span>
     </div>
     <div class="tools">
-      <button class="tool" id="btnWardrobe" aria-label="Dress up" title="Dress up (O)">👕</button>
       <button class="tool" id="btnSound" aria-label="Sound on or off" title="Sound (M)">🔊</button>
       <button class="tool" id="btnMusic" aria-label="Music on or off" title="Music (N)">🎵</button>
       <button class="tool" id="btnNight" aria-label="Day or night" title="Day or night (L)">
@@ -74,8 +73,6 @@
             <dd><kbd>B</kbd></dd>
             <dt>Look</dt>
             <dd><kbd>Q</kbd><kbd>E</kbd> or drag</dd>
-            <dt>Dress up</dt>
-            <dd><kbd>O</kbd> or 👕</dd>
             <dt>Sound, music</dt>
             <dd><kbd>M</kbd><kbd>N</kbd></dd>
             <dt>Night</dt>
@@ -94,13 +91,11 @@
             <dd>Woof button</dd>
             <dt>Look</dt>
             <dd>Drag the screen</dd>
-            <dt>Dress up</dt>
-            <dd>👕 button</dd>
             <dt>Night</dt>
             <dd>🌙 button</dd>
           </span>
         </dl>
-        <p class="tip">Fell in the water? No problem, a bubble carries you back.</p>
+        <p class="tip">Fell in the water? No problem, Spartacus can paddle!</p>
         <div class="row">
           <button class="cta ghost" id="play">Start from the beginning</button>
           <button class="cta hidden" id="cont">Continue</button>
@@ -117,18 +112,6 @@
         <div class="row">
           <button class="cta ghost" id="winExplore">Keep exploring</button>
           <button class="cta" id="winGo"></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- dress-up panel; the camera shows Spartacus above it (game/wardrobe.js) -->
-    <div class="overlay hidden" id="wardrobe">
-      <div class="panel">
-        <div class="tabs" id="wardrobeTabs"></div>
-        <div class="grid" id="wardrobeGrid"></div>
-        <div class="row">
-          <button class="cta ghost" id="wardrobeRandom" aria-label="Random outfit">🎲</button>
-          <button class="cta" id="wardrobeDone">Done ✔</button>
         </div>
       </div>
     </div>

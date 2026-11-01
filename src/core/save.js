@@ -1,14 +1,17 @@
 import { clamp } from './util.js';
 
-// The save: {v, island, owned: [accessory ids], equipped: {slot: id}, secrets: [secret ids], muted}.
+// The save: {v, island, muted, music, night}.
 // Bump VERSION when the shape changes and add a step to migrate() so older saves keep working.
 const STORAGE_KEY = 'spartacus-save';
-const VERSION = 4;
+const VERSION = 5;
 
-// v3 was island-only; everything else starts empty
+// v3 was island-only; v4 also had dress-up (owned, equipped, secrets), which is gone
 function migrate(save) {
   if (save.v === VERSION) return save;
-  if (save.v === 3) return { v: VERSION, island: save.island };
+  if (save.v === 3 || save.v === 4) {
+    const { island, muted, music, night } = save;
+    return { v: VERSION, island, muted, music, night };
+  }
   return {};
 }
 
