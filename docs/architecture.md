@@ -28,7 +28,8 @@ src/
     ship.js           the ship, its bubble, placeShipAt, onDeck, addBucket
     sky.js            clouds
   player/
-    player.js         player (state), stepPlayer physics, bubble rescue
+    player.js         player (state), stepPlayer physics (walk, run, jump, wade, paddle)
+    pound.js          the ground pound
     dog.js            Spartacus model + animateDog
   models/items.js     small reusable models (plank, key, bone, acorn, flower, pillow, seed…)
   systems/            reusable gameplay building blocks (see systems.md)
@@ -69,12 +70,11 @@ There are a few circular imports (e.g. `player.js` ↔ `systems/vines.js`). They
 
 `game.state` is one of:
 
-| state                     | meaning                                               | who sets it                                                                   |
-| ------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `start`                   | title screen, camera orbits island 1                  | initial                                                                       |
-| `play`                    | normal play                                           | `startGame`, `enterIsland`, end of rescue                                     |
-| `rescue`                  | bubble carrying Spartacus back after falling in water | `startRescue`                                                                 |
-| `sail`, `bubble`, `whale` | cutscenes                                             | registered in `game.cutscenes`; each has `update(dt)` and optionally `skip()` |
+| state                     | meaning                              | who sets it                                                                   |
+| ------------------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
+| `start`                   | title screen, camera orbits island 1 | initial                                                                       |
+| `play`                    | normal play                          | `startGame`, `enterIsland`                                                    |
+| `sail`, `bubble`, `whale` | cutscenes                            | registered in `game.cutscenes`; each has `update(dt)` and optionally `skip()` |
 
 Inside `play`, one of these drives the player each frame: `player.swing` → `updateSwing`, `player.climb` → `updateClimb`, `player.zip` → `updateZip`, otherwise `stepPlayer` (+ digging and item placing).
 

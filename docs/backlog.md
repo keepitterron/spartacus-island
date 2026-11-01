@@ -11,7 +11,7 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 
 - **Mid-island saves**: persist grown vines, found items, dug spots, crew state.
 - **Multiplayer** (the long-term goal): host-authoritative, one browser runs physics, others send inputs. Options: PeerJS/WebRTC with a share code, or PartyKit/Colyseus. Friends play crew members with built-in abilities (Mango glides/carries, Wasabi swims/bubbles, Eduardo pinches), which makes co-op puzzles natural. `stepPlayer` is already isolated, and `P` would become one of several players.
-- **Ship home base** (Minecraft-style): spend bones/acorns/crabs on ship decorations, sail patterns, hats; rescued friends live on the ship.
+- **Ship home base** (Minecraft-style): spend bones/acorns/crabs on ship decorations and sail patterns (not on Spartacus: no dress-up, see design-rules.md); rescued friends live on the ship.
 
 ## Tech
 

@@ -1,18 +1,17 @@
-// Spartacus's state and movement physics (walk, jump, collide, land), plus the bubble rescue
-// that floats him back to dry land when he falls in the water.
-import * as THREE from 'three';
-import { clamp, lerp, vec3 } from '../core/util.js';
-import { scene } from '../core/renderer.js';
-import { game, followCam, currentIsland } from '../core/state.js';
+// Spartacus's state and movement physics: walk, run, jump, collide, land, wade and paddle.
+// There's no drowning and no bubble: in water he paddles at the surface, and the open sea
+// gently carries him back towards the island (Zoë found the bubble rescue frustrating).
+import { vec3 } from '../core/util.js';
+import { followCam, currentIsland } from '../core/state.js';
 import { keys, moveAxis } from '../core/input.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
-import { toast, hintOnce, actionKeyName } from '../core/ui.js';
+import { hintOnce, actionKeyName } from '../core/ui.js';
 import { colliders, inFootprint, pushOut } from '../core/colliders.js';
 import { terrainHeight } from '../world/terrain.js';
 import { startClimb } from '../systems/vines.js';
 import { POWERS } from '../systems/powers.js';
-import { poundAction, holdPound, landPound, cancelPound } from './pound.js';
+import { poundAction, holdPound, landPound, updatePoundRecovery } from './pound.js';
 
 // Spartacus's physical state. Sub-states: swing / climb / zip are set by their systems
 // and replace normal walking while active; digTimer>0 or placing locks movement.
@@ -43,10 +42,12 @@ export const player = {
   runTime: 0, // seconds the stick has been pushed all the way (a long push turns into a run)
   sprinting: false,
   dustTimer: 0,
-  wading: false, // standing in shallow water: slower, paddling
+  wading: false, // in the water at all: slower, paddling
+  swimming: false, // in water too deep to stand: floating at the surface
   airTime: 0,
   pounding: false, // ground pound in progress (player/pound.js)
-  poundHang: 0,
+  poundTime: 0, // seconds since the pound started
+  poundRecover: 0, // landing pause left (movement is locked meanwhile)
 };
 export const RADIUS = 0.45,
   STEP_HEIGHT = 0.5,
@@ -57,12 +58,15 @@ export const RADIUS = 0.45,
 // Movement tuning in one place, so it can be tweaked live with Zoë (__g.move in debug).
 //   sprint: speed multiplier while running; runAfter: seconds of a full push before running
 //   starts (Shift runs straight away); fullPush: how far the stick counts as "all the way";
-//   wadeSpeed: speed multiplier in shallow water; wadeDepth: deeper than this is a bubble rescue
-export const MOVE = { sprint: 1.5, runAfter: 1.1, fullPush: 0.9, wadeSpeed: 0.55, wadeDepth: 0.65 };
-// where a bubble rescue goes when there is no recent safe spot (set on entering an island)
-export const SPAWN = vec3();
+//   wadeSpeed: speed multiplier in water; current: how fast the open sea carries him back
+export const MOVE = { sprint: 1.5, runAfter: 1.1, fullPush: 0.9, wadeSpeed: 0.55, current: 4.5 };
+// in deep water his feet float this far below the surface (head and back stay dry)
+const SWIM_Y = -0.55;
+// sea floor deeper than this is open sea (ponds and lagoons are shallower)
+const OPEN_SEA = -3.5;
 export const forwardDir = () => vec3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
-export const isMovementLocked = () => player.digTimer > 0 || !!player.placing;
+export const isMovementLocked = () =>
+  player.digTimer > 0 || !!player.placing || player.poundRecover > 0;
 
 // per-island tweaks; an island can override any of these with `physics:{…}`
 // bound: {x, z, r} circle the player can't leave
@@ -76,23 +80,17 @@ const DEFAULT_PHYSICS = {
 };
 export const physics = () => ({ ...DEFAULT_PHYSICS, ...currentIsland().physics });
 
-const rescue = { t: 0, from: vec3(), to: vec3() };
-// recent spots where Spartacus stood on dry ground (a rescue goes back to one of these)
-const safeSpots = [];
-let safeSpotTimer = 0;
-export const clearSafeSpots = () => {
-  safeSpots.length = 0;
-};
-
 // one physics step of normal walking (not swinging, climbing or zipping)
 export function stepPlayer(dt) {
   const pos = player.pos,
     vel = player.vel,
     locked = isMovementLocked(),
     phys = physics();
+  updatePoundRecovery(dt);
   const { forward, right, amount } = readMoveInput(locked);
   const heavy = player.carrying?.heavy;
   player.wading = phys.water && pos.y < 0;
+  const current = player.wading ? seaCurrent(pos) : null;
   updateSprint(dt, { amount, heavy });
   const speed =
     SPEED *
@@ -103,8 +101,8 @@ export function stepPlayer(dt) {
   const move = cameraRelative(forward, right);
   // ease towards the wanted velocity: snappy on the ground, floatier in the air
   const ease = Math.min(1, dt * (player.grounded ? 12 : 4));
-  vel.x += (move.x * speed - vel.x) * ease;
-  vel.z += (move.z * speed - vel.z) * ease;
+  vel.x += (move.x * speed + (current?.x ?? 0) - vel.x) * ease;
+  vel.z += (move.z * speed + (current?.z ?? 0) - vel.z) * ease;
   vel.y -= phys.gravity * dt;
   if (vel.y < -phys.maxFall) vel.y = -phys.maxFall;
   updateJump(dt, { locked, heavy, phys });
@@ -112,12 +110,42 @@ export function stepPlayer(dt) {
   const prevY = pos.y;
   pos.addScaledVector(vel, dt);
   if (collideSides(prevY, { move, amount, heavy })) return;
-  landOn(groundHeightUnder(pos, prevY));
-  rememberSafeSpot(dt);
+  const wasSwimming = player.swimming,
+    fallSpeed = -vel.y;
+  // in water deeper than he can stand in, the surface holds him up like ground
+  const ground = groundHeightUnder(pos, prevY),
+    deep = phys.water && ground < SWIM_Y;
+  landOn(deep ? SWIM_Y : ground);
+  player.swimming = deep && player.grounded;
+  if (player.swimming && !wasSwimming && fallSpeed > 4) splashDown();
   if (phys.bound) keepInBound(pos, phys.bound);
   hintPound(dt);
   if (player.wading) splashAround(dt, amount);
-  if (phys.water && pos.y < -MOVE.wadeDepth) startRescue();
+}
+
+// out over the open sea, a gentle current towards the island centre, faster than he paddles
+function seaCurrent(pos) {
+  if (terrainHeight(pos.x, pos.z) > OPEN_SEA) return null;
+  hintOnce('current', 'The waves carry Spartacus back to the island.', 2800);
+  const center = currentIsland().center,
+    dx = center.x - pos.x,
+    dz = center.z - pos.z,
+    dist = Math.hypot(dx, dz) || 1;
+  return { x: (dx / dist) * MOVE.current, z: (dz / dist) * MOVE.current };
+}
+
+// falling into deep water: a big splash, then he bobs up and paddles
+function splashDown() {
+  sfx.splash();
+  player.squashVel = -6;
+  burst(vec3(player.pos.x, 0, player.pos.z), {
+    count: 22,
+    color: [0xffffff, 0xbff3ff, 0x7fd8ee],
+    speed: 5,
+    up: 5,
+    life: 0.9,
+    size: 1.2,
+  });
 }
 
 // the first time he's up high for a while, tell her about the ground pound
@@ -129,7 +157,7 @@ function hintPound(dt) {
 
 // little splashes round his legs while wading
 function splashAround(dt, amount) {
-  hintOnce('wade', 'Splish splash! Too deep and the bubble comes.', 2600);
+  hintOnce('wade', 'Splish splash! Spartacus can paddle.', 2600);
   player.dustTimer -= dt;
   if (player.dustTimer > 0 || amount < 0.2) return;
   player.dustTimer = 0.12;
@@ -204,7 +232,8 @@ function updateJump(dt, { locked, heavy, phys }) {
   player.coyoteTimer = player.grounded ? 0.12 : player.coyoteTimer - dt;
   player.jumpBuffer -= dt;
   if (locked || player.jumpBuffer <= 0 || player.coyoteTimer <= 0) return;
-  const boing = player.superJump && !heavy;
+  // no Boing-Boing from the water: the hops out are ordinary ones
+  const boing = player.superJump && !heavy && !player.swimming;
   player.vel.y = jumpSpeed(heavy, boing) * phys.jump;
   player.coyoteTimer = 0;
   player.jumpBuffer = 0;
@@ -289,16 +318,6 @@ function landOn(support) {
   } else player.grounded = false;
 }
 
-// remember the last 12 safe spots (one every 0.3 s) for bubble rescues
-function rememberSafeSpot(dt) {
-  if (!player.grounded || player.pos.y <= 0.25) return;
-  safeSpotTimer -= dt;
-  if (safeSpotTimer > 0) return;
-  safeSpotTimer = 0.3;
-  safeSpots.push(player.pos.clone());
-  if (safeSpots.length > 12) safeSpots.shift();
-}
-
 function keepInBound(pos, bound) {
   const dx = pos.x - bound.x,
     dz = pos.z - bound.z,
@@ -307,65 +326,4 @@ function keepInBound(pos, bound) {
     pos.x = bound.x + (dx / dist) * bound.r;
     pos.z = bound.z + (dz / dist) * bound.r;
   }
-}
-
-/* ---------- bubble rescue: falling in the water floats you back ~2 s ---------- */
-const rescueBubble = new THREE.Mesh(
-  new THREE.SphereGeometry(1.1, 20, 14),
-  new THREE.MeshStandardMaterial({
-    color: 0xbff3ff,
-    transparent: true,
-    opacity: 0.35,
-    roughness: 0.1,
-    metalness: 0.2,
-  }),
-);
-rescueBubble.visible = false;
-scene.add(rescueBubble);
-export function startRescue() {
-  game.state = 'rescue';
-  cancelPound();
-  rescue.t = 0;
-  rescue.from.copy(player.pos);
-  // a spot from ~1.5 s ago, so we don't land right back on the edge we fell off
-  rescue.to.copy(safeSpots.length ? safeSpots[Math.max(0, safeSpots.length - 6)] : SPAWN);
-  safeSpots.length = 0;
-  player.vel.set(0, 0, 0);
-  sfx.splash();
-  burst(vec3(player.pos.x, 0, player.pos.z), {
-    count: 22,
-    color: [0xffffff, 0xbff3ff, 0x7fd8ee],
-    speed: 5,
-    up: 5,
-    life: 0.9,
-    size: 1.2,
-  });
-  rescueBubble.visible = true;
-  toast(player.power ? 'Fruit pups can’t swim! Bubble rescue!' : 'Splash! Bubble rescue!');
-}
-export function updateRescue(dt) {
-  rescue.t += dt;
-  const duration = clamp(rescue.from.distanceTo(rescue.to) / 6, 1.2, 2.6);
-  // ease in-out, plus a 3.5 high arc
-  const t = clamp(rescue.t / duration, 0, 1),
-    eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-  player.pos.lerpVectors(rescue.from, rescue.to, eased);
-  player.pos.y = lerp(rescue.from.y, rescue.to.y, eased) + Math.sin(Math.PI * t) * 3.5;
-  rescueBubble.position.copy(player.pos).add(vec3(0, 0.85, 0));
-  rescueBubble.scale.setScalar(1 + Math.sin(rescue.t * 9) * 0.05);
-  player.gaitPhase += dt * 18;
-  if (t < 1) return;
-  rescueBubble.visible = false;
-  sfx.pop();
-  burst(rescueBubble.position.clone(), {
-    count: 16,
-    color: 0xdff9ff,
-    speed: 4,
-    up: 2,
-    life: 0.5,
-    size: 0.9,
-  });
-  player.grounded = false;
-  player.vel.set(0, 2, 0);
-  game.state = 'play';
 }

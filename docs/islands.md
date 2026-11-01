@@ -25,7 +25,6 @@ const island = {
   tasks:{title, list:[{id, ic, t:()=>text, power?}]},   // ic = emoji icon, t = label text
   //   ids must be unique across the whole game; power:'grow' ticks itself when that fruit is eaten
   collect:{total, count:0, taskId, name, all, model},   // optional bones/acorns-style pickups
-  secrets:[{id, x, z, reward, y?, dig?}],                // hidden presents (island-local), see systems.md
   balls:[[x, z], …],                                     // beach balls (island-local)
   critters:{birds, butterflies, fish},                   // ambient life spots (island-local)
   music:{tempo, root, wave, melody, bass},               // the island's tune (core/music.js)

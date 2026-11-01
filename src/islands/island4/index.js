@@ -620,7 +620,7 @@ function updateTentacleGates(T) {
 }
 
 function updateBreathBubble(dt, T) {
-  breathBubble.visible = game.state === 'play' || game.state === 'rescue';
+  breathBubble.visible = game.state === 'play';
   breathBubble.position.copy(player.pos).add(vec3(0, 1.1, 0));
   breathBubble.scale.setScalar(1 + Math.sin(T * 2.5) * 0.03);
   // stray bubbles rising around Spartacus
@@ -775,15 +775,6 @@ const island = {
       { id: 'ship4', ic: '⛵', t: () => 'Bring Eduardo to the ship' },
     ],
   },
-  // hidden presents with accessories inside (systems/secrets.js), island-local coordinates
-  secrets: [
-    { id: 'i4-ship', x: -14, z: 13, reward: 'goggles' }, // near the ship
-    { id: 'i4-shelf', x: 16.6, z: 8.6, reward: 'coral-crown' }, // Boing-Boing onto the shelf
-    { id: 'i4-ledge', x: 11.4, z: 0.9, reward: 'bubble-helmet' }, // ride the lift vent
-    { id: 'i4-canyon', x: 14, z: -14, reward: 'starfish-brooch' }, // deep in the vent canyon
-    { id: 'i4-kelp', x: -18, z: -4, reward: 'pearl-collar' },
-    { id: 'i4-dig', x: 6, z: 14, reward: 'ink-mustache', dig: true },
-  ],
   // fish schools [x, z, height above the sea bed] (systems/critters.js), island-local
   critters: {
     fish: [
