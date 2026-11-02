@@ -1,5 +1,5 @@
 // Spinning collectibles (bones, golden acorns…) that Spartacus picks up by walking into them.
-import { distXZ } from '../core/util.js';
+import { distXZ, spotKey } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { game } from '../core/state.js';
 import { sfx } from '../core/audio.js';
@@ -62,6 +62,21 @@ function countPickup(collect) {
     toast(`${collect.name}! ${count} of ${collect.total}`, 1600);
     renderTasks();
   }
+}
+
+// mid-island saves (game/progress.js): which pickups are gone, by spot
+export const takenPickups = (island) =>
+  pickups
+    .filter((pickup) => pickup.island === island && pickup.taken)
+    .map((p) => spotKey(p.x, p.z));
+export function restorePickups(island, { taken = [], count = 0 }) {
+  for (const pickup of pickups)
+    if (pickup.island === island && taken.includes(spotKey(pickup.x, pickup.z))) {
+      pickup.taken = true;
+      scene.remove(pickup.model);
+    }
+  const collect = game.islands[island].collect;
+  if (collect) collect.count = count;
 }
 
 // "Find 6 bones (2/6)" for the to-do list

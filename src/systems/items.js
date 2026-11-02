@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { clamp, lerpAngle, distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
+import { ownerIsland } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
 import { toast } from '../core/ui.js';
@@ -10,7 +11,7 @@ import { supportHeight } from '../core/colliders.js';
 import { player, forwardDir, physics } from '../player/player.js';
 import { dog } from '../player/dog.js';
 
-// item.state: ground | carried | floating (bubbling home) | placed | used
+// item.state: ground | carried | floating (bubbling home) | placed | used; island: whose it is
 // opts: name (for messages), heavy (slower, lower jumps), reach, lift (height above ground
 //       when dropped), carryPos/carryRot (in the mouth), yaw, onCarry(it)
 export const items = [];
@@ -34,6 +35,7 @@ export function addItem(id, { model, pos, heavy = false, ...opts }) {
     lift: 0.12,
     carryPos: vec3(0, -0.05, 0.12),
     carryRot: 0,
+    island: ownerIsland(),
     ...opts,
   };
   items.push(it);
@@ -203,4 +205,30 @@ export function updatePlacing(dt) {
   model.rotation.set(0, 0, 0);
   player.placing = null;
   placing.onDone?.(placing.it);
+}
+
+/* mid-island saves (game/progress.js): where each of an island's items is, by id */
+// [{id, state, pos: [x, y, z]}]; something floating home is saved as already home
+export const itemSpots = (island) =>
+  items
+    .filter((it) => it.island === island)
+    .map((it) => {
+      const pos = it.state === 'floating' ? it.home : it.mesh.position;
+      return { id: it.id, state: it.state, pos: [pos.x, pos.y, pos.z] };
+    });
+// placed items are left to the island's own loadState (only it knows what fixing the bridge means)
+export function restoreItems(island, saved = []) {
+  for (const { id, state, pos } of saved) {
+    const it = items.find((item) => item.island === island && item.id === id);
+    if (!it || state === 'placed') continue;
+    if (player.carrying === it) releaseCarried();
+    if (state === 'used') {
+      scene.remove(it.mesh);
+      it.state = 'used';
+    } else if (state === 'carried') carryItem(it);
+    else {
+      it.mesh.position.set(...pos);
+      it.state = 'ground';
+    }
+  }
 }

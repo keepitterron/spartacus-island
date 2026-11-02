@@ -1,10 +1,10 @@
 // Grow-Grow: magic seeds grow either a climbing vine up a "tree" or a zipline vine
 // between two tree tops. Also climbing and zipping themselves.
 import * as THREE from 'three';
-import { clamp, distXZ, rand, vec3 } from '../core/util.js';
+import { clamp, distXZ, rand, spotKey, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { material, mesh } from '../core/materials.js';
-import { game } from '../core/state.js';
+import { game, ownerIsland } from '../core/state.js';
 import { moveAxis } from '../core/input.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
@@ -17,7 +17,7 @@ import { POWERS } from './powers.js';
 // A tree is {x,z,gh (ground height), top, grown} with a collider whose .tree points back at it
 // (see bigTree in island 3, kelp pillar in island 4). Walking into it once grown = climb.
 // A grower is a seed plus what it grows:
-//   {kind:'climb'|'zip', x, z, y (the seed), seed, grown, growing, growth (0..1),
+//   {kind:'climb'|'zip', x, z, y (the seed), seed, grown, growing, growth (0..1), island,
 //    climb: t (the tree), vine;  zip: a, b (trees), tube, geo, curve, len, end (landing)}
 export const growers = [];
 const GROW_TIME = 1.3;
@@ -75,6 +75,7 @@ export function climbVine(tree, towardX, towardZ) {
     grown: false,
     growing: false,
     growth: 0,
+    island: ownerIsland(),
   };
   growers.push(grower);
   return grower;
@@ -131,6 +132,7 @@ export function zipVine(a, b) {
     grown: false,
     growing: false,
     growth: 0,
+    island: ownerIsland(),
   };
   growers.push(grower);
   return grower;
@@ -200,6 +202,28 @@ function grow(grower, dt) {
     grower.t.grown = true;
     toast('The vine grew! Walk into it to climb.', 3000);
   } else toast(`A vine to the next tree! Press ${actionKeyName()} to zip.`, 3000);
+}
+
+// mid-island saves (game/progress.js): which seeds have grown, by spot
+export const grownSpots = (island) =>
+  growers.filter((g) => g.island === island && g.grown).map((g) => spotKey(g.x, g.z));
+export function restoreGrowers(island, grown = []) {
+  for (const grower of growers)
+    if (grower.island === island && !grower.grown && grown.includes(spotKey(grower.x, grower.z)))
+      growAtOnce(grower);
+}
+function growAtOnce(grower) {
+  grower.seed.visible = false;
+  grower.growing = false;
+  grower.growth = 1;
+  grower.grown = true;
+  if (grower.kind === 'zip') {
+    grower.geo.setDrawRange(0, grower.geo.index.count);
+    return;
+  }
+  grower.vine.visible = true;
+  grower.vine.scale.y = 1;
+  grower.t.grown = true;
 }
 
 /* climbing: up/down moves along the trunk, left/right circles it, jump lets go */

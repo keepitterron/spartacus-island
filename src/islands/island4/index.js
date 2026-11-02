@@ -16,7 +16,7 @@ import { burst } from '../../core/fx.js';
 import { toast, hintOnce } from '../../core/ui.js';
 import { addCylinder } from '../../core/colliders.js';
 import { terrainHeight, buildGround } from '../../world/terrain.js';
-import { CENTER_4 } from '../../world/layout.js';
+import { CENTER_4, CENTER_5 } from '../../world/layout.js';
 import { rock } from '../../world/props.js';
 import { ship, shipBubble, shipState } from '../../world/ship.js';
 import { makePillow } from '../../models/items.js';
@@ -82,6 +82,15 @@ const sunRays = [], // {m, phase}
   vents = []; // see addVent
 const FRUIT_BUSHES = { chop: toWorld(4, 9), grow: toWorld(-6, 7), boing: toWorld(9, 8) };
 const SHIP_SPOT = toWorld(-10, 17);
+// after the whale's ride up, the ship sails on from the surface above SHIP_SPOT to Rainbow Reef
+// (whale.js decides whether island 5 is ready to visit)
+const sailPath = new THREE.CatmullRomCurve3([
+  vec3(SHIP_SPOT.x, 0, SHIP_SPOT.z),
+  vec3(SHIP_SPOT.x + 18, 0, SHIP_SPOT.z - 50),
+  vec3(30, 0, -880),
+  vec3(24, 0, CENTER_5.z + 60),
+  vec3(5.6, 0, CENTER_5.z + 23),
+]);
 const LIFT_VENT = toWorld(9, -1);
 const SAND_CRAB = toWorld(-3, 6);
 const CLUMP_CRAB = toWorld(-8, 11);
@@ -734,6 +743,7 @@ function interact(p) {
 const island = {
   id: 4,
   center: CENTER_4,
+  sailPath,
   name: 'Bubbly Ocean',
   zMax: -600,
   height: seabedHeight,

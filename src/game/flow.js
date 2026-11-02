@@ -12,6 +12,7 @@ import { updatePowerHud } from '../systems/powers.js';
 import { gull, gullJoinsShip } from '../npcs/gull.js';
 import { renderTasks } from './tasks.js';
 import { snapCamera } from './camera.js';
+import { clearProgress, restoreProgress } from './progress.js';
 
 // schedule an island's intro messages: [[delayMs, text, durationMs], …]
 const showIntro = (messages) => {
@@ -30,7 +31,7 @@ export function startGame(n) {
     return;
   }
   game.state = 'play';
-  writeSave({ island: 1 });
+  writeSave({ island: 1, progress: null });
   showIntro(game.islands[1].intro || []);
 }
 
@@ -49,7 +50,9 @@ export function enterIsland(n, arrived) {
   player.yaw = Math.PI;
   followCam.yaw = 0;
   snapCamera();
+  if (arrived) clearProgress();
   island.enter?.(arrived);
+  if (!arrived) restoreProgress(island);
   gullJoinsShip();
   game.state = 'play';
   $('#skip').classList.add('hidden');
@@ -62,7 +65,7 @@ export function enterIsland(n, arrived) {
 }
 
 export function restartFromBeginning() {
-  writeSave({ island: 1 });
+  writeSave({ island: 1, progress: null });
   // drop any #hash so the reload really starts fresh
   try {
     history.replaceState(null, '', location.pathname + location.search);

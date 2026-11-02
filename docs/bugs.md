@@ -44,6 +44,6 @@
 
 - BUG-1 above (and recover from context loss instead of showing an error).
 - Progress is only saved on arrival at an island: closing the tab with a finished list means redoing it.
-- Only island-level saves: grown vines, dug spots etc. reset on reload (see backlog: mid-island saves).
+- Islands 1–4 only have island-level saves: grown vines, dug spots etc. reset on reload (island 5 saves mid-island; see backlog).
 - Tuning to check with Zoë: tentacle rhythm (~60% safe), vent push strength, number of crabs, lily pads (island 1) and hook choosing (island 2). A small arrow on the selected hook was suggested.
 - Non-QWERTY keyboards: movement uses `e.key` (WASD), so AZERTY layouts get odd keys; `e.code` would fix it.

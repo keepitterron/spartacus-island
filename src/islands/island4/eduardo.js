@@ -182,6 +182,19 @@ function updateHop(e) {
   completeTask('eduardo');
 }
 
+// on deck with the crew (for later islands, also when arriving directly with Continue)
+export function ensureEduardoCrew() {
+  const eg = eduardo.g;
+  if (eduardo.state === 'crew') return;
+  eg.parent?.remove(eg);
+  ship.add(eg);
+  eg.visible = true;
+  eg.position.set(-0.6, 1.18, 1);
+  eg.rotation.set(0, 0, 0);
+  eg.scale.setScalar(1.3);
+  eduardo.state = 'crew';
+}
+
 // arc onto the ship's deck over 1s and stay there as crew
 function updateToShip(e) {
   const eg = e.g,

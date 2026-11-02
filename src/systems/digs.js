@@ -1,15 +1,16 @@
 // Sand mounds you dig up with the action button. reward(dig) runs when digging finishes
 // (spawn a pickup, hand Spartacus an item…). marked=true paints a red X on it.
 import * as THREE from 'three';
-import { distXZ, vec3 } from '../core/util.js';
+import { distXZ, spotKey, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
+import { ownerIsland } from '../core/state.js';
 import { material, mesh } from '../core/materials.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
 import { terrainHeight } from '../world/terrain.js';
 import { player, forwardDir } from '../player/player.js';
 
-// {x, z, y, mound, marks: [X bars], reward(dig), dug}; islands read x/y/z in reward
+// {x, z, y, mound, marks: [X bars], reward(dig), dug, island}; islands read x/y/z in reward
 const digs = [];
 const holeMaterial = new THREE.MeshStandardMaterial({ color: 0xb08a4a, roughness: 1 });
 const DIG_TIME = 1.1;
@@ -32,7 +33,7 @@ export function addDig(x, z, { reward, marked = false, y = terrainHeight(x, z) }
       scene.add(bar);
       marks.push(bar);
     }
-  const dig = { x, z, y, mound, marks, reward, dug: false };
+  const dig = { x, z, y, mound, marks, reward, dug: false, island: ownerIsland() };
   digs.push(dig);
   return dig;
 }
@@ -90,7 +91,9 @@ function kickSand() {
   });
 }
 
-function finishDig(dig) {
+// quiet: putting a save back, so no sand burst (the reward still runs, and should be
+// written so it's fine to run again then: spawn a pickup or hand over an item)
+function finishDig(dig, { quiet = false } = {}) {
   dig.dug = true;
   scene.remove(dig.mound);
   for (const bar of dig.marks) scene.remove(bar);
@@ -99,15 +102,25 @@ function finishDig(dig) {
   hole.position.set(dig.x, dig.y + 0.03, dig.z);
   hole.receiveShadow = true;
   scene.add(hole);
-  burst(vec3(dig.x, dig.y + 0.3, dig.z), {
-    count: 18,
-    color: [0xf0c86a, 0xffe08a],
-    speed: 4,
-    up: 4,
-    life: 0.7,
-    size: 1,
-  });
+  if (!quiet)
+    burst(vec3(dig.x, dig.y + 0.3, dig.z), {
+      count: 18,
+      color: [0xf0c86a, 0xffe08a],
+      speed: 4,
+      up: 4,
+      life: 0.7,
+      size: 1,
+    });
   dig.reward(dig);
+}
+
+// mid-island saves (game/progress.js): which mounds are dug, by spot
+export const dugSpots = (island) =>
+  digs.filter((dig) => dig.island === island && dig.dug).map((dig) => spotKey(dig.x, dig.z));
+export function restoreDigs(island, dug = []) {
+  for (const dig of digs)
+    if (dig.island === island && !dig.dug && dug.includes(spotKey(dig.x, dig.z)))
+      finishDig(dig, { quiet: true });
 }
 
 // little sparkles so mounds are easy to spot (only within 60 of the player, along z)

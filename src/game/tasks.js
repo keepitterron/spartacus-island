@@ -2,6 +2,7 @@
 import { $ } from '../core/util.js';
 import { game, currentIsland } from '../core/state.js';
 import { sfx } from '../core/audio.js';
+import { saveProgress } from './progress.js';
 
 // Each island has tasks:{title, list:[{id, ic, t:()=>text, power?}]} and a matching
 // done:{id:bool}. Task ids are unique across the whole game, so completeTask(id) finds its island.
@@ -31,6 +32,7 @@ export function completeTask(id) {
   if (!island || island.done[id]) return;
   island.done[id] = true;
   if (island === currentIsland()) renderTasks(id);
+  saveProgress();
   if (allTasksDone(island)) {
     island.onAllDone?.();
     celebrate(island);

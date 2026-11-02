@@ -37,25 +37,35 @@ import { initTasks, renderTasks, showWin, hideWin } from './game/tasks.js';
 import { bark, doAction, updatePrompt, updateWoof } from './game/actions.js';
 import { checkTriggers } from './game/interact.js';
 import { startGame, restartFromBeginning } from './game/flow.js';
+import { bindProgressSaving, updateProgress } from './game/progress.js';
 import { orbitCamera, updateCamera } from './game/camera.js';
 import island1 from './islands/island1/index.js';
 import island2 from './islands/island2/index.js';
 import island3 from './islands/island3/index.js';
 import island4 from './islands/island4/index.js';
+import island5 from './islands/island5/index.js';
 
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
-const ISLANDS = [island1, island2, island3, island4];
+const ISLANDS = [island1, island2, island3, island4, island5];
 for (const island of ISLANDS) {
   game.islands[island.id] = island;
   initTasks(island);
   addTerrain(island.zMax, island.height);
 }
 // Build order matters: all scenery shares one seeded random sequence (see core/util.js rand).
-for (const island of ISLANDS) island.build();
+// game.building tells systems which island the digs, seeds and items they add belong to
+for (const island of ISLANDS) {
+  game.building = island.id;
+  island.build();
+}
 buildSky();
 buildStars();
-for (const island of ISLANDS) island.buildLate?.();
+for (const island of ISLANDS) {
+  game.building = island.id;
+  island.buildLate?.();
+}
+game.building = 0;
 // last, so balls and critters can sit on top of everything built above
 buildBalls();
 buildCritters();
@@ -193,6 +203,7 @@ function update(dt) {
   turnToFaceMovement(dt, speed);
   updatePowerSparkles(dt, speed);
   updateCelebration(dt);
+  updateProgress(dt);
   updatePrompt();
   animateDog(dt, speed);
   updateSwingLine();
@@ -287,6 +298,7 @@ function updateCelebration(dt) {
     game.celebrateTime = -1;
   }
 }
+bindProgressSaving();
 frame();
 
 /* ---------- debug: ?debug (always on in dev) ---------- */

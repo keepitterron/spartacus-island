@@ -5,3 +5,4 @@ export const CENTER_1 = { x: 0, z: 0 }; // starter island
 export const CENTER_2 = { x: 0, z: -170 }; // Hook Rock Bay
 export const CENTER_3 = { x: 0, z: -322 }; // Mossy Paw Woods
 export const CENTER_4 = { x: 0, z: -720 }; // Bubbly Ocean (sea floor)
+export const CENTER_5 = { x: 0, z: -1100 }; // Rainbow Reef: a ring of islets, far enough that fog hides island 4
