@@ -36,7 +36,7 @@ Always on in dev; on the live site add `?debug` to the URL. From the browser con
 
 In dev you can also import any module from the console, e.g. `(await import('/spartacus-island/src/npcs/wasabi.js')).wasabi.state`.
 
-Other shortcuts: `#island2`, `#island3`, `#island4` in the URL make **Continue** go to that island (reload after changing the hash).
+Other shortcuts: `#island2`, `#island3`, `#island4` in the URL make **Continue** go to that island (reload after changing the hash). The numbered island chips on the start screen jump to any island without the hash.
 
 ## Manual play-test checklist
 
@@ -52,7 +52,7 @@ The full game was play-tested this way after the Vite migration (Oct 2026). Re-r
 
 **Exploration layer:** run (Shift / full stick); jump into the island 1 pond, paddle and climb out; swim out past the dock end and feel the current carry you back; slam (jump off something high, press F) onto a dig mound; bark at a palm, a flock of birds, a beach ball, and the fish on island 4; 🌙 night: fireflies; 🔊 and 🎵 toggles survive a reload.
 
-**Every time:** start screen with and without a save (Continue appears only with a save; "Start from the beginning" needs two taps when there is one); phone size (touch controls, toasts not covering buttons); no console errors.
+**Every time:** start screen with and without a save (Continue appears only with a save; "Start from the beginning" needs two taps when there is one); phone size (touch controls, toasts not covering buttons); island picker chips (one per island, the Continue one highlighted; any other island needs two taps when there is a save); no console errors.
 
 ## Headless browsers
 

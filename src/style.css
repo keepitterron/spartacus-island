@@ -537,6 +537,31 @@ body.touch .kb {
   flex-wrap: wrap;
   align-items: center;
 }
+/* start screen: the small numbered island chips under the main buttons */
+.picker {
+  margin-top: 16px;
+}
+.pickerLabel {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+#islandPicker {
+  gap: 8px;
+}
+/* fixed size, so arming one never moves the others */
+.cta.chip {
+  width: 48px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.1rem;
+}
+.cta.chip.current {
+  background: var(--sun);
+}
+.cta.chip[data-armed] {
+  background: #ff9fb4;
+}
 button:focus-visible {
   outline: 3px dashed #ff6b8a;
   outline-offset: 3px;
