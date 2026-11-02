@@ -158,3 +158,23 @@ export function makeSeed() {
   g.add(mound);
   return g;
 }
+// a pink scallop shell standing up (island 5's collectible): a fan of ribs on a little hinge
+export function makeShell() {
+  const g = new THREE.Group();
+  // each rib is a cone flipped tip-down, pivoting at the hinge
+  const ribGeo = new THREE.ConeGeometry(0.09, 0.5, 5);
+  ribGeo.rotateZ(Math.PI);
+  ribGeo.translate(0, 0.25, 0);
+  const ribs = 7;
+  for (let i = 0; i < ribs; i++) {
+    const rib = mesh(ribGeo, material(i % 2 ? 0xff9fb2 : 0xffc3cf));
+    rib.rotation.z = ((i - (ribs - 1) / 2) / ribs) * 2.2;
+    g.add(rib);
+  }
+  const hinge = mesh(new THREE.SphereGeometry(0.08, 6, 5), material(0xf27a92));
+  g.add(hinge);
+  g.position.y = -0.2;
+  const holder = new THREE.Group();
+  holder.add(g);
+  return holder;
+}

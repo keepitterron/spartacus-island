@@ -8,6 +8,7 @@ Each island is one module, `src/islands/islandN/index.js`, that default-exports 
 | 2   | Hook Rock Bay                | Stretchy (swing from golden hooks)    | Mango the parrot        | Dig snack on a Boing-only mesa, swing rock to rock to the tall pillar, feed Mango, he rides your hat to the ship                                                    |
 | 3   | Mossy Paw Woods              | Grow-Grow (climbing vines + ziplines) | Wasabi the axolotl      | Climb, zip treetop to treetop, Mango fetches a flower, trade it to the bees for a key, open the water gate, Wasabi swims to the ship                                |
 | 4   | Bubbly Ocean (underwater)    | Chop-Chop (hat frisbee cuts seaweed)  | Eduardo the hermit crab | 5 red crabs parade behind you, chase Eduardo through the tentacle lane, fetch the octopus's pillow through the vent canyon, bring Eduardo to the ship, whale ending |
+| 5   | Rainbow Reef (**blockout**)  | none: every fruit comes back          | (the unicorn, later)    | A hub and four islets in a shallow lagoon. For now: visit each islet, find 8 shells. Design: [island5.md](island5.md)                                               |
 
 Layouts for islands 3 and 4 are **placeholders** until Zoë draws them.
 
@@ -19,6 +20,8 @@ const island = {
   zMax:-245,                 // terrain band: this island's height() is used for z < zMax
   height(x,z){…},            // terrain height function
   underwater:false,          // switches fog/background, hides the gull
+  savesProgress:false,       // mid-island saves (game/progress.js); see saveState/loadState below
+  preview:false,             // still being built: the island before only sails on here in dev/?debug
   physics:{…},               // optional overrides: gravity, maxFall, speed, jump, water, bound
   camera:{minY(pos), maxY, assist(dt)},   // optional camera hooks
 
@@ -41,6 +44,8 @@ const island = {
   interact(p,dt),   // per-frame walk-into triggers and hints
   actions(p),       // context-button actions: return {label, run} or null
   bark(p),          // what barking does here
+  saveState(),      // optional, with savesProgress: anything the systems don't save (crew, gates…)
+  loadState(state), // optional: put that back on Continue
 };
 export default island;
 ```
@@ -58,19 +63,22 @@ actions(p) {
 
 Every action check should test both **distance and height** (`Math.abs(p.y-target.y)<…`), or the button shows up from the ground under a tree top.
 
-## Adding island 5: step by step
+## Adding an island: step by step
 
-1. **Story first.** Get Zoë's story: where the whale leaves the ship, what's tied up, who needs rescuing, what the new power is. Eduardo pinches through ropes here.
-2. **Place it in the world.** Add `CENTER_5` to `world/layout.js` (e.g. `{x:0,z:-900}` for underwater, or between existing land islands with ~150 units of sea). Pick a `zMax` so its terrain band doesn't overlap a neighbour.
-3. **Copy a template.** Copy `islands/island2/index.js` (land, compact) or `island4/` (underwater, split into files) to `islands/island5/`. Point its `toWorld(x, z)` helper at `CENTER_5` and set `id:5`, `center:CENTER_5`, `name`.
-4. **Terrain.** Write `height(x,z)`: base height, features (ponds, hills), then the shore falloff (`lerp(h, -4, smoothstep(e, e + 2.5, r))`). In `build()` call `buildGround(CENTER_5.x, CENTER_5.z, {size, segments: LOW_POWER ? 90 : 140, palette})` first.
+Island 5 is the latest example (`islands/island5/`, a land island past the underwater one).
+
+1. **Story first.** Get Zoë's story, or a design you make together (see [island5.md](island5.md)).
+2. **Place it in the world.** Add `CENTER_N` to `world/layout.js` and pick a `zMax` so its terrain band doesn't overlap a neighbour. Islands past z=−460 need their own water: call `addSea(cx, cz, {width, depth})` in `build()` (island 5's patch also covers the route from island 4).
+3. **Copy a template.** `islands/island2/index.js` (land, compact), `island4/` (underwater, split into files) or `island5/` (big, several islets, mid-island saves). Point `toWorld(x, z)` at the new centre and set `id`, `center`, `name`.
+4. **Terrain.** Write `height(x,z)`: base height, features, then the shore falloff (`lerp(h, -4, smoothstep(e, e + 2.5, r))`). Water deeper than −0.55 is for paddling, deeper than −3.5 is open sea (the current carries Spartacus back to the island centre). In `build()` call `buildGround(cx, cz, {size, segments, palette})` first.
 5. **Spawn + dock.** Set `island.spawn` in `build()` and add a `dock()`. Keep the area behind the spawn clear (the camera sits there).
-6. **Content.** Use the systems: `addPickup`, `addItem`, `addDig`, `addFruit`, `addHook`, `climbVine`/`zipVine`, `addChoppable`. Positions in `toWorld(x, z)` so Zoë's map is a number edit.
+6. **Content.** Use the systems: `addPickup`, `addItem`, `addDig`, `addFruit`, `addHook`, `climbVine`/`zipVine`, `addChoppable`. Positions in `toWorld(x, z)` so a new map is a number edit.
 7. **Tasks.** Write the list (unique ids!), a `win` panel and an `exit`. If the new power is eaten here, mark that task with `power:'…'`.
 8. **Hints.** For every new object or mechanic add a `hintOnce` in `interact()`. Use `hintTooHigh(near, msg)` for "you need Boing-Boing here".
-9. **Arriving.** Set the previous island's exit to take you here (`enterIsland(5,true)` at the end of a cutscene). Today island 4 ends with the whale and the `#end` panel: change `island4/whale.js` to call `enterIsland(5,true)` instead of showing "To be continued…", and move the end panel to island 5's exit. In `enter()`, bring the crew (`ensureMangoCrew()`, Wasabi, Eduardo) and place the ship.
-10. **Register it** in `src/main.js`: add to `ISLANDS` **at the end** (build order). `continueIsland()` and `#island5` work automatically.
-11. **Test** with `npm run dev`, `__g.go(5)`, and the checklist in [testing.md](testing.md). Check it on a phone.
+9. **Arriving.** Give the previous island a `sailPath` ending at the new dock and have its exit (or ending cutscene) call `startSail(sailPath, () => enterIsland(N, true))`. Island 4's whale does this for island 5, unless island 5 is a `preview`. In `enter()`, bring the crew (`ensureMangoCrew()`, `wasabiToBucket()`, `ensureEduardoCrew()`) and set the ship up.
+10. **Saves.** For a big island set `savesProgress: true`. Digs, pickups, seeds, items, tasks, the power and Spartacus's spot are saved for you. Write dig rewards so they're fine to run again (spawn a pickup, hand over an item), and add `saveState()`/`loadState()` for anything else.
+11. **Register it** in `src/main.js`: add to `ISLANDS` **at the end** (build order). `continueIsland()` and `#islandN` work automatically.
+12. **Test** with `npm run dev`, `__g.go(N)`, and the checklist in [testing.md](testing.md). Check it on a phone.
 
 ## Checklist for any level change
 

@@ -10,9 +10,12 @@ import { player } from '../../player/player.js';
 import { useUpCarried } from '../../systems/items.js';
 import { updatePowerHud } from '../../systems/powers.js';
 import { hideWin } from '../../game/tasks.js';
+import { enterIsland } from '../../game/flow.js';
+import { startSail } from '../../cutscenes/sail.js';
 
 // Ending of island 4: a big friendly whale swims under the ship and pushes it back up
-// to the surface, the bubble pops, then "To be continued…".
+// to the surface, the bubble pops, then the ship sails on to island 5, or "To be continued…"
+// while island 5 is still a preview (only reachable in dev/?debug).
 const whale = new THREE.Group();
 const tail = new THREE.Group();
 
@@ -63,7 +66,7 @@ export function startWhale() {
   player.zip = null;
   player.swing = null;
   game.state = 'whale';
-  ride.t = 0;
+  Object.assign(ride, { t: 0, endShown: false, popped: false, popT: 0 });
   whale.visible = true;
   whale.position.set(ship.position.x - 45, shipState.baseY - 4, ship.position.z + 12);
   sfx.whale();
@@ -105,7 +108,13 @@ function popShipBubble() {
   sfx.splashy();
 }
 
-// at the surface: the whale spouts, and after 2.5s the "To be continued…" screen shows
+// the next island, if there is one that's ready to visit
+function nextIsland() {
+  const next = game.islands[game.island + 1];
+  return next && (!next.preview || game.debug) ? next : null;
+}
+
+// at the surface: the whale spouts, and after 2.5s the ship sails on (or the end screen shows)
 function spoutThenEnd(dt) {
   ride.popT += dt;
   if (Math.random() < dt * 14)
@@ -117,11 +126,19 @@ function spoutThenEnd(dt) {
       life: 1,
       size: 1,
     });
-  if (ride.popT > 2.5 && !ride.endShown) {
-    ride.endShown = true;
+  if (ride.popT <= 2.5 || ride.endShown) return;
+  ride.endShown = true;
+  const next = nextIsland();
+  if (!next) {
     sfx.win();
     $('#end').classList.remove('hidden');
+    return;
   }
+  game.state = 'play'; // startSail only starts from play
+  startSail(game.islands[game.island].sailPath, () => {
+    whale.visible = false;
+    enterIsland(next.id, true);
+  });
 }
 
 game.cutscenes.whale = {

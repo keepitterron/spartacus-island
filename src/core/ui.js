@@ -1,5 +1,6 @@
 // HUD helpers: toast messages, one-time hints, island title card, overlays.
 import { $ } from './util.js';
+import { game } from './state.js';
 
 export const isTouch = () => document.body.classList.contains('touch');
 // how to name the action button in messages
@@ -7,6 +8,7 @@ export const actionKeyName = () => (isTouch() ? 'the green button' : 'F');
 
 let toastTimer;
 export function toast(msg, ms = 2600) {
+  if (game.restoring) return; // putting a save back replays rewards: no messages for those
   const el = $('#toast');
   el.firstChild.textContent = msg;
   el.classList.add('show');

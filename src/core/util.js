@@ -29,6 +29,8 @@ export function seededRandom(seed) {
 export const rand = seededRandom(42);
 export const vec3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 export const distXZ = (a, x, z) => Math.hypot(a.x - x, a.z - z);
+// a stable name for a ground spot, so saves can say which dig, seed or pickup it was
+export const spotKey = (x, z) => `${Math.round(x * 10)},${Math.round(z * 10)}`;
 // distance from p to the segment a-b, ignoring height
 export function distToSegmentXZ(p, a, b) {
   const vx = b.x - a.x;

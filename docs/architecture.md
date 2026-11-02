@@ -21,10 +21,10 @@ src/
     ui.js             toast, hintOnce, showTitleCard, armButton, overlayOpen
     save.js           localStorage save, continueIsland()
   world/              things shared by all islands
-    layout.js         island centres CENTER_1..CENTER_4
+    layout.js         island centres CENTER_1..CENTER_5
     terrain.js        addTerrain / terrainHeight dispatcher, buildGround()
     props.js          palm, rock, rockTop, crate, scatter, dock
-    ocean.js          sea floor + animated water surface
+    ocean.js          sea patches: floor + animated water surface (addSea)
     ship.js           the ship, its bubble, placeShipAt, onDeck, addBucket
     sky.js            clouds
   player/
@@ -43,8 +43,9 @@ src/
     flow.js           startGame, enterIsland, restart
     camera.js         follow camera with per-island hooks
     debug.js          window.__g helpers (dev / ?debug)
+    progress.js       mid-island saves (islands with savesProgress)
   islands/
-    island1/ … island4/   one module per island (see islands.md)
+    island1/ … island5/   one module per island (see islands.md)
 ```
 
 ## Boot order (main.js)

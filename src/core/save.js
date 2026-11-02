@@ -1,6 +1,7 @@
 import { clamp } from './util.js';
 
-// The save: {v, island, muted, music, night}.
+// The save: {v, island, muted, music, night, progress}. progress is the mid-island save
+// (game/progress.js), null when there's none; adding it didn't need a new version.
 // Bump VERSION when the shape changes and add a step to migrate() so older saves keep working.
 const STORAGE_KEY = 'spartacus-save';
 const VERSION = 5;

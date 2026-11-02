@@ -5,6 +5,7 @@ import { lerp, lerpAngle, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { material, mesh } from '../core/materials.js';
 import { game } from '../core/state.js';
+import { ship, addBucket } from '../world/ship.js';
 import { player } from '../player/player.js';
 
 // state: stuck | happy | swim   (island 3's story, driven from islands/island3)
@@ -61,6 +62,17 @@ export const wasabi = { g: new THREE.Group(), state: 'stuck', t: 0 };
   smile.position.set(0, 0.26, 0.74);
   g.add(smile);
   scene.add(g);
+}
+
+// back in her bucket on deck (above water after island 4, or arriving directly with Continue)
+export function wasabiToBucket() {
+  addBucket();
+  wasabi.g.parent?.remove(wasabi.g);
+  ship.add(wasabi.g);
+  wasabi.g.position.set(0.65, 1.55, 1.4);
+  wasabi.g.rotation.set(0, 0, 0);
+  wasabi.g.scale.setScalar(0.75);
+  wasabi.state = 'crew';
 }
 
 // leave the bucket and swim beside Spartacus
