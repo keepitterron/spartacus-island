@@ -237,6 +237,14 @@ function makeIslet(kelp) {
         hintOnce('kelpPlate', 'A stone plate! It needs a beach ball resting on it.', 3200);
       if (fromCenter < 3.5 && !kelp.clamOpen)
         hintOnce('kelpClam', 'A giant clam, shut tight. Maybe the three plates open it?', 3400);
+      // two balls on their plates and the third still out at sea: point at Wasabi
+      const emptyPlates = kelp.plates.filter((plate) => !plate.pressed).length;
+      if (!kelp.wasabiBall && emptyPlates === 1 && fromCenter < HEDGE_RADIUS)
+        hintOnce(
+          'kelpLastBall',
+          'One ball is missing! Find the bubbles out at sea and bark for Wasabi.',
+          4200,
+        );
       if (!kelp.wasabiBall && distXZ(p, bubbles.x, bubbles.z) < 5)
         hintOnce(
           'kelpBubbles',

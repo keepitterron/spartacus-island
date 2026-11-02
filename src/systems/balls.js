@@ -1,6 +1,7 @@
 // Beach balls: simple home-made physics for props, no library. Run into one to kick it; a bark
-// pushes nearby balls away and a ground pound launches them. A ball that rolls into the sea
-// bobs there for a moment, then pops back where it started (nothing is ever lost).
+// pushes nearby balls away and a ground pound launches them. A ball that rolls into the water
+// bobs there for a moment, then pops back to the last dry spot it rested on, so one bad kick
+// never undoes the kicking that got it there.
 // Islands list them as data, island-local: balls: [[x, z], …]
 import * as THREE from 'three';
 import { distXZ, vec3 } from '../core/util.js';
@@ -17,7 +18,9 @@ const GRAVITY = 20;
 const BOUNCE = 0.6; // share of the speed kept on each bounce
 const FLOAT_TIME = 2.5; // seconds bobbing in the sea before it pops back home
 const ACTIVE_RANGE = 70; // balls further away than this sleep
-// {mesh, pos, vel, home, floatTime}
+const DRY_GROUND = 0.3; // a resting spot must be at least this far above the sea to count as dry
+const RESTING_SPEED = 0.5; // slower than this on the ground counts as resting
+// {mesh, pos, vel, home, floatTime}; home is the last dry resting spot, where it pops back to
 const balls = [];
 
 // red/white/blue/yellow segments, like a real beach ball
@@ -40,7 +43,7 @@ export function buildBalls() {
       addBall(island.center.x + localX, island.center.z + localZ);
 }
 
-// a ball resting at world (x, z); its home is where it pops back to from the sea
+// a ball resting at world (x, z), which is its first home
 export function addBall(x, z) {
   look.material ??= new THREE.MeshStandardMaterial({ map: ballTexture(), roughness: 0.5 });
   look.geometry ??= new THREE.SphereGeometry(BALL_RADIUS, 16, 12);
@@ -116,11 +119,19 @@ function stepBall(ball, dt) {
     const friction = Math.exp(-dt * 1.2); // rolling slows it down
     vel.x *= friction;
     vel.z *= friction;
+    rememberDrySpot(ball, ground - BALL_RADIUS);
   }
   // roll: spin around the axis across the direction of travel
   ball.mesh.position.copy(pos);
   ball.mesh.rotation.x += (vel.z / BALL_RADIUS) * dt;
   ball.mesh.rotation.z -= (vel.x / BALL_RADIUS) * dt;
+}
+
+// resting on dry ground: this is where it comes back to if it ends up in the water
+function rememberDrySpot(ball, groundHeight) {
+  const { pos, vel } = ball;
+  if (groundHeight < DRY_GROUND || Math.hypot(vel.x, vel.z) > RESTING_SPEED) return;
+  ball.home.copy(pos);
 }
 
 // bob on the surface, then pop back home in a puff of bubbles
