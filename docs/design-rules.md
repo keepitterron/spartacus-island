@@ -29,7 +29,7 @@ Things she tried and said no to, so we don't build them again. Newest first.
 
 - Plays on phones (touch: stick + Act / Woof / Jump buttons) and desktop (keyboard).
 - Long term: playable **together with her friends** in the browser (see [backlog.md](backlog.md)).
-- Kids read slowly: keep toasts short, show them for 3–4 s, one idea per toast.
+- Kids read slowly: keep toasts short, one idea per toast. `toast()` shows each one for at least 3.5 s, longer for long messages, and island intros wait for the previous message.
 
 ## Spartacus
 

@@ -29,6 +29,22 @@ export function bindInput({ onKey, onJump, onBark, onAct }) {
   bindKeyboard(onKey);
   bindCameraDrag();
   bindTouchControls({ onJump, onBark, onAct });
+  blockPageZoom();
+}
+
+// A zoomed-in page can't be zoomed back out mid-game (every touch is a game control), so never
+// let it zoom. iOS Safari ignores user-scalable=no, so also cancel its pinch and double-tap gestures.
+function blockPageZoom() {
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend'])
+    document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+  document.addEventListener(
+    'touchmove',
+    (e) => {
+      if (e.touches.length > 1) e.preventDefault();
+    },
+    { passive: false },
+  );
+  document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 }
 
 // onKey fires once per press, not on key repeat

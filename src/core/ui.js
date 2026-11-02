@@ -6,14 +6,20 @@ export const isTouch = () => document.body.classList.contains('touch');
 // how to name the action button in messages
 export const actionKeyName = () => (isTouch() ? 'the green button' : 'F');
 
+// kids read slowly: a toast stays at least this long, plus a bit per letter, whatever `ms` says
+const TOAST_MIN_MS = 3500;
+const TOAST_MS_PER_CHAR = 60;
+// how long a toast stays up
+export const toastTime = (msg, ms = 0) =>
+  Math.max(ms, TOAST_MIN_MS, 1500 + msg.length * TOAST_MS_PER_CHAR);
 let toastTimer;
-export function toast(msg, ms = 2600) {
+export function toast(msg, ms = 0) {
   if (game.restoring) return; // putting a save back replays rewards: no messages for those
   const el = $('#toast');
   el.firstChild.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+  toastTimer = setTimeout(() => el.classList.remove('show'), toastTime(msg, ms));
 }
 // every new thing gets a hint the first time the player meets it
 const seenHints = {};

@@ -4,7 +4,7 @@ import { canvas, setUnderwater } from '../core/renderer.js';
 import { game, followCam, currentIsland } from '../core/state.js';
 import { sfx, audioContext } from '../core/audio.js';
 import { startMusic } from '../core/music.js';
-import { toast, showTitleCard } from '../core/ui.js';
+import { toast, toastTime, showTitleCard } from '../core/ui.js';
 import { writeSave } from '../core/save.js';
 import { placeShipAt } from '../world/ship.js';
 import { player } from '../player/player.js';
@@ -14,9 +14,16 @@ import { renderTasks } from './tasks.js';
 import { snapCamera } from './camera.js';
 import { clearProgress, restoreProgress } from './progress.js';
 
-// schedule an island's intro messages: [[delayMs, text, durationMs], …]
+// schedule an island's intro messages: [[delayMs, text, durationMs], …]. A message never starts
+// before the previous one has had its full reading time, so none gets cut short.
+const INTRO_GAP = 400; // ms between two intro messages
 const showIntro = (messages) => {
-  for (const [delay, text, duration] of messages) setTimeout(() => toast(text, duration), delay);
+  let previousEnd = 0;
+  for (const [delay, text, duration] of messages) {
+    const start = Math.max(delay, previousEnd + INTRO_GAP);
+    setTimeout(() => toast(text, duration), start);
+    previousEnd = start + toastTime(text, duration);
+  }
 };
 
 // island 1 starts right where the title screen is; later islands (Continue) go via enterIsland

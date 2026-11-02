@@ -55,7 +55,7 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 
 ## Beach balls (`systems/balls.js`)
 
-Islands list `balls: [[x, z], …]` (island-local). Home-made physics, no library: gravity, bounces, rolling friction, pushed out of colliders. Running into a ball kicks it, a bark shoves balls within 6, a ground pound launches them. A ball in the sea bobs for 2.5 s, then pops back home. Balls further than 70 from Spartacus sleep. `addBall(x, z)` adds one at runtime (Wasabi brings one up on island 5); `ballsNear(x, z, r)` gives puzzles the balls nearby, whose `pos` and `vel` they may nudge (island 5's plates pull a slow ball in).
+Islands list `balls: [[x, z], …]` (island-local). Home-made physics, no library: gravity, bounces, rolling friction, pushed out of colliders. Running into a ball kicks it, a bark shoves balls within 6, a ground pound launches them. A ball in the water (sea or pond) bobs for 2.5 s, then pops back to the last dry spot it rested on (at least 0.3 above the sea), so a bad kick costs seconds, not the kicking before it. Balls further than 70 from Spartacus sleep. `addBall(x, z)` adds one at runtime (Wasabi brings one up on island 5); `ballsNear(x, z, r)` gives puzzles the balls nearby, whose `pos` and `vel` they may nudge (island 5's plates pull a slow ball in).
 
 ## Ambient critters (`systems/critters.js`)
 
