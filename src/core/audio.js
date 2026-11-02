@@ -142,8 +142,8 @@ export const sfx = {
   },
   // ground pound landing: a deep thump
   pound() {
-    tone(130, { to: 45, duration: 0.3, type: 'sine', volume: 0.45 });
-    noise(0.2, { freq: 300, volume: 0.5 });
+    tone(130, { to: 45, duration: 0.3, type: 'sine', volume: 0.3 });
+    noise(0.2, { freq: 300, volume: 0.3 });
   },
   // a coconut hitting the sand
   bonk() {
