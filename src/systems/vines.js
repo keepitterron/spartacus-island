@@ -16,6 +16,8 @@ import { POWERS } from './powers.js';
 
 // A tree is {x,z,gh (ground height), top, grown} with a collider whose .tree points back at it
 // (see bigTree in island 3, kelp pillar in island 4). Walking into it once grown = climb.
+// raised: true when the trunk stands on a rock rather than the terrain (island 5's sea stack),
+// so the seed sits at gh and climbing down stops there.
 // A grower is a seed plus what it grows:
 //   {kind:'climb'|'zip', x, z, y (the seed), seed, grown, growing, growth (0..1), island,
 //    climb: t (the tree), vine;  zip: a, b (trees), tube, geo, curve, len, end (landing)}
@@ -32,7 +34,7 @@ export function climbVine(tree, towardX, towardZ) {
     uz = dz / dist;
   const seedX = tree.x + ux * 2.2,
     seedZ = tree.z + uz * 2.2,
-    seedY = terrainHeight(seedX, seedZ);
+    seedY = tree.raised ? tree.gh : terrainHeight(seedX, seedZ);
   const seed = makeSeed();
   seed.position.set(seedX, seedY, seedZ);
   scene.add(seed);
@@ -248,7 +250,7 @@ export function updateClimb(dt) {
   player.pos.x = tree.x + Math.cos(climb.angle) * radius;
   player.pos.z = tree.z + Math.sin(climb.angle) * radius;
   player.yaw = Math.atan2(tree.x - player.pos.x, tree.z - player.pos.z);
-  const groundY = terrainHeight(player.pos.x, player.pos.z);
+  const groundY = tree.raised ? tree.gh : terrainHeight(player.pos.x, player.pos.z);
   player.jumpBuffer -= dt;
   if (player.jumpBuffer > 0) {
     // jump off, away from the trunk
