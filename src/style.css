@@ -44,6 +44,7 @@ body {
   color: var(--ink);
   font-family: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', 'Segoe UI', system-ui, sans-serif;
   touch-action: none;
+  overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -56,6 +57,14 @@ body {
   height: 100%;
   display: block;
   outline: none;
+}
+/* touch-action isn't inherited, so without this a pinch on a panel or the HUD zooms the page */
+body * {
+  touch-action: none;
+}
+.panel,
+.panel * {
+  touch-action: pan-y;
 }
 .hidden {
   display: none !important;
@@ -230,6 +239,18 @@ body {
   max-width: 92vw;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* toasts wrap instead of being cut off on narrow phones */
+#toast {
+  width: max-content;
+  max-width: calc(100vw - 24px);
+}
+#toast span {
+  white-space: normal;
+  max-width: none;
+  text-align: center;
+  line-height: 1.3;
+  border-radius: 22px;
 }
 #toast.show {
   opacity: 1;
