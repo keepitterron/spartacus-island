@@ -30,22 +30,33 @@ const ballTexture = () =>
     });
   });
 
+// one geometry and material for every ball, made with the first one
+const look = {};
+
 // after every island is built, so balls can rest on top of things
 export function buildBalls() {
-  const ballMaterial = new THREE.MeshStandardMaterial({ map: ballTexture(), roughness: 0.5 });
-  const geometry = new THREE.SphereGeometry(BALL_RADIUS, 16, 12);
   for (const island of Object.values(game.islands))
-    for (const [localX, localZ] of island.balls || []) {
-      const x = island.center.x + localX,
-        z = island.center.z + localZ;
-      const home = vec3(x, supportHeight(x, z, Infinity) + BALL_RADIUS, z);
-      const mesh = new THREE.Mesh(geometry, ballMaterial);
-      mesh.castShadow = true;
-      mesh.position.copy(home);
-      scene.add(mesh);
-      balls.push({ mesh, pos: home.clone(), vel: vec3(), home, floatTime: 0 });
-    }
+    for (const [localX, localZ] of island.balls || [])
+      addBall(island.center.x + localX, island.center.z + localZ);
 }
+
+// a ball resting at world (x, z); its home is where it pops back to from the sea
+export function addBall(x, z) {
+  look.material ??= new THREE.MeshStandardMaterial({ map: ballTexture(), roughness: 0.5 });
+  look.geometry ??= new THREE.SphereGeometry(BALL_RADIUS, 16, 12);
+  const home = vec3(x, supportHeight(x, z, Infinity) + BALL_RADIUS, z);
+  const mesh = new THREE.Mesh(look.geometry, look.material);
+  mesh.castShadow = true;
+  mesh.position.copy(home);
+  scene.add(mesh);
+  const ball = { mesh, pos: home.clone(), vel: vec3(), home, floatTime: 0 };
+  balls.push(ball);
+  return ball;
+}
+
+// the balls within radius of (x, z), for puzzles (their pos and vel can be nudged)
+export const ballsNear = (x, z, radius) =>
+  balls.filter((ball) => Math.hypot(ball.pos.x - x, ball.pos.z - z) < radius);
 
 // push every ball within reach away from pos (and up a bit)
 export function shoveBalls(pos, { reach, push, up }) {

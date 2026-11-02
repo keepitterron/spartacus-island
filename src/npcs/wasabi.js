@@ -1,15 +1,18 @@
 // Wasabi the blue axolotl: model and per-frame update. Rescued on island 3 (her spring dried up),
 // rides in the bucket on deck, and underwater (island 4) floats next to Spartacus as his breathing bubble.
 import * as THREE from 'three';
-import { lerp, lerpAngle, vec3 } from '../core/util.js';
+import { clamp, lerp, lerpAngle, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { material, mesh } from '../core/materials.js';
 import { game } from '../core/state.js';
+import { sfx } from '../core/audio.js';
+import { burst } from '../core/fx.js';
 import { ship, addBucket } from '../world/ship.js';
 import { player } from '../player/player.js';
 
 // state: stuck | happy | swim   (island 3's story, driven from islands/island3)
 //        crew (in the bucket) | follow (swimming beside Spartacus)
+//        fetch (bringing something up from the sea bed, see wasabiFetch)
 export const wasabi = { g: new THREE.Group(), state: 'stuck', t: 0 };
 {
   const blue = material(0x6fb6ff),
@@ -75,6 +78,45 @@ export function wasabiToBucket() {
   wasabi.state = 'crew';
 }
 
+// errand (island 5): pop up at `from` holding `carried`, paddle it to `to` on the shore, drop it
+// there (onDrop(to)), then dive and she's back in her bucket. from/to are world {x, z}.
+const FETCH = { rise: 1, swim: 2.6 }; // seconds for each part
+export function wasabiFetch({ from, to, carried, onDrop }) {
+  wasabi.g.parent?.remove(wasabi.g);
+  scene.add(wasabi.g);
+  wasabi.g.scale.setScalar(1);
+  wasabi.g.add(carried);
+  carried.position.set(0, 0.5, 0.95);
+  wasabi.state = 'fetch';
+  wasabi.t = 0;
+  wasabi.fetch = { from, to, carried, onDrop };
+  splash(from);
+}
+function splash({ x, z }) {
+  sfx.splashy();
+  burst(vec3(x, 0.1, z), { count: 18, color: [0xffffff, 0xbff3ff], speed: 3, up: 3, life: 0.7 });
+}
+function updateFetch() {
+  const { from, to, carried, onDrop } = wasabi.fetch,
+    g = wasabi.g;
+  if (wasabi.t < FETCH.rise) {
+    g.position.set(from.x, lerp(-1.5, -0.2, wasabi.t / FETCH.rise), from.z);
+    return;
+  }
+  const t = clamp((wasabi.t - FETCH.rise) / FETCH.swim, 0, 1);
+  g.position.set(
+    lerp(from.x, to.x, t),
+    -0.2 + Math.sin(game.time * 6) * 0.05,
+    lerp(from.z, to.z, t),
+  );
+  g.rotation.y = Math.atan2(to.x - from.x, to.z - from.z);
+  if (t < 1) return;
+  g.remove(carried);
+  onDrop(to);
+  splash(g.position);
+  wasabiToBucket();
+}
+
 // leave the bucket and swim beside Spartacus
 export function wasabiFollow() {
   wasabi.g.parent?.remove(wasabi.g);
@@ -110,4 +152,5 @@ export function updateWasabi(dt) {
   wasabi.tail.rotation.y = Math.sin(time * (wasabi.state === 'stuck' ? 3 : 9)) * 0.45;
   if (wasabi.state === 'crew') wasabi.g.rotation.y = Math.sin(time * 0.7) * 0.8;
   else if (wasabi.state === 'follow') updateFollowing(dt);
+  else if (wasabi.state === 'fetch') updateFetch();
 }

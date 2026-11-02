@@ -9,7 +9,7 @@ These came from Zoë and are the whole point of the game. Check every new featur
   - Items dropped in water float back to where they were found, in a visible bubble, with sparkles.
 - **Cute even when challenging.** Challenge comes from timing, platforming and figuring things out. Her references: Rayman, Sackboy, Humans Fall Flat, Untitled Goose Game.
 - **One power at a time.** Each fruit gives a power; eating another swaps it. Bushes regrow, so swapping can be part of a puzzle.
-- **The friend you rescue helps on the next island.** Mango (parrot) fetches things on island 3; Wasabi (axolotl) is the breathing bubble on island 4; Eduardo (crab) will pinch through ropes on island 5.
+- **The friend you rescue helps on the next island.** Mango (parrot) fetches things on island 3; Wasabi (axolotl) is the breathing bubble on island 4; Eduardo (crab) pinches through ropes on island 5; the unicorn will help on the sky island (island 6).
 - **Every new thing gets a one-time hint toast** (`hintOnce`). If a kid can't tell what to do, that's a bug.
 - **Zoë writes the story.** Ask her (via Claudio) rather than inventing big story beats. She enjoys story-making more than drawing.
 - **Never lose progress by accident.** Destructive buttons (restart, start over) need a second tap (`armButton`).

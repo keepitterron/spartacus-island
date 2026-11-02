@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { $, distXZ, distToSegmentXZ, lerp, smoothstep, vec3 } from '../../core/util.js';
+import { distXZ, distToSegmentXZ, lerp, smoothstep, vec3 } from '../../core/util.js';
 import { scene, LOW_POWER } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
@@ -19,19 +19,35 @@ import { vineAction } from '../../systems/vines.js';
 import { chopAction } from '../../systems/hat.js';
 import { ensureMangoCrew } from '../../npcs/mango.js';
 import { wasabiToBucket } from '../../npcs/wasabi.js';
-import { ensureEduardoCrew } from '../island4/eduardo.js';
-import { addUnicorn, colourStripe, updateUnicorn } from '../../npcs/unicorn.js';
-import { addStar, grabStars, sendStarHome, starForTask, updateStars } from './stars.js';
+import { eduardoRideHat } from '../island4/eduardo.js';
+import {
+  unicorn,
+  addUnicorn,
+  colourStripe,
+  updateUnicorn,
+  setHornGlow,
+  unicornFollow,
+  unicornBoard,
+  unicornAboard,
+} from '../../npcs/unicorn.js';
+import { isNight, daylight } from '../../world/daylight.js';
+import { addStar, grabStars, sendStarHome, starForTask, starsHome, updateStars } from './stars.js';
 import { buildSeaStack } from './seastack.js';
-import { completeTask, hideWin } from '../../game/tasks.js';
+import { buildCrabCove } from './cove.js';
+import { buildKelpGarden } from './kelp.js';
+import { buildTidePools } from './tide.js';
+import { buildWhaleSpout } from './spout.js';
+import { buildRainbow, showRainbow, updateRainbow, startRainbowRide } from './finale.js';
+import { completeTask } from '../../game/tasks.js';
 import { hintTooHigh } from '../../game/interact.js';
 
 // Island 5, Rainbow Reef: a hub island and four islets in a shallow lagoon. The unicorn by the
 // stone arch slid down her rainbow and it broke into four colour stars, one on each islet;
-// each star brought home gives a stripe of her mane its colour back. See docs/island5.md.
-//
-// IN PROGRESS: the sea stack's orange star is built (seastack.js); the other three islets are
-// still "visit it" placeholders. Reachable from island 4 only in dev/?debug (`preview`).
+// each star brought home gives a stripe of her mane its colour back. With all four home, at
+// night her horn lights the arch, the rainbow comes back and she sails on with the crew.
+// Each islet is its own module (cove, seastack, tide, kelp); see docs/island5.md for the design.
+// An islet module returns {update(dt), interact(p), action(p), bark(p), pound(p), save(), load(s)},
+// any of them optional.
 
 const toWorld = (x, z) => ({ x: CENTER_5.x + x, z: CENTER_5.z + z }); // island-local -> world
 
@@ -42,14 +58,14 @@ const ISLETS = {
   stack: { x: 34, z: -40, radius: 11, height: 1.6 }, // orange: the tall sea stack
   tide: { x: -40, z: -32, radius: 13, height: 0.7 }, // yellow: flat, with rock pools
   cove: { x: -42, z: 30, radius: 12, height: 2.8 }, // red: a cliffy islet with a bay
-  kelp: { x: 40, z: 32, radius: 12, height: 1.3 }, // blue: a ring around a pond
+  kelp: { x: 40, z: 32, radius: 15, height: 1.3 }, // blue: a garden ring around a pond
 };
 // the four stars, in rainbow order: the arch socket and mane stripe each one fills
 const STARS = {
-  red: { color: 0xff5a5a, islet: 'cove', index: 0 },
-  orange: { color: 0xff9a3d, islet: 'stack', index: 1 },
-  yellow: { color: 0xffd84d, islet: 'tide', index: 2 },
-  blue: { color: 0x5aa8ff, islet: 'kelp', index: 3 },
+  red: { color: 0xff5a5a, islet: 'cove', index: 0, task: 'reefRed' },
+  orange: { color: 0xff9a3d, islet: 'stack', index: 1, task: 'reefOrange' },
+  yellow: { color: 0xffd84d, islet: 'tide', index: 2, task: 'reefYellow' },
+  blue: { color: 0x5aa8ff, islet: 'kelp', index: 3, task: 'reefBlue' },
 };
 const REEF_RADIUS = 78; // inside: a shallow lagoon to paddle across; outside: the open sea
 const LAGOON_DEPTH = -1.8; // deeper than wading depth, so Spartacus paddles
@@ -94,9 +110,11 @@ function height(x, z) {
   return h;
 }
 
-// Filled in by build(): beacons {islet, task, beam, glow}, and the spots puzzles will hang off
+// Filled in by build(): beacons {islet, task, beam, fade}, the spots puzzles hang off,
+// and the islet modules
 const beacons = [];
 const spots = {};
+const islets = {};
 const BEACON_HEIGHT = 70;
 
 function build() {
@@ -116,17 +134,26 @@ function build() {
   lookout.top = rock(lookout.x, lookout.z, { radius: 3, height: 2.4 });
   const stack = toWorld(ISLETS.stack.x, ISLETS.stack.z);
   Object.assign(spots, buildSeaStack(stack, { lookout }));
-  addStar('orange', {
-    color: STARS.orange.color,
-    pos: spots.star,
-    task: 'reefOrange',
-    socket: spots.sockets[STARS.orange.index].position.clone().add(vec3(0, 0, 0.12)),
-    onHome: starHome,
-  });
+  makeStar('orange', spots.star, { hidden: false });
   buildUnicorn();
   buildBeacons();
   buildPalms();
   addShells();
+  // the other islets (added last: build order matters, see architecture.md)
+  const at = (name) => toWorld(ISLETS[name].x, ISLETS[name].z);
+  const addHiddenStar = (name, pos) => makeStar(name, pos, { hidden: true });
+  islets.cove = buildCrabCove(at('cove'), { addStar: addHiddenStar });
+  islets.kelp = buildKelpGarden(at('kelp'), { addStar: addHiddenStar });
+  islets.tide = buildTidePools(at('tide'), { from: CENTER_5, addStar: addHiddenStar });
+  islets.whale = buildWhaleSpout(toWorld(23.5, -31), { toward: at('stack') }); // ~5 from the first ledge
+  buildRainbow(spots.arch);
+}
+
+// a star that flies home to its socket in the arch (hidden ones wait for their islet's puzzle)
+function makeStar(name, pos, { hidden }) {
+  const { color, index, task } = STARS[name];
+  const socket = spots.sockets[index].position.clone().add(vec3(0, 0, 0.12));
+  return addStar(name, { color, pos, task, socket, onHome: starHome, hidden });
 }
 
 // sad by the arch, facing the path up from the dock
@@ -134,8 +161,8 @@ function buildUnicorn() {
   const at = toWorld(5.5, -3);
   const ground = terrainHeight(at.x, at.z);
   addUnicorn(at.x, at.z, { y: ground, yaw: Math.atan2(-5.5, 12) });
-  addCylinder(at.x, at.z, { r: 1.1, bottom: ground - 1, top: ground + 2.6 });
   spots.unicorn = at;
+  spots.unicornCol = addCylinder(at.x, at.z, { r: 1.1, bottom: ground - 1, top: ground + 2.6 });
 }
 
 // the grey stone arch on the hub, with four empty sockets for the stars (the finale)
@@ -164,10 +191,9 @@ function buildArch() {
 }
 
 // a tall see-through beam of colour over each islet, so you can always see where to go;
-// it fades out once that islet's task is done (its star is home, or for now: it's been visited)
-const BEACON_TASKS = { stack: 'reefOrange', tide: 'reefTide', cove: 'reefCove', kelp: 'reefKelp' };
+// it fades out once that islet's star is home
 function buildBeacons() {
-  for (const { color, islet: name } of Object.values(STARS)) {
+  for (const { color, islet: name, task } of Object.values(STARS)) {
     const { x, z } = toWorld(ISLETS[name].x, ISLETS[name].z),
       base = name === 'stack' ? spots.cap.y : terrainHeight(x, z);
     const beamMaterial = new THREE.MeshBasicMaterial({
@@ -185,7 +211,7 @@ function buildBeacons() {
     );
     beam.position.set(x, base + BEACON_HEIGHT / 2, z);
     scene.add(beam);
-    beacons.push({ islet: ISLETS[name], task: BEACON_TASKS[name], beam, fade: 1 });
+    beacons.push({ islet: ISLETS[name], task, beam, fade: 1 });
   }
 }
 
@@ -203,8 +229,7 @@ function buildPalms() {
     [-46, 24],
     [-36, -38],
     [-46, -24],
-    [44, 26],
-    [36, 40],
+    [40, 22.4], // in the kelp garden, between two plates
     [30, -36],
     [38, -45],
   ];
@@ -215,15 +240,15 @@ function buildPalms() {
   scatter(CENTER_5.x, CENTER_5.z, { radius: 13, allowed: awayFromPaths, bushes: 10, flowers: 50 });
 }
 
-// 8 shells all over the reef: easy ones on the hub, the rest out on the islets and the sandbar
+// 8 shells all over the reef. Two more come later: one buried on the tide pools' beach (buildLate)
+// and one Mango fetches from the crane on Crab Rock (cove.js).
 function addShells() {
   const shellSpots = [
     [8, -2],
-    [-10, 6],
     [20, 16], // halfway along the sandbar
     [-44, 26], // on top of Crab Cove
     [-37, -36], // in a rock pool
-    [47, 28], // on the kelp garden's ring
+    [40, 24.8], // inside the kelp garden
   ];
   for (const [x, z] of shellSpots) {
     const w = toWorld(x, z);
@@ -233,7 +258,7 @@ function addShells() {
 }
 
 function buildLate() {
-  const bushes = { boing: [-7, 2], stretch: [7, 2], grow: [-4, -11], chop: [31.5, 35] };
+  const bushes = { boing: [-7, 2], stretch: [7, 2], grow: [-4, -11] };
   for (const [type, [x, z]] of Object.entries(bushes)) {
     const w = toWorld(x, z);
     addFruit(w.x, w.z, { type, y: terrainHeight(w.x, w.z), bush: true });
@@ -244,6 +269,11 @@ function buildLate() {
     ['grow', spots.growBush],
   ])
     addFruit(spot.x, spot.z, { type, y: spot.y, bush: true });
+  // outside the kelp garden's hedge, where the sandbar from the hub comes ashore
+  const kelp = ISLETS.kelp,
+    toHub = Math.atan2(-kelp.z, -kelp.x),
+    chop = toWorld(kelp.x + Math.cos(toHub) * 13.2, kelp.z + Math.sin(toHub) * 13.2);
+  addFruit(chop.x, chop.z, { type: 'chop', y: terrainHeight(chop.x, chop.z), bush: true });
   const dig = toWorld(-47, -37);
   addDig(dig.x, dig.z, {
     // fine to run again when a save is put back (see systems/digs.js)
@@ -256,14 +286,15 @@ function buildLate() {
 
 /* ---------------- arriving, update, triggers ---------------- */
 
-// the crew comes along on deck, and the ship is back on top of the water after island 4
+// the crew comes along: Mango and Wasabi on deck, Eduardo on Spartacus's hat (his pincers cut
+// ropes here). The ship is back on top of the water after island 4.
 function enter() {
   shipState.baseY = -0.15;
   shipState.depth = 0;
   shipBubble.visible = false;
   ensureMangoCrew();
   wasabiToBucket();
-  ensureEduardoCrew();
+  eduardoRideHat();
 }
 
 // a star reached its socket in the arch: that stripe of the unicorn's mane gets its colour back
@@ -272,11 +303,19 @@ function starHome(star, { quiet }) {
   if (quiet) return;
   toast(`The ${star.name} star is home! The unicorn’s mane is ${star.name} again.`, 3600);
   completeTask(star.task);
+  if (starsHome() === 4)
+    setTimeout(
+      () => toast('All four stars are home! The unicorn’s horn glows in the dark… 🌙', 4200),
+      3800,
+    );
 }
 
 function update(dt) {
   updateStars(dt);
   updateUnicorn(dt);
+  updateRainbow(dt);
+  for (const islet of Object.values(islets)) islet.update?.(dt);
+  if (starsHome() === 4 && !island.done.reefRainbow) setHornGlow(daylight.night);
   const time = game.time;
   for (const beacon of beacons) {
     const target = island.done[beacon.task] ? 0 : 1;
@@ -284,22 +323,6 @@ function update(dt) {
     beacon.beam.visible = beacon.fade > 0.02;
     beacon.beam.material.opacity =
       beacon.fade * (0.24 + 0.08 * Math.sin(time * 2 + beacon.islet.x));
-  }
-}
-
-const VISIT_MESSAGES = {
-  reefTide: 'The tide pools! Little pools full of water.',
-  reefCove: 'Crab Cove! A cliff and a cosy bay.',
-  reefKelp: 'The kelp garden! A pond in the middle.',
-};
-// standing on an islet's dry land ticks its "visit" task
-function checkVisits(p) {
-  for (const beacon of beacons) {
-    if (!VISIT_MESSAGES[beacon.task] || island.done[beacon.task] || p.y < 0.2) continue;
-    const { x, z } = toWorld(beacon.islet.x, beacon.islet.z);
-    if (distXZ(p, x, z) > beacon.islet.radius - 2) continue;
-    toast(VISIT_MESSAGES[beacon.task], 3000);
-    completeTask(beacon.task);
   }
 }
 
@@ -315,9 +338,40 @@ function meetUnicorn() {
   for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
 }
 
+// at night, with every star home: her horn lights the arch and the rainbow comes back
+function fixRainbow() {
+  completeTask('reefRainbow');
+  showRainbow();
+  unicorn.state = 'happy';
+  setHornGlow(1);
+  toast('The unicorn’s horn lights up the arch… The rainbow is back! 🌈', 3800);
+  setTimeout(() => toast('Unicorn: “Thank you! Can I come with you on your ship?”', 3600), 4000);
+  setTimeout(followSpartacus, 4000);
+}
+function followSpartacus() {
+  spots.unicornCol.top = -999;
+  unicornFollow();
+}
+
+// walking onto the dock with her following: she hops aboard
+const onDockEnd = (p) => p.z > CENTER_5.z + 19 && Math.abs(p.x - CENTER_5.x) < 1.6 && p.y > 0.5;
+
+function interactFinale(p) {
+  const nearUnicorn = distXZ(p, unicorn.g.position.x, unicorn.g.position.z) < 7;
+  if (starsHome() === 4 && !island.done.reefRainbow && nearUnicorn) {
+    if (isNight()) fixRainbow();
+    else hintOnce('reefNight', 'Her horn only glows in the dark. Try the 🌙 button!', 3400);
+  }
+  if (island.done.reefRainbow && unicorn.state === 'follow' && onDockEnd(p)) {
+    unicornBoard(() => completeTask('reefAboard'));
+    toast('The unicorn hops aboard the ship!', 3000);
+  }
+}
+
 function interact(p) {
-  checkVisits(p);
   grabStars(p);
+  for (const islet of Object.values(islets)) islet.interact?.(p);
+  interactFinale(p);
   const { ledge, middle, plateau } = spots;
   if (!island.done.reefUnicorn && distXZ(p, spots.unicorn.x, spots.unicorn.z) < 4.5) meetUnicorn();
   const nearLedge = distXZ(p, ledge.x, ledge.z) < 4.5;
@@ -333,20 +387,37 @@ function interact(p) {
     hintOnce('stackSeed', 'A magic seed! The Grow-Grow fruit up here can wake it.', 3400);
 }
 
-// barking at her: how many stars are home
+// barking at her tells you how many stars are home; the islets react too (Mango, Wasabi)
 function bark(p) {
-  if (!island.done.reefUnicorn || distXZ(p, spots.unicorn.x, spots.unicorn.z) > 7) return;
-  const home = Object.values(STARS).filter((s) => island.done[starTask(s)]).length;
-  toast(`Unicorn: “${home} of 4 stars are home!”`, 2400);
+  for (const islet of Object.values(islets)) islet.bark?.(p);
+  const nearUnicorn = distXZ(p, unicorn.g.position.x, unicorn.g.position.z) < 7;
+  if (!island.done.reefUnicorn || island.done.reefRainbow || !nearUnicorn) return;
+  toast(`Unicorn: “${starsHome()} of 4 stars are home!”`, 2400);
 }
-const starTask = (star) => BEACON_TASKS[star.islet];
 
-// putting a save back: stars already home go straight to their sockets
-function loadState() {
-  for (const task of Object.values(BEACON_TASKS)) {
+// the islets' own state (bridge down, crate broken, hedge chopped…); tasks are saved anyway
+const saveState = () =>
+  Object.fromEntries(
+    Object.entries(islets)
+      .filter(([, islet]) => islet.save)
+      .map(([name, islet]) => [name, islet.save()]),
+  );
+
+// putting a save back: the islets first (they reveal their stars), then stars already home go
+// to their sockets, then the finale
+function loadState(state) {
+  for (const [name, islet] of Object.entries(islets)) islet.load?.(state[name] ?? {});
+  for (const { task } of Object.values(STARS)) {
     const star = starForTask(task);
-    if (star && island.done[task]) sendStarHome(star, { quiet: true });
+    if (island.done[task]) sendStarHome(star, { quiet: true });
   }
+  if (island.done.reefRainbow) {
+    showRainbow({ quiet: true });
+    unicorn.state = 'happy';
+    setHornGlow(1);
+    if (!island.done.reefAboard) followSpartacus();
+  }
+  if (island.done.reefAboard) unicornAboard();
 }
 
 const island = {
@@ -356,18 +427,20 @@ const island = {
   zMax: -950,
   height,
   savesProgress: true,
-  preview: true, // still being built: island 4 only sails on here in dev/?debug
+  preview: true, // island 4 only sails on here in dev/?debug until Claudio says it's ready
   // keeps Spartacus over the ground mesh; the sea current brings him back long before this
   physics: { bound: { x: CENTER_5.x, z: CENTER_5.z, r: 105 } },
   tasks: {
     title: 'Rainbow Reef',
     list: [
       { id: 'reefUnicorn', ic: '🦄', t: () => 'Meet the unicorn by the stone arch' },
-      { id: 'reefOrange', ic: '🧡', t: () => 'Bring back the orange star' },
-      { id: 'reefCove', ic: '❤️', t: () => 'Visit Crab Cove' },
-      { id: 'reefTide', ic: '💛', t: () => 'Visit the tide pools' },
-      { id: 'reefKelp', ic: '💙', t: () => 'Visit the kelp garden' },
+      { id: 'reefRed', ic: '❤️', t: () => 'Bring back the red star (Crab Cove)' },
+      { id: 'reefOrange', ic: '🧡', t: () => 'Bring back the orange star (the sea stack)' },
+      { id: 'reefYellow', ic: '💛', t: () => 'Bring back the yellow star (the tide pools)' },
+      { id: 'reefBlue', ic: '💙', t: () => 'Bring back the blue star (the kelp garden)' },
       { id: 'reefShells', ic: '🐚', t: () => pickupText(5, 'shells') },
+      { id: 'reefRainbow', ic: '🌈', t: () => 'Fix the rainbow' },
+      { id: 'reefAboard', ic: '⛵', t: () => 'Bring the unicorn to the ship' },
     ],
   },
   collect: {
@@ -385,9 +458,11 @@ const island = {
       [-40, 22],
       [44, -38],
     ],
+    // butterflies by day, fireflies at night (along the tide pools' stepping stones too)
     butterflies: [
       [2, -1],
-      [44, 36],
+      [40, 26],
+      [-53, -42],
     ],
     fish: [
       [20, -20, 0.8],
@@ -405,30 +480,32 @@ const island = {
   },
   intro: [
     [3400, 'A ring of little islands! Swim from one to the next.', 3400],
-    [7400, 'Someone is waiting by the stone arch…', 3000],
+    [7400, 'Eduardo rides on Spartacus’s hat. His pincers can cut ropes!', 3600],
+    [11600, 'Someone is waiting by the stone arch…', 3000],
   ],
   win: {
-    title: 'Reef explored!',
-    text: 'Spartacus visited every little island. More adventures are coming soon!',
-    tip: 'You can also rest later at the end of the dock.',
-    go: 'The end, for now 🌈',
+    title: 'The rainbow is back!',
+    text: 'All four stars are home and the unicorn joined the crew. Her rainbow can take the ship up into the sky…',
+    tip: 'You can also ride the rainbow later from the end of the dock.',
+    go: 'Ride the rainbow! 🌈',
   },
-  exit: {
-    label: 'Rest',
-    at: (p) => p.z > CENTER_5.z + 19 && Math.abs(p.x - CENTER_5.x) < 1.6 && p.y > 0.5,
-    run: () => {
-      hideWin();
-      $('#end').classList.remove('hidden');
-    },
-  },
+  exit: { label: 'Ride', at: onDockEnd, run: startRainbowRide },
   build,
   buildLate,
   enter,
   update,
   interact,
-  // the seeds on the sea stack (Grow, Zip); the hat for seaweed once the kelp garden has some
-  actions: (p) => vineAction(p) || chopAction(p),
+  // the islets' own buttons (Pinch), the seeds (Grow, Zip) and the hat (Chop)
+  actions(p) {
+    for (const islet of Object.values(islets)) {
+      const action = islet.action?.(p);
+      if (action) return action;
+    }
+    return vineAction(p) || chopAction(p);
+  },
   bark,
+  pound: (p) => islets.cove.pound(p),
+  saveState,
   loadState,
 };
 export default island;

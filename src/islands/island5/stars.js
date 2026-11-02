@@ -9,13 +9,15 @@ import { toast } from '../../core/ui.js';
 import { makeStar } from '../../models/items.js';
 
 // {name, color, task, pos (where it waits), model, socket (Vector3 in the arch), onHome(star, {quiet}),
-//  state: waiting | flying | home, t (seconds into the flight), from}
+//  state: hidden (not found yet) | waiting | flying | home, t (seconds into the flight), from}
 const stars = [];
 const FLIGHT_HEIGHT = 12; // how high the arc home goes
 
-export function addStar(name, { color, pos, task, socket, onHome }) {
+// hidden: it only appears once the islet's puzzle reveals it (revealStar)
+export function addStar(name, { color, pos, task, socket, onHome, hidden = false }) {
   const model = makeStar(color);
   model.position.copy(pos);
+  model.visible = !hidden;
   scene.add(model);
   const star = {
     name,
@@ -25,13 +27,24 @@ export function addStar(name, { color, pos, task, socket, onHome }) {
     model,
     socket,
     onHome,
-    state: 'waiting',
+    state: hidden ? 'hidden' : 'waiting',
     t: 0,
   };
   stars.push(star);
   return star;
 }
 export const starForTask = (task) => stars.find((star) => star.task === task);
+export const starsHome = () => stars.filter((star) => star.state === 'home').length;
+
+// the puzzle is solved: the star pops out where it waits (quiet: putting a save back)
+export function revealStar(star, { quiet = false } = {}) {
+  if (star.state !== 'hidden') return;
+  star.state = 'waiting';
+  star.model.visible = true;
+  if (quiet) return;
+  sfx.ding();
+  burst(star.pos.clone(), { count: 30, color: [star.color, 0xffffff], speed: 4, up: 4, life: 1 });
+}
 
 // in the island's interact(p): walking into a waiting star
 export function grabStars(pos) {
@@ -57,6 +70,7 @@ export function grabStars(pos) {
 // straight into its socket, no flight (also used when a save is put back)
 export function sendStarHome(star, { quiet = false } = {}) {
   star.state = 'home';
+  star.model.visible = true;
   star.model.position.copy(star.socket);
   star.model.rotation.set(0, 0, 0);
   star.model.scale.setScalar(0.7);

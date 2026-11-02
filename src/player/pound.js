@@ -7,6 +7,7 @@ import { smoothstep, vec3 } from '../core/util.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
 import { supportHeight } from '../core/colliders.js';
+import { currentIsland } from '../core/state.js';
 import { poundReactions } from '../systems/reactions.js';
 import { player } from './player.js';
 
@@ -68,6 +69,7 @@ export function landPound() {
     size: 1.1,
   });
   poundReactions(player.pos);
+  currentIsland().pound?.(player.pos); // islands react too (island 5: breaking a crate)
 }
 
 // the landing pause counts down even when he isn't walking (it locks movement meanwhile)

@@ -43,13 +43,13 @@ export function restoreProgress(island) {
   game.restoring = true;
   try {
     for (const id of Object.keys(island.done)) island.done[id] = !!saved.done?.[id];
-    // digs first: their rewards may spawn the pickups and items restored next
+    // digs and the island's own state first: they may spawn the pickups and items restored next
     restoreDigs(island.id, saved.digs);
+    island.loadState?.(saved.state ?? {});
     restorePickups(island.id, { taken: saved.pickups, count: saved.count });
     restoreGrowers(island.id, saved.growers);
     restoreItems(island.id, saved.items);
     if (saved.power) setPower(saved.power);
-    island.loadState?.(saved.state ?? {});
     if (saved.pos) player.pos.set(...saved.pos);
   } finally {
     game.restoring = false;
