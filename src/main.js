@@ -134,6 +134,42 @@ if (continueTo >= 2 && loadSave().island >= 2)
   armButton($('#play'), 'Tap again to start over', () => startGame(1));
 else $('#play').addEventListener('click', () => startGame(1));
 $('#cont').addEventListener('click', () => startGame(continueTo));
+
+// Quick island picker: jump to any island. Leaving a saved island for another needs a second tap,
+// because it replaces where Continue goes (and any mid-island save). The chip itself never changes
+// size, so the second tap lands where the first one did; the label above says "tap again".
+const PICKER_TEXT = $('#pickerLabel').textContent;
+const ARM_TIME = 3000; // ms the second tap has
+const hasSave = loadSave().island >= 2;
+const picker = { armed: null, timer: null };
+function disarmPicker() {
+  picker.armed?.removeAttribute('data-armed');
+  picker.armed = null;
+  $('#pickerLabel').textContent = PICKER_TEXT;
+}
+function pickIsland(chip, island) {
+  const needsSecondTap = hasSave && island.id !== continueTo;
+  if (!needsSecondTap || picker.armed === chip) {
+    startGame(island.id);
+    return;
+  }
+  disarmPicker();
+  picker.armed = chip;
+  chip.dataset.armed = '1';
+  $('#pickerLabel').textContent = `Tap ${island.id} again to sail to ${island.name}`;
+  clearTimeout(picker.timer);
+  picker.timer = setTimeout(disarmPicker, ARM_TIME);
+}
+for (const island of ISLANDS) {
+  const chip = document.createElement('button');
+  chip.className = 'cta ghost chip';
+  chip.textContent = island.id;
+  chip.title = island.name;
+  chip.setAttribute('aria-label', `Island ${island.id}: ${island.name}`);
+  if (island.id === continueTo) chip.classList.add('current');
+  chip.addEventListener('click', () => pickIsland(chip, island));
+  $('#islandPicker').append(chip);
+}
 $('#winExplore').addEventListener('click', () => {
   hideWin();
   canvas.focus();
