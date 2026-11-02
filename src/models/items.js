@@ -178,3 +178,34 @@ export function makeShell() {
   holder.add(g);
   return holder;
 }
+// a chunky five-pointed star that glows in its own colour (island 5's rainbow pieces)
+export function makeStar(color) {
+  const shape = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const angle = (i / 10) * Math.PI * 2 + Math.PI / 2,
+      r = i % 2 ? 0.24 : 0.55;
+    if (i === 0) shape.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
+    else shape.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+  }
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.16,
+    bevelEnabled: true,
+    bevelThickness: 0.05,
+    bevelSize: 0.05,
+    bevelSegments: 1,
+  });
+  geo.center();
+  const g = new THREE.Group();
+  g.add(
+    mesh(
+      geo,
+      new THREE.MeshStandardMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.55,
+        roughness: 0.35,
+      }),
+    ),
+  );
+  return g;
+}

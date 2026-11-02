@@ -36,7 +36,8 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 ## Vines (`systems/vines.js`), Grow-Grow
 
 - A _tree_ is `{x,z,gh,top,grown}` with a collider whose `.tree` points back to it (`bigTree` on island 3, kelp `pillar` on island 4).
-- `climbVine(tree, towardX, towardZ)`: a seed at the foot; once grown, walking into the trunk climbs it.
+- `climbVine(tree, towardX, towardZ)`: a seed at the foot; once grown, walking into the trunk climbs it. A tree standing on a rock instead of the terrain sets `raised: true` (island 5's sea stack): the seed sits at `gh` and climbing down stops there.
+- Islands only offer Grow / Zip if their `actions(p)` returns `vineAction(p)`.
 - `zipVine(a,b)`: a seed on top of `a` grows a zipline to `b`.
 - `vineAction(p)` gives Grow / Zip.
 
@@ -75,6 +76,7 @@ Crew members who travel live in `src/npcs/`; island-only characters live in thei
 - **Gull**: sleeps on island 1, wakes on bark, then circles the ship.
 - **Mango**: `placeMango`, `mangoHop` (onto the hat), `mangoToShip(onArrive)`, `ensureMangoCrew()`, and `mangoFetch(to, mesh, onDrop)` for errands on later islands.
 - **Wasabi**: island 3 drives her story (stuck → happy → swim); `wasabiFollow()` makes her swim beside Spartacus.
+- **Unicorn** (`npcs/unicorn.js`): met on island 5. `addUnicorn(x, z, {y, yaw})`, `colourStripe(i, color)` (one of her four grey mane/tail stripes gets its colour back, with a hop), state `sad` | `happy`. Updated from island 5 for now; move it into the main loop when she becomes crew.
 
 Pattern: each NPC has a `state` string and an `update…(dt)` function that switches over the states, one small helper per state. Riders are attached to `dog.head`; crew on the ship are attached to `ship`.
 
