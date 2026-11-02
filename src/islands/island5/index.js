@@ -427,7 +427,6 @@ const island = {
   zMax: -950,
   height,
   savesProgress: true,
-  preview: true, // island 4 only sails on here in dev/?debug until Claudio says it's ready
   // keeps Spartacus over the ground mesh; the sea current brings him back long before this
   physics: { bound: { x: CENTER_5.x, z: CENTER_5.z, r: 105 } },
   tasks: {

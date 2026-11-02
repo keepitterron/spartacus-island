@@ -85,7 +85,7 @@ With all four stars in the arch, a hint says "The unicorn's horn glows in the da
 1. ✅ Mid-island save, then a blockout of the hub, the islets and the channels (shapes only, no puzzles). Check that wading, paddling, the current and the camera feel good at this size. _Built: `islands/island5/`, reachable after the whale in dev/`?debug` (`preview: true`), or with `__g.go(5)`. The tasks are placeholders: visit each islet and find 8 shells._
 2. ✅ Hub + unicorn + arch + beacons, then the **sea stack** (only existing systems, so it's quick and proves the "every fruit" idea). _Built: the unicorn is sad by the arch with a grey mane, and walking up to her tells the story. The sea stack (`island5/seastack.js`) has tiers 7 apart (a Boing-Boing jump reaches about 6.4 with the step up, so nothing can be skipped): Boing-Boing onto the first ledge, Stretchy bush, two hook swings, Grow-Grow bush, a vine up the column to the cap. The orange star flies home to the arch (`island5/stars.js`) and colours her second stripe; a zipline from the cap lands on a lookout rock on the hub. Not yet: the whale spout._
 3. ✅ **Crab Cove** (ropes, pinch), then the **kelp garden** (plates, Wasabi call), then the **tide pools** (tide). _Built; see "As built" below for how they ended up._
-4. ✅ Finale, shells, music, hints. _Built._ Still to do: a full play-through with Zoë on her phone, then `preview: false`.
+4. ✅ Finale, shells, music, hints. _Built._ Live (no longer a `preview`). Still to do: a full play-through with Zoë on her phone.
 
 ## As built
 
