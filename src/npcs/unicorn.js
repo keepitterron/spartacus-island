@@ -2,20 +2,26 @@
 // into four colour stars, so her mane and tail went grey. Every star brought back to the arch
 // colours one stripe again. (She joins the crew at the end of island 5, later.)
 import * as THREE from 'three';
-import { lerp } from '../core/util.js';
+import { clamp, lerp, lerpAngle, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { material, mesh } from '../core/materials.js';
 import { game } from '../core/state.js';
+import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
+import { supportHeight } from '../core/colliders.js';
+import { ship } from '../world/ship.js';
+import { player } from '../player/player.js';
 
 const GREY = 0xb8bcc8;
-// state: sad (head down, waiting) | happy (all colours back)
+// state: sad (head down, waiting) | happy (all colours back) | follow (trotting after Spartacus)
+//        | boarding (hopping onto the ship) | crew (on deck)
 // stripes: one material per mane/tail stripe, shared by the mane tuft and the tail strand,
 // so colouring a stripe colours both. hop: seconds left of a happy little hop.
 export const unicorn = {
   g: null,
   head: null,
   tail: null,
+  horn: null,
   stripes: [],
   state: 'sad',
   hop: 0,
@@ -89,6 +95,7 @@ function addHead(g, { white, ink, pink }) {
       roughness: 0.3,
     }),
   );
+  unicorn.horn = horn;
   horn.position.set(0, 0.42, 0.28);
   horn.rotation.x = 0.5;
   head.add(horn);
@@ -135,14 +142,81 @@ export function colourStripe(index, color, { quiet = false } = {}) {
   });
 }
 
+// her horn's glow, 0..1 (it shines at night once every star is home)
+export function setHornGlow(k) {
+  unicorn.horn.material.emissiveIntensity = 0.3 + k * 2.2;
+}
+
+export const unicornFollow = () => {
+  unicorn.state = 'follow';
+};
+
+// hop onto the ship's deck, then onAboard()
+const DECK_SPOT = vec3(0, 1.2, -1.9); // ship-local, at the back of the deck
+export function unicornBoard(onAboard) {
+  unicorn.state = 'boarding';
+  unicorn.t = 0;
+  unicorn.from = unicorn.g.position.clone();
+  unicorn.onAboard = onAboard;
+  sfx.fruit();
+}
+// on deck at once (also when a save is put back)
+export function unicornAboard() {
+  unicorn.g.parent?.remove(unicorn.g);
+  ship.add(unicorn.g);
+  unicorn.g.position.copy(DECK_SPOT);
+  unicorn.g.rotation.set(0, 0, 0);
+  unicorn.g.scale.setScalar(0.55);
+  unicorn.state = 'crew';
+}
+
+// trot to a spot 3 behind Spartacus, on whatever is there (over water her hooves sparkle on the
+// surface); if he's far away (a zipline, a whale spout) she catches up at once
+function updateFollow(dt) {
+  const g = unicorn.g,
+    behindX = player.pos.x - Math.sin(player.yaw) * 3,
+    behindZ = player.pos.z - Math.cos(player.yaw) * 3,
+    dx = behindX - g.position.x,
+    dz = behindZ - g.position.z,
+    dist = Math.hypot(dx, dz);
+  if (dist > 25) g.position.set(behindX, player.pos.y, behindZ);
+  else if (dist > 0.6) {
+    const step = Math.min(dist, dt * clamp(dist * 2, 2, 9));
+    g.position.x += (dx / dist) * step;
+    g.position.z += (dz / dist) * step;
+    g.rotation.y = lerpAngle(g.rotation.y, Math.atan2(dx, dz), Math.min(1, dt * 6));
+  }
+  const ground = supportHeight(g.position.x, g.position.z, g.position.y + 1);
+  unicorn.baseY = Math.max(ground, -0.3);
+  if (ground < -0.3 && Math.random() < dt * 12)
+    burst(g.position.clone().setY(0), { count: 1, color: [0xffd84d, 0xffffff], speed: 1, up: 1 });
+}
+
+function updateBoarding(dt) {
+  unicorn.t += dt;
+  const t = clamp(unicorn.t / 1.2, 0, 1);
+  ship.updateMatrixWorld(true);
+  const to = ship.localToWorld(DECK_SPOT.clone());
+  unicorn.g.position.lerpVectors(unicorn.from, to, t);
+  unicorn.g.position.y += Math.sin(Math.PI * t) * 3;
+  if (t < 1) return;
+  unicornAboard();
+  unicorn.onAboard?.();
+}
+
 // a swishing tail, the head drooped while sad, and a hop when a colour comes back
 export function updateUnicorn(dt) {
   if (!unicorn.g) return;
+  if (unicorn.state === 'follow') updateFollow(dt);
+  if (unicorn.state === 'boarding') {
+    updateBoarding(dt);
+    return;
+  }
   const time = game.time,
     sad = unicorn.state === 'sad';
   unicorn.head.rotation.x = lerp(unicorn.head.rotation.x, sad ? 0.45 : -0.1, Math.min(1, dt * 3));
   unicorn.tail.rotation.y = Math.sin(time * (sad ? 0.8 : 3)) * (sad ? 0.15 : 0.4);
   unicorn.hop = Math.max(0, unicorn.hop - dt);
   const hopHeight = Math.sin((unicorn.hop / 0.6) * Math.PI) * 0.5;
-  unicorn.g.position.y = unicorn.baseY + hopHeight;
+  if (unicorn.state !== 'crew') unicorn.g.position.y = unicorn.baseY + hopHeight;
 }

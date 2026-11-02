@@ -182,6 +182,18 @@ function updateHop(e) {
   completeTask('eduardo');
 }
 
+// riding on Spartacus's hat (island 5, where his pincers cut ropes)
+export function eduardoRideHat() {
+  const eg = eduardo.g;
+  eg.parent?.remove(eg);
+  dog.head.add(eg);
+  eg.visible = true;
+  eg.position.set(0, 0.68, -0.05);
+  eg.rotation.set(0, 0, 0);
+  eg.scale.setScalar(0.95);
+  eduardo.state = 'riding';
+}
+
 // on deck with the crew (for later islands, also when arriving directly with Continue)
 export function ensureEduardoCrew() {
   const eg = eduardo.g;

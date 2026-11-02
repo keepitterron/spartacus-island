@@ -51,11 +51,11 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 
 ## Bark and pound reactions (`systems/reactions.js`)
 
-`barkReactions(pos)` runs on every bark (and `poundReactions(pos)` on every ground-pound landing), on every island, before the island's own `bark(p)`. Palms within 7 shake and usually drop a coconut that bounces and pops back into its tree after 12 s (`palms` is filled by `palm()` in `world/props.js`). Add new reactions here: anything that just reacts to a bark, without being part of a puzzle.
+`barkReactions(pos)` runs on every bark (and `poundReactions(pos)` on every ground-pound landing), on every island, before the island's own `bark(p)` (or `pound(p)`). Palms within 7 shake and usually drop a coconut that bounces and pops back into its tree after 12 s (`palms` is filled by `palm()` in `world/props.js`). Add new reactions here: anything that just reacts to a bark, without being part of a puzzle.
 
 ## Beach balls (`systems/balls.js`)
 
-Islands list `balls: [[x, z], …]` (island-local). Home-made physics, no library: gravity, bounces, rolling friction, pushed out of colliders. Running into a ball kicks it, a bark shoves balls within 6, a ground pound launches them. A ball in the sea bobs for 2.5 s, then pops back home. Balls further than 70 from Spartacus sleep.
+Islands list `balls: [[x, z], …]` (island-local). Home-made physics, no library: gravity, bounces, rolling friction, pushed out of colliders. Running into a ball kicks it, a bark shoves balls within 6, a ground pound launches them. A ball in the sea bobs for 2.5 s, then pops back home. Balls further than 70 from Spartacus sleep. `addBall(x, z)` adds one at runtime (Wasabi brings one up on island 5); `ballsNear(x, z, r)` gives puzzles the balls nearby, whose `pos` and `vel` they may nudge (island 5's plates pull a slow ball in).
 
 ## Ambient critters (`systems/critters.js`)
 
@@ -75,8 +75,9 @@ Crew members who travel live in `src/npcs/`; island-only characters live in thei
 
 - **Gull**: sleeps on island 1, wakes on bark, then circles the ship.
 - **Mango**: `placeMango`, `mangoHop` (onto the hat), `mangoToShip(onArrive)`, `ensureMangoCrew()`, and `mangoFetch(to, mesh, onDrop)` for errands on later islands.
-- **Wasabi**: island 3 drives her story (stuck → happy → swim); `wasabiFollow()` makes her swim beside Spartacus.
-- **Unicorn** (`npcs/unicorn.js`): met on island 5. `addUnicorn(x, z, {y, yaw})`, `colourStripe(i, color)` (one of her four grey mane/tail stripes gets its colour back, with a hop), state `sad` | `happy`. Updated from island 5 for now; move it into the main loop when she becomes crew.
+- **Wasabi**: island 3 drives her story (stuck → happy → swim); `wasabiFollow()` makes her swim beside Spartacus; `wasabiToBucket()` puts her back on deck; `wasabiFetch({from, to, carried, onDrop})` has her pop up at `from` with something and paddle it ashore (island 5).
+- **Eduardo** (`islands/island4/eduardo.js`): `ensureEduardoCrew()` on deck, `eduardoRideHat()` on Spartacus's hat (island 5, where Pinch needs him there).
+- **Unicorn** (`npcs/unicorn.js`): met on island 5. `addUnicorn(x, z, {y, yaw})`, `colourStripe(i, color)` (one of her four grey mane/tail stripes gets its colour back, with a hop), `setHornGlow(k)`, `unicornFollow()`, `unicornBoard(onAboard)`, `unicornAboard()`. States `sad` | `happy` | `follow` | `boarding` | `crew`. Updated from island 5 for now; move `updateUnicorn` into the main loop when island 6 needs her.
 
 Pattern: each NPC has a `state` string and an `update…(dt)` function that switches over the states, one small helper per state. Riders are attached to `dog.head`; crew on the ship are attached to `ship`.
 
@@ -86,7 +87,8 @@ Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'na
 
 - `startSail(path, onArrive)`: ship follows a Catmull-Rom path (~13 s, skippable).
 - `startBubble(onDone)`: island 3 → 4.
-- `startWhale()`: island 4 ending.
+- `startWhale()`: island 4 ending; it sails on to island 5 unless that's a `preview` (then dev/`?debug` only). `makeWhale()` builds the model (island 5's lagoon has one whose spout throws Spartacus up).
+- `startRainbowRide()` (`islands/island5/finale.js`): island 5 ending, the ship rides a rainbow road up into the sky.
 
 ## Tasks, celebration, hints (`game/`)
 

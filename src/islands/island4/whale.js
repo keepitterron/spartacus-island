@@ -17,40 +17,50 @@ import { startSail } from '../../cutscenes/sail.js';
 // to the surface, the bubble pops, then the ship sails on to island 5, or "To be continued…"
 // while island 5 is still a preview (only reachable in dev/?debug).
 const whale = new THREE.Group();
-const tail = new THREE.Group();
+const parts = { tail: null }; // the tail pivot, set by buildWhale
 
-export function buildWhale() {
+// the whale model: a group plus its tail pivot (island 5 has one living in its lagoon)
+export function makeWhale() {
+  const g = new THREE.Group(),
+    tailPivot = new THREE.Group();
   const blueMat = material(0x3d6fd6),
     bellyMat = material(0xbfd6ff),
     inkMat = material(0x1c2333);
   const body = mesh(new THREE.CapsuleGeometry(3, 9, 6, 14), blueMat);
   body.rotation.x = Math.PI / 2;
-  whale.add(body);
+  g.add(body);
   const belly = mesh(new THREE.CapsuleGeometry(2.4, 8, 6, 12), bellyMat);
   belly.rotation.x = Math.PI / 2;
   belly.position.set(0, -1.1, 0.4);
-  whale.add(belly);
-  tail.position.set(0, 0, -7.2);
-  whale.add(tail);
+  g.add(belly);
+  tailPivot.position.set(0, 0, -7.2);
+  g.add(tailPivot);
   for (const side of [-1, 1]) {
     const fluke = mesh(new THREE.BoxGeometry(3.2, 0.35, 1.8), blueMat);
     fluke.position.set(side * 1.6, 0, -0.6);
     fluke.rotation.y = side * 0.35;
-    tail.add(fluke);
+    tailPivot.add(fluke);
     const fin = mesh(new THREE.BoxGeometry(2.4, 0.3, 1.2), blueMat);
     fin.position.set(side * 3.2, -1, 1.5);
     fin.rotation.z = side * -0.4;
-    whale.add(fin);
+    g.add(fin);
     const eye = mesh(new THREE.SphereGeometry(0.32, 8, 6), inkMat, { castShadow: false });
     eye.position.set(side * 2.3, 0.3, 4.6);
-    whale.add(eye);
+    g.add(eye);
   }
   const smile = mesh(new THREE.TorusGeometry(1, 0.1, 5, 14, Math.PI), inkMat, {
     castShadow: false,
   });
   smile.rotation.z = Math.PI;
   smile.position.set(0, -0.3, 5.85);
-  whale.add(smile);
+  g.add(smile);
+  return { g, tail: tailPivot };
+}
+
+export function buildWhale() {
+  const { g, tail } = makeWhale();
+  whale.add(g);
+  parts.tail = tail;
   whale.visible = false;
   scene.add(whale);
 }
@@ -145,7 +155,7 @@ game.cutscenes.whale = {
   update(dt) {
     const T = game.time;
     ride.t += dt;
-    tail.rotation.x = Math.sin(T * 2.5) * 0.35;
+    parts.tail.rotation.x = Math.sin(T * 2.5) * 0.35;
     swimAndLift(dt);
     player.pos.copy(onDeck());
     player.yaw = ship.rotation.y;

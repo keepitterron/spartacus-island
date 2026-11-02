@@ -4,7 +4,8 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 
 ## Story and levels
 
-- **Island 5**: story not written yet. Eduardo's ability is pinching through ropes. Ask Zoë: where does the whale leave the ship, what's tied up, who needs rescuing. How-to: [islands.md](islands.md#adding-island-5-step-by-step).
+- **Island 5, Rainbow Reef**: built, still a `preview` (only reachable after the whale in dev/`?debug`). Next: Zoë play-tests it, then set `preview: false` in `islands/island5/index.js` to ship it. Ask her the unicorn's name when she meets her.
+- **Island 6, the sky island**: rainbows and clouds to climb; the unicorn is the friend who helps there (rainbow bridges?). Story from Zoë.
 - **Zoë's layouts** for Mossy Paw Woods and Bubbly Ocean (currently placeholders). Positions are island-local (`toWorld(x, z)` in each island), so her maps are a number edit. A next step could be moving those positions into a plain data object per island.
 
 ## Features

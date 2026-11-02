@@ -84,11 +84,20 @@ With all four stars in the arch, a hint says "The unicorn's horn glows in the da
 
 1. ✅ Mid-island save, then a blockout of the hub, the islets and the channels (shapes only, no puzzles). Check that wading, paddling, the current and the camera feel good at this size. _Built: `islands/island5/`, reachable after the whale in dev/`?debug` (`preview: true`), or with `__g.go(5)`. The tasks are placeholders: visit each islet and find 8 shells._
 2. ✅ Hub + unicorn + arch + beacons, then the **sea stack** (only existing systems, so it's quick and proves the "every fruit" idea). _Built: the unicorn is sad by the arch with a grey mane, and walking up to her tells the story. The sea stack (`island5/seastack.js`) has tiers 7 apart (a Boing-Boing jump reaches about 6.4 with the step up, so nothing can be skipped): Boing-Boing onto the first ledge, Stretchy bush, two hook swings, Grow-Grow bush, a vine up the column to the cap. The orange star flies home to the arch (`island5/stars.js`) and colours her second stripe; a zipline from the cap lands on a lookout rock on the hub. Not yet: the whale spout._
-3. **Crab Cove** (ropes, pinch), then the **kelp garden** (plates, Wasabi call), then the **tide pools** (tide).
-4. Finale, shells, music, hints, then a full play-through on a phone.
+3. ✅ **Crab Cove** (ropes, pinch), then the **kelp garden** (plates, Wasabi call), then the **tide pools** (tide). _Built; see "As built" below for how they ended up._
+4. ✅ Finale, shells, music, hints. _Built._ Still to do: a full play-through with Zoë on her phone, then `preview: false`.
+
+## As built
+
+Where the build differs from the draft above, and the numbers that keep each puzzle honest:
+
+- **Crab Cove** (`island5/cove.js`): the drawbridge runs from a platform on the hilltop to Crab Rock, 18 away (a running Boing-Boing jump comes down ~15 out). On Crab Rock: Pinch the crane's rope, jump on the crate and slam it open. Bark on the rock and Mango fetches the shell from the crane arm. Eduardo rides Spartacus's hat for the whole island.
+- **Sea stack** (`island5/seastack.js`): tiers 7 apart; the whale in the lagoon (`island5/spout.js`) surfaces every ~11 s and its spout (~6.7 up) is a second way onto the first ledge.
+- **Tide pools** (`island5/tide.js`): no cave. Moon Rock (7.2 high, more than a Boing-Boing jump from the beach) stands off the far shore; at night four stepping stones rise out of the sea, each a normal jump higher, and the yellow star is buried on top.
+- **Kelp garden** (`island5/kelp.js`): a kelp hedge (colliders 7 tall, so no jumping over) rings the garden; one Chop cuts a 3-clump gap. Three plates need a beach ball each: two in the garden, the third comes from Wasabi (bark over the bubbles in the lagoon). Plates pull a slow ball onto themselves, so it's about getting the ball close. The clam opens and the blue star sits on it, in the pond.
+- **Finale** (`island5/finale.js`): with all four stars home, the unicorn's horn glows at night; near her at night the rainbow grows over the arch, she follows Spartacus and hops aboard at the dock end. "Ride the rainbow" carries the ship up a rainbow road, then "To be continued…" (the sky island).
+- **No separate systems yet** for ropes and plates: they live in their islet modules until a second island needs them.
 
 ## Open for us (not for Zoë)
 
-- The anchor seesaw: is it a fun bonus, or one thing too many?
-- Should the whale's spout be the only way to the sea stack's first ledge (a surprise) or an alternative to Boing (a safer choice)?
 - The unicorn's name: ask Zoë at the moment it matters (she meets her), so it's still a surprise.
