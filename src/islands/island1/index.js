@@ -299,15 +299,27 @@ function buildChest() {
     band.position.set(x, 0.43, 0);
     g.add(band);
   }
-  // the lid is a half cylinder hinged at the back edge
+  // the lid: a domed half cylinder lying along x, with a flat bottom so it never looks hollow,
+  // hinged at the base's back top edge (opening tips the front up and over towards the back)
   CHEST.lid = new THREE.Group();
   CHEST.lid.position.set(0, 0.85, -0.52);
   g.add(CHEST.lid);
-  const lidGeometry = new THREE.CylinderGeometry(0.52, 0.52, 1.5, 10, 1, false, 0, Math.PI);
-  lidGeometry.rotateZ(Math.PI / 2);
-  const lid = mesh(lidGeometry, material(0xc4834a));
-  lid.rotateX(-Math.PI / 2);
-  lid.position.set(0, 0, 0.52);
+  const dome = new THREE.CylinderGeometry(0.52, 0.52, 1.5, 10, 1, false, 0, Math.PI);
+  dome.rotateZ(Math.PI / 2); // axis along x, the curved half on top
+  const lid = new THREE.Group();
+  lid.position.z = 0.52; // dome centred over the base
+  lid.add(mesh(dome, material(0xc4834a, { side: THREE.DoubleSide })));
+  lid.add(mesh(new THREE.BoxGeometry(1.5, 0.05, 1.04), material(0xa8693a)));
+  for (const x of [-0.55, 0.55]) {
+    const band = new THREE.CylinderGeometry(0.545, 0.545, 0.14, 10, 1, true, 0, Math.PI);
+    band.rotateZ(Math.PI / 2);
+    const gold = mesh(
+      band,
+      material(0xffc83d, { metalness: 0.3, roughness: 0.5, side: THREE.DoubleSide }),
+    );
+    gold.position.x = x;
+    lid.add(gold);
+  }
   CHEST.lid.add(lid);
   const lock = mesh(
     new THREE.BoxGeometry(0.28, 0.32, 0.1),
