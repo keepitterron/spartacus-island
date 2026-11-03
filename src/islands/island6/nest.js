@@ -122,7 +122,7 @@ export function buildNest(toWorld, { island }) {
       return { label: 'Swap', run: swap };
     },
     bark(p) {
-      if (leo.g.position.distanceTo(p) > 20) return false;
+      if (leo.g.getWorldPosition(vec3()).distanceTo(p) > 20) return false;
       if (island.done.skyJewel) toast('Leo: “Chack-chack! Best friends!”', 2400);
       else if (distractLeo()) toast('Leo looks all around for the woof… Sneak now!', 2800);
       return true;

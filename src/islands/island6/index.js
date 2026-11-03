@@ -6,15 +6,17 @@ import { sfx } from '../../core/audio.js';
 import { toast, hintOnce } from '../../core/ui.js';
 import { burst } from '../../core/fx.js';
 import { addCylinder } from '../../core/colliders.js';
-import { makeFork } from '../../models/items.js';
+import { makeFork, makeFeather } from '../../models/items.js';
 import { CENTER_6 } from '../../world/layout.js';
 import { ship, shipState, shipBubble } from '../../world/ship.js';
 import { player } from '../../player/player.js';
 import { addFruit } from '../../systems/powers.js';
+import { addPickup, pickupText } from '../../systems/collect.js';
 import { items, addItem, placeItem } from '../../systems/items.js';
 import { ensureMangoCrew } from '../../npcs/mango.js';
 import { wasabiToBucket } from '../../npcs/wasabi.js';
 import { unicorn, unicornFly, colourStripe } from '../../npcs/unicorn.js';
+import { leoToShip, leoAboard } from '../../npcs/leo.js';
 import { ensureEduardoCrew } from '../island4/eduardo.js';
 import { BANDS } from '../island5/finale.js';
 import { completeTask } from '../../game/tasks.js';
@@ -85,6 +87,23 @@ const WAY_BACK = [
   [1, -86, 3, 15],
   [0, -76, 3, 15],
 ];
+// two little clouds off to the side, just for feathers (exploring the edges pays off)
+const SIDE_CLOUDS = [
+  [-11, -22, 2.5, 4],
+  [13, -42, 2.5, 8],
+];
+// eight feathers, island-local [x, z, height]: the side clouds, the edges, and spots past each
+// puzzle (between the tunnel walls, behind the cracked wall, the way back, Leo's far corner)
+const FEATHERS = [
+  [-11, -22, 4],
+  [13, -42, 8],
+  [-5, 19, 0],
+  [-27, -61, 8],
+  [-49, -73, 10],
+  [-41, -97, 12],
+  [1, -86, 15],
+  [52, -99, 13],
+];
 const SHIP_SPOT = [9, 16]; // island-local, alongside the spawn cloud
 
 // filled in by build(): the clouds and spots the triggers use
@@ -104,6 +123,7 @@ function build() {
   buildTunnels();
   buildCrystalWall();
   spots.nest = buildNest(toWorld, { island });
+  for (const side of SIDE_CLOUDS) addCloudAt(side);
   finishClouds();
   buildUpdraft();
   buildLandingShadow();
@@ -247,6 +267,10 @@ function enter() {
 // you need to swap: Mini-Me by the palace (into the tunnels), both on the Smash-Smash cloud
 // (Mini-Me again for the way back), and Mini-Me inside the picnic fence (for the cubby door).
 function buildLate() {
+  for (const [x, z, y] of FEATHERS) {
+    const pos = toWorld(x, z);
+    addPickup(pos.x, pos.z, { y, island: island.id });
+  }
   const { palace, smash, picnic } = spots;
   const bushes = [
     ['mini', toWorld(-6, -50), palace.top],
@@ -333,11 +357,14 @@ function lightFountain() {
   spots.fountain.light();
   unicorn.hop = 0.6;
   completeTask('skyFountain');
-  const lines = [
-    [0, 'Lina: “My Sky Jewel! The fountain sparkles again!”', 3400],
-    [3600, 'Lina: “Thank you, Spartacus! And thank you, Leo!”', 3200],
-  ];
-  for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
+  toast('Lina: “My Sky Jewel! The fountain sparkles again!”', 3400);
+  // Leo asks to come along, and flies off to the ship
+  setTimeout(() => {
+    toast('Leo: “Chack-chack! Can I come on your ship too?”', 3400);
+    leoToShip(() => toast('Leo joins the crew! He rides on the ship’s figurehead.', 3400));
+  }, 3600);
+  if (island.collect.count < island.collect.total)
+    setTimeout(() => toast('There are still feathers to find… 🪶', 3000), 11000);
 }
 
 // a save: the jewel back on the spout (the items system leaves placed items to the island)
@@ -353,7 +380,7 @@ const atShip = (p) =>
   distXZ(p, toWorld(6, 16).x, toWorld(6, 16).z) < 2.5 && Math.abs(p.y - SPAWN_CLOUD[3]) < 1;
 const sailOn = () =>
   showEnd(
-    'The Sky Jewel is home, the fountain sparkles, and Leo the magpie is a new friend! Where does the ship float next? Make up the story!',
+    'The Sky Jewel is home, the fountain sparkles, and Leo the magpie joined the crew! Where does the ship float next? Make up the story!',
   );
 
 function interact(p, dt) {
@@ -374,7 +401,7 @@ function interact(p, dt) {
 const island = {
   id: 6,
   center: CENTER_6,
-  name: 'Sky Island',
+  name: 'Cottoncrest Islets',
   zMax: -1350,
   // no ground up here, only clouds: the "terrain" is far below the cloud sea
   height: () => CLOUD_SEA_Y - 30,
@@ -389,10 +416,19 @@ const island = {
     night: new THREE.Color(0x18214d),
     ground: new THREE.Color(0xb7a8e0),
   },
+  collect: {
+    total: FEATHERS.length,
+    count: 0,
+    taskId: 'skyFeathers',
+    name: 'Feather',
+    all: 'All the feathers! Good boy, Spartacus!',
+    model: makeFeather,
+  },
   tasks: {
-    title: 'Sky Island',
+    title: 'Cottoncrest Islets',
     list: [
       { id: 'skyFly', ic: '🦄', t: () => 'Fly with Lina to her palace' },
+      { id: 'skyFeathers', ic: '🪶', t: () => pickupText(6, 'feathers') },
       { id: 'skyMini', ic: '🤏', t: () => 'Eat a Mini-Me fruit', power: 'mini' },
       { id: 'skySmash', ic: '💥', t: () => 'Eat a Smash-Smash fruit', power: 'smash' },
       { id: 'skyFork', ic: '🍴', t: () => 'Find something shiny for Leo' },
@@ -431,7 +467,7 @@ const island = {
   ],
   win: {
     title: 'The fountain sparkles!',
-    text: 'The Sky Jewel is home and Leo the magpie is your friend. Lina’s palace shines again!',
+    text: 'The Sky Jewel is home, Lina’s palace shines again, and Leo the magpie joined the crew!',
     tip: 'You can keep exploring and go back to the ship later.',
     go: 'What happens next? ✨',
   },
@@ -456,7 +492,10 @@ const island = {
   loadState(state) {
     restoreBrokenWalls(state.broken);
     spots.nest.load();
-    if (island.done.skyFountain) putJewelInFountain();
+    if (island.done.skyFountain) {
+      putJewelInFountain();
+      leoAboard();
+    }
   },
   bark(p) {
     if (spots.nest.bark(p)) return;

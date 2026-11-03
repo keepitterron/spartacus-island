@@ -1,6 +1,6 @@
-# Island 6: the sky island
+# Island 6: Cottoncrest Islets (the sky island)
 
-Built and playable, from Claudio's idea and Zoë's answers. The name (Sky Island) is a placeholder until Zoë picks one. What was built, and how, is under **Built so far** below.
+Built and playable, from Claudio's idea and Zoë's answers. Zoë named it **Cottoncrest Islets**. What was built, and how, is under **Built so far** below.
 
 **What Zoë gave us:** the unicorn is **Lina**, and she gets wings in the sky. **Leo** the magpie has her jewel, wants a **fork** for it, and becomes a friend. Clouds under the island, not water. The fruits are **Mini-Me** and **Smash-Smash**. Shrinking is fine: Spartacus doesn't change, he just gets smaller for a while.
 
@@ -61,10 +61,7 @@ Plus a "collect a number" task (feathers?) to reward exploring the edges.
 
 ## Still open (for Zoë)
 
-- The island's name.
-- Does Leo join the crew on the ship, and help on the next island?
-- What's collected around the edges (feathers?), and how many.
-- What the fruits look like.
+- Nothing for this island. Next: what happens on the next island?
 
 ## Built so far
 
@@ -83,5 +80,5 @@ Plus a "collect a number" task (feathers?) to reward exploring the edges.
 - **The Magpie's Nest** (`nest.js`, east of the palace): three hops up to Leo's cloud. Leo looks round from his nest at the far side; six pink cloud bushes (`addCloudBush`) hide you on the way. Spotted, he shows "!" and flutters to a crystal perch with the jewel for a few seconds, then comes home. Hints build up: the first time he sees you, then "woof to distract him", then "a teeny dog is harder to spot". With the fork, **Swap** at the nest: the fork goes in, the jewel goes in Spartacus's mouth, and Leo is a friend. The swap is put back from its task on Continue.
 - **Seeing past walls** (Claudio's play-test: holes were hard to find, and walls hid the way on): cloud walls and the crystal fence fade almost fully see-through while they're between the camera and Spartacus (`fade.js`; each such wall has its own material). The tunnel holes and the cubby door have little golden arches that sparkle when you're near (`doors.js`), the cubby is clear crystal, and the fork glints until it's found.
 - **Fountain finale** (`fountain.js`): with the jewel, **Place** at the palace fountain puts it back on the spout. Water fills the basin, a jet sparkles over the jewel, Lina hops for joy, and the last task ticks, which brings up the win panel. Its button, or **Sail** at the ship afterwards, shows "To be continued…". That panel now has **Keep exploring**, and its **Start over** needs a second tap. A placed jewel is put back from its task on Continue.
-- **Not built (still Zoë's):** a "collect a number" task round the edges (feathers?), and whether Leo joins the crew.
+- **Zoë's answers (Nov 2026):** the name is Cottoncrest Islets; the Mini-Me fruit looks like a red mushroom with white spots and the Smash-Smash fruit like a spiky blue ball (a hedgehog curled up), both whole models (`fruitModels` in `systems/powers.js`); there are **8 feathers** to find, on two little side clouds, the edges and past each puzzle; and **Leo joins the crew**: once the jewel is in the fountain he asks to come along and flies to the ship, where he rides on the figurehead (`leoToShip()`, `leoAboard()`).
 - **Telling things apart** (Claudio's play-test: everything was white): the island has its own deeper blue `sky` (daylight.js reads `island.sky`), the cloud sea is a shady lilac blue, the clouds you land on are a sunlit warm white, and a soft round shadow (`shadow.js`) marks where Spartacus will land while he floats.

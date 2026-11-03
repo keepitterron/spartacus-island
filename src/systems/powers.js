@@ -11,7 +11,8 @@ import { toast, actionKeyName } from '../core/ui.js';
 import { completeTask } from '../game/tasks.js';
 import { player } from '../player/player.js';
 
-// a painted skin per fruit, so each power is recognisable by its pattern too
+// a painted skin per fruit, so each power is recognisable by its pattern too (Mini-Me and
+// Smash-Smash have whole models instead, see fruitModels)
 const fruitSkins = {
   // purple with springy spirals
   boing: canvasTexture(256, 128, (ctx, w, h) => {
@@ -71,31 +72,6 @@ const fruitSkins = {
       ctx.fill();
     }
   }),
-  // pink with lots of tiny white dots (placeholder until Zoë says what it looks like)
-  mini: canvasTexture(256, 128, (ctx, w, h) => {
-    ctx.fillStyle = '#ff8fc8';
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#fff0f8';
-    for (let i = 0; i < 40; i++) {
-      ctx.beginPath();
-      ctx.arc((i * 29) % w, (i * 47) % h, 4, 0, 7);
-      ctx.fill();
-    }
-  }),
-  // crystal blue with white cracks (placeholder until Zoë says what it looks like)
-  smash: canvasTexture(256, 128, (ctx, w, h) => {
-    ctx.fillStyle = '#5a8cff';
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = '#eaf2ff';
-    ctx.lineWidth = 5;
-    ctx.lineJoin = 'round';
-    for (let i = 0; i < 4; i++) {
-      ctx.beginPath();
-      ctx.moveTo(20 + i * 64, 0);
-      for (let y = 16; y <= h; y += 16) ctx.lineTo(20 + i * 64 + (y % 32 ? 12 : -6), y);
-      ctx.stroke();
-    }
-  }),
 };
 // sparkleColors: [main, light, accent]; signColor: bush label colour;
 // intro() is the first-time toast, shown for introMs
@@ -140,8 +116,8 @@ export const POWERS = {
   mini: {
     name: 'Mini-Me',
     icon: '🤏',
-    sparkleColors: [0xff8fc8, 0xfff0f8, 0xffd84d],
-    signColor: '#ffb3dc',
+    sparkleColors: [0xe8332f, 0xffffff, 0xffd84d],
+    signColor: '#ff8a7a',
     bushColor: 0x58a83a,
     intro: () => 'Mini-Me fruit! Spartacus is teeny tiny. Squeeze through little gaps!',
     introMs: 3800,
@@ -173,7 +149,84 @@ export function addFruit(x, z, { type, y, bush }) {
   fruits.push({ type, model, x, z, y: fruitY, regrow: 0 });
 }
 
+// Mini-Me and Smash-Smash have their own shapes (Zoë's picks): a red mushroom with white spots,
+// and a spiky blue ball, like a hedgehog curled up
+const fruitModels = { mini: makeMushroom, smash: makeSpikyBall };
+
+function makeMushroom() {
+  const g = new THREE.Group();
+  const cap = mesh(
+    new THREE.SphereGeometry(0.42, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    material(0xe8332f, { flatShading: false, roughness: 0.5 }),
+  );
+  cap.position.y = 0.05;
+  g.add(cap);
+  // white spots round the cap, tilted to sit on its curve
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2,
+      up = i % 2 ? 0.55 : 0.9;
+    const spot = mesh(new THREE.SphereGeometry(0.1, 8, 6), material(0xffffff), {
+      castShadow: false,
+    });
+    spot.scale.set(1, 0.35, 1);
+    spot.position.set(
+      Math.cos(angle) * Math.sin(up) * 0.41,
+      0.05 + Math.cos(up) * 0.41,
+      Math.sin(angle) * Math.sin(up) * 0.41,
+    );
+    spot.lookAt(spot.position.clone().multiplyScalar(2));
+    spot.rotateX(Math.PI / 2);
+    g.add(spot);
+  }
+  const top = mesh(new THREE.SphereGeometry(0.1, 8, 6), material(0xffffff), { castShadow: false });
+  top.scale.set(1, 0.35, 1);
+  top.position.y = 0.46;
+  g.add(top);
+  const stem = mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.36, 10), material(0xfff1d6));
+  stem.position.y = -0.14;
+  g.add(stem);
+  for (const side of [-1, 1]) {
+    const eye = mesh(new THREE.CapsuleGeometry(0.025, 0.06, 3, 6), material(0x1c2333), {
+      castShadow: false,
+    });
+    eye.position.set(side * 0.07, -0.1, 0.21);
+    g.add(eye);
+  }
+  return g;
+}
+
+function makeSpikyBall() {
+  const g = new THREE.Group(),
+    blue = material(0x2f6fe8);
+  g.add(mesh(new THREE.SphereGeometry(0.34, 12, 10), blue));
+  // spikes all round, swept back a little like quills
+  const spikeGeo = new THREE.ConeGeometry(0.11, 0.32, 5);
+  spikeGeo.translate(0, 0.42, 0);
+  const count = 14;
+  for (let i = 0; i < count; i++) {
+    const spike = mesh(spikeGeo, blue);
+    // spread evenly over the ball (a golden-angle spiral)
+    const y = 1 - (2 * (i + 0.5)) / count,
+      ring = Math.sqrt(1 - y * y),
+      angle = i * 2.4;
+    spike.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(Math.cos(angle) * ring, y, Math.sin(angle) * ring - 0.35).normalize(),
+    );
+    g.add(spike);
+  }
+  // a peach tummy patch in front
+  const tummy = mesh(new THREE.SphereGeometry(0.2, 8, 6), material(0xffd2a8), {
+    castShadow: false,
+  });
+  tummy.scale.set(1, 1, 0.5);
+  tummy.position.set(0, -0.05, 0.27);
+  g.add(tummy);
+  return g;
+}
+
 function makeFruit(type) {
+  if (fruitModels[type]) return fruitModels[type]();
   const g = new THREE.Group();
   g.add(
     mesh(

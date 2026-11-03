@@ -3,7 +3,8 @@
 // nest, shows "?" when he's curious and "!" when he spots Spartacus, then flutters off to a
 // perch with the jewel for a few seconds (a spotted dog loses a little time, nothing else).
 // Puffy bushes hide you, a Mini-Me dog is harder to see, and a woof distracts him. Bring him
-// something shiny and he swaps it for the jewel and becomes a friend.
+// something shiny and he swaps it for the jewel and becomes a friend; once the jewel is home he
+// joins the crew and rides on the ship's figurehead.
 import * as THREE from 'three';
 import { clamp, distToSegmentXZ, lerpAngle, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
@@ -11,6 +12,7 @@ import { material, mesh } from '../core/materials.js';
 import { game, isPlaying } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { textSprite, onFontsReady } from '../core/fx.js';
+import { ship } from '../world/ship.js';
 import { player } from '../player/player.js';
 
 // how far he can see, and how wide (half-angle); a Mini-Me dog has to be much closer
@@ -18,12 +20,14 @@ const SIGHT = { range: 12, tinyRange: 6, halfAngle: 0.75 };
 const LOOK_HOLD = 2.4; // seconds he looks one way before turning to the next
 const CURIOUS_TIME = 0.7; // seconds of "?" before he's sure ("!")
 const SPOTTED_TIME = 0.6; // seconds of "!" before he flutters off
-const FLY_TIME = 1.2; // seconds for a flight between perches
+const FLY_TIME = 1.2; // seconds for a flight between perches (longer flights take longer)
+const FLY_SPEED = 14; // units per second on a long flight (to the ship)
 const AWAY_TIME = 4; // seconds on the far perch before he flies home
 const DISTRACTED_TIME = 4; // seconds a woof keeps him looking around
 
 // state: watch (looking round from the nest) | curious ("?") | spotted ("!") | flying
 //        | away (on a far perch, with the jewel) | distracted (after a woof) | happy (swapped)
+//        | boarding (flying to the ship) | crew (on the ship's figurehead)
 // t: seconds in this state; looks: yaws he looks along in turn; flight: {from, to, next}
 // spots: {nest, perches, bushes, ground} set by placeLeo
 export const leo = {
@@ -176,7 +180,9 @@ export function distractLeo() {
 
 // fly from where he is to `to`, then go into state `next`
 function flyTo(to, next) {
-  leo.flight = { from: leo.g.position.clone(), to: to.clone(), next };
+  const from = leo.g.position.clone(),
+    duration = clamp(from.distanceTo(to) / FLY_SPEED, FLY_TIME, 8);
+  leo.flight = { from, to: to.clone(), next, duration };
   setState('flying');
   sfx.flutter();
 }
@@ -214,6 +220,11 @@ export function updateLeo(dt, { onSpotted }) {
       leo.yaw = leo.spots.facing + Math.PI + Math.sin(leo.t * 2.5) * 0.9;
       if (leo.t > DISTRACTED_TIME) setState('watch');
     },
+    boarding: () => {
+      leoAboard();
+      leo.onAboard?.();
+    },
+    crew: () => {},
     happy: () => {
       leo.yaw += dt * 0.6;
     },
@@ -232,8 +243,8 @@ function lookAround(dt) {
 }
 
 function updateFlight() {
-  const { from, to, next } = leo.flight,
-    t = clamp(leo.t / FLY_TIME, 0, 1);
+  const { from, to, next, duration } = leo.flight,
+    t = clamp(leo.t / duration, 0, 1);
   leo.g.position.lerpVectors(from, to, t);
   leo.g.position.y += Math.sin(Math.PI * t) * 2.5;
   leo.yaw = Math.atan2(to.x - from.x, to.z - from.z);
@@ -274,4 +285,23 @@ export function leoHappy({ quiet = false } = {}) {
   leo.jewel.visible = false;
   setState('happy');
   if (!quiet) sfx.parrot();
+}
+
+// on top of the little Spartacus figurehead at the ship's bow (ship-local)
+const FIGUREHEAD_SPOT = vec3(0, 1.97, 3.5);
+// fly to the ship, then onAboard()
+export function leoToShip(onAboard) {
+  leo.onAboard = onAboard;
+  ship.updateMatrixWorld(true);
+  flyTo(ship.localToWorld(FIGUREHEAD_SPOT.clone()), 'boarding');
+}
+// on the figurehead at once (also when a save is put back)
+export function leoAboard() {
+  leo.g.parent?.remove(leo.g);
+  ship.add(leo.g);
+  leo.g.position.copy(FIGUREHEAD_SPOT);
+  leo.g.scale.setScalar(0.8);
+  leo.yaw = 0; // looking ahead, like the figurehead
+  leo.jewel.visible = false;
+  setState('crew');
 }
