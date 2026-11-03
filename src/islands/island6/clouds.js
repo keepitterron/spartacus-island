@@ -1,6 +1,8 @@
 // The sky island's clouds: platforms to float between, the sea of clouds below, and the
 // checkpoints. There's no ground: each cloud is a cylinder collider with a flat top, drawn as
-// instanced cushions and puffs (two draw calls for every cloud on the island, see island6.md).
+// instanced cushions and puffs (a few draw calls for every cloud on the island, see island6.md).
+// The clouds you can land on are sunlit white; the cloud sea below is a shady lilac blue, so
+// it's easy to see where to land.
 // Falling into the cloud sea is a quick poof back onto the last cloud Spartacus stood on.
 import * as THREE from 'three';
 import { seededRandom, vec3 } from '../../core/util.js';
@@ -21,7 +23,7 @@ const cloudRand = seededRandom(606);
 // every platform (its collider: {type:'cyl', x, z, r, bottom, top}); instances: transforms
 // waiting for the instanced meshes
 const clouds = [];
-const instances = { cushions: [], puffs: [] };
+const instances = { cushions: [], puffs: [], seaPuffs: [] };
 // the last cloud stood on, and seconds left sinking (-1 while not sinking)
 const checkpoint = { cloud: null, sinking: -1 };
 
@@ -50,8 +52,9 @@ export function addCloud(x, z, { r, top }) {
   return cloud;
 }
 
-function addPuff(x, z, { y, size }) {
-  instances.puffs.push(
+// a puff on a platform, or (with list: instances.seaPuffs) on the cloud sea
+function addPuff(x, z, { y, size, list = instances.puffs }) {
+  list.push(
     transform({ x, y, z }, { scale: vec3(size, size * 0.75, size), yaw: cloudRand() * 6.28 }),
   );
 }
@@ -63,12 +66,10 @@ const transform = (pos, { scale, yaw = 0 }) =>
     scale,
   );
 
-// the sea of clouds around (cx, cz): a flat white floor with big puffs heaped on it
+const SEA_COLOR = 0xa3b4e6;
+// the sea of clouds around (cx, cz): a flat floor with big puffs heaped on it
 export function buildCloudSea(cx, cz) {
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(420, 420),
-    material(0xf4f8ff, { emissive: 0xdfe8ff, emissiveIntensity: 0.18 }),
-  );
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), material(SEA_COLOR));
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(cx, CLOUD_SEA_Y - 0.6, cz);
   scene.add(floor);
@@ -79,19 +80,23 @@ export function buildCloudSea(cx, cz) {
     addPuff(cx + Math.cos(angle) * dist, cz + Math.sin(angle) * dist, {
       y: CLOUD_SEA_Y - size * 0.35,
       size,
+      list: instances.seaPuffs,
     });
   }
 }
 
-// once every cloud is added: one instanced mesh for the cushions, one for the puffs
+// once every cloud is added: one instanced mesh each for the cushions, the platforms' puffs
+// and the cloud sea's puffs
 export function finishClouds() {
-  // a little glow of their own, or the hemisphere light's green ground colour tints them
-  const white = material(0xffffff, { emissive: 0xdfe8ff, emissiveIntensity: 0.18 });
+  // a warm glow of their own, as if the sun is on them
+  const sunlit = material(0xffffff, { emissive: 0xfff1dc, emissiveIntensity: 0.3 });
+  const puff = new THREE.IcosahedronGeometry(1, 1);
   addInstanced(new THREE.CylinderGeometry(1, 0.8, 1, 14), {
-    mat: white,
+    mat: sunlit,
     matrices: instances.cushions,
   });
-  addInstanced(new THREE.IcosahedronGeometry(1, 1), { mat: white, matrices: instances.puffs });
+  addInstanced(puff, { mat: sunlit, matrices: instances.puffs });
+  addInstanced(puff, { mat: material(SEA_COLOR), matrices: instances.seaPuffs });
 }
 
 function addInstanced(geometry, { mat, matrices }) {
