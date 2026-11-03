@@ -4,8 +4,8 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 
 ## Story and levels
 
-- **Island 5, Rainbow Reef**: live. Next: Zoë play-tests it on her phone. Ask her the unicorn's name when she meets her.
-- **Island 6, the sky island**: rainbows and clouds to climb; the unicorn is the friend who helps there (rainbow bridges?). Story from Zoë.
+- **Island 5, Rainbow Reef**: live. Next: Zoë play-tests it on her phone. The unicorn is called Lina.
+- **Island 6, the sky island**: designed, not built yet. Lina flaps an updraft, Mini-Me and Smash-Smash fruits, swap a fork with Leo the magpie for the Sky Jewel. See [island6.md](island6.md).
 - **Zoë's layouts** for Mossy Paw Woods and Bubbly Ocean (currently placeholders). Positions are island-local (`toWorld(x, z)` in each island), so her maps are a number edit. A next step could be moving those positions into a plain data object per island.
 
 ## Features
