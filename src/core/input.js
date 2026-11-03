@@ -9,6 +9,9 @@ import { overlayOpen } from './ui.js';
 export const keys = {}; // lowercased e.key -> currently held
 export const stick = { x: 0, y: 0 }; // touch stick, each -1..1
 export const drag = { id: null }; // pointer dragging the camera: {id, x, y} (id null when none)
+const jumpButton = { held: false }; // the touch Jump button is pressed down
+// Space or the Jump button held down (gliding on the sky island)
+export const isJumpHeld = () => !!keys[' '] || jumpButton.held;
 const STICK_RADIUS = 46; // px the knob can travel from the stick's centre
 
 // movement input: f = forward/back, r = right/left, each roughly -1..1 (not normalised)
@@ -91,6 +94,9 @@ function bindCameraDrag() {
 function endDrag(e) {
   if (e.pointerId === drag.id) drag.id = null;
 }
+function releaseJump() {
+  jumpButton.held = false;
+}
 
 function bindTouchControls({ onJump, onBark, onAct }) {
   // touch UI appears on coarse pointers, or as soon as the screen is touched
@@ -138,11 +144,16 @@ function bindTouchControls({ onJump, onBark, onAct }) {
   };
   zone.addEventListener('pointerup', endStick);
   zone.addEventListener('pointercancel', endStick);
-  $('#btnJump').addEventListener('pointerdown', (e) => {
+  const jump = $('#btnJump');
+  jump.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     audioContext();
+    jumpButton.held = true;
+    jump.setPointerCapture(e.pointerId); // still held if the thumb slides off the button
     onJump();
   });
+  jump.addEventListener('pointerup', releaseJump);
+  jump.addEventListener('pointercancel', releaseJump);
   $('#btnBark').addEventListener('pointerdown', (e) => {
     e.preventDefault();
     onBark();

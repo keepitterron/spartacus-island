@@ -24,7 +24,6 @@ import {
   unicorn,
   addUnicorn,
   colourStripe,
-  updateUnicorn,
   setHornGlow,
   unicornFollow,
   unicornBoard,
@@ -312,7 +311,6 @@ function starHome(star, { quiet }) {
 
 function update(dt) {
   updateStars(dt);
-  updateUnicorn(dt);
   updateRainbow(dt);
   for (const islet of Object.values(islets)) islet.update?.(dt);
   if (starsHome() === 4 && !island.done.reefRainbow) setHornGlow(daylight.night);

@@ -3,7 +3,7 @@
 // gently carries him back towards the island (Zoë found the bubble rescue frustrating).
 import { vec3 } from '../core/util.js';
 import { followCam, currentIsland } from '../core/state.js';
-import { keys, moveAxis } from '../core/input.js';
+import { keys, moveAxis, isJumpHeld } from '../core/input.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
 import { hintOnce, actionKeyName } from '../core/ui.js';
@@ -48,6 +48,7 @@ export const player = {
   pounding: false, // ground pound in progress (player/pound.js)
   poundTime: 0, // seconds since the pound started
   poundRecover: 0, // landing pause left (movement is locked meanwhile)
+  flapsLeft: 0, // flaps left before landing again (sky island)
 };
 export const RADIUS = 0.45,
   STEP_HEIGHT = 0.5,
@@ -60,6 +61,10 @@ export const RADIUS = 0.45,
 //   starts (Shift runs straight away); fullPush: how far the stick counts as "all the way";
 //   wadeSpeed: speed multiplier in water; current: how fast the open sea carries him back
 export const MOVE = { sprint: 1.5, runAfter: 1.1, fullPush: 0.9, wadeSpeed: 0.55, current: 4.5 };
+// Floating on Lina's wind (islands with physics.flap), also live-tweakable (__g.fly):
+//   flapSpeed: the upward kick of a flap; flaps: how many before landing again;
+//   glideFall: top fall speed while Jump is held. Gentle on purpose (Rayman, not Flappy Bird).
+export const FLY = { flapSpeed: 5.5, flaps: 2, glideFall: 3 };
 // in deep water his feet float this far below the surface (head and back stay dry)
 const SWIM_Y = -0.55;
 // sea floor deeper than this is open sea (ponds and lagoons are shallower)
@@ -69,7 +74,7 @@ export const isMovementLocked = () =>
   player.digTimer > 0 || !!player.placing || player.poundRecover > 0;
 
 // per-island tweaks; an island can override any of these with `physics:{…}`
-// bound: {x, z, r} circle the player can't leave
+// bound: {x, z, r} circle the player can't leave; flap: Jump in the air flaps, holding it glides
 const DEFAULT_PHYSICS = {
   gravity: GRAVITY,
   maxFall: Infinity,
@@ -77,6 +82,7 @@ const DEFAULT_PHYSICS = {
   jump: 1,
   water: true,
   bound: null,
+  flap: false,
 };
 export const physics = () => ({ ...DEFAULT_PHYSICS, ...currentIsland().physics });
 
@@ -106,6 +112,7 @@ export function stepPlayer(dt) {
   vel.y -= phys.gravity * dt;
   if (vel.y < -phys.maxFall) vel.y = -phys.maxFall;
   updateJump(dt, { locked, heavy, phys });
+  if (phys.flap) updateFlap(locked);
   if (player.pounding) holdPound(dt);
   const prevY = pos.y;
   pos.addScaledVector(vel, dt);
@@ -251,6 +258,30 @@ function updateJump(dt, { locked, heavy, phys }) {
     up: 1,
     life: 0.7,
     size: 0.9,
+  });
+}
+
+// In the air on Lina's wind: a Jump press (one the ordinary jump didn't use) flaps him up a
+// little, and holding Jump down glides, falling slower
+function updateFlap(locked) {
+  if (player.grounded) {
+    player.flapsLeft = FLY.flaps;
+    return;
+  }
+  if (isJumpHeld() && player.vel.y < -FLY.glideFall) player.vel.y = -FLY.glideFall;
+  if (locked || player.jumpBuffer <= 0 || player.flapsLeft <= 0) return;
+  player.flapsLeft -= 1;
+  player.jumpBuffer = 0;
+  player.vel.y = Math.max(player.vel.y, FLY.flapSpeed);
+  player.squashVel = 3;
+  sfx.flutter();
+  burst(player.pos.clone(), {
+    count: 8,
+    color: [0xffffff, 0xf3ecff, 0xffd84d],
+    speed: 2,
+    up: -1,
+    life: 0.5,
+    size: 0.8,
   });
 }
 

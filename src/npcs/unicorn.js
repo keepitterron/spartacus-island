@@ -1,6 +1,7 @@
-// The unicorn, met on island 5. She slid down her rainbow from the sky island and it broke
+// Lina the unicorn, met on island 5. She slid down her rainbow from the sky island and it broke
 // into four colour stars, so her mane and tail went grey. Every star brought back to the arch
-// colours one stripe again. (She joins the crew at the end of island 5, later.)
+// colours one stripe again, and she joins the crew. Back home on the sky island (island 6) her
+// wings unfold (they only work up there) and she flies after Spartacus.
 import * as THREE from 'three';
 import { clamp, lerp, lerpAngle, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
@@ -14,15 +15,18 @@ import { player } from '../player/player.js';
 
 const GREY = 0xb8bcc8;
 // state: sad (head down, waiting) | happy (all colours back) | follow (trotting after Spartacus)
-//        | boarding (hopping onto the ship) | crew (on deck)
+//        | boarding (hopping onto the ship) | crew (on deck) | fly (flapping along after him)
 // stripes: one material per mane/tail stripe, shared by the mane tuft and the tail strand,
 // so colouring a stripe colours both. hop: seconds left of a happy little hop.
+// wings: the two wing pivots (hidden until she flies); flyPos: where she's flying, before the bob
 export const unicorn = {
   g: null,
   head: null,
   tail: null,
   horn: null,
   stripes: [],
+  wings: [],
+  flyPos: null,
   state: 'sad',
   hop: 0,
   baseY: 0,
@@ -61,6 +65,28 @@ export function addUnicorn(x, z, { y, yaw = 0 }) {
   addHead(g, { white, ink, pink });
   addMane(g);
   addTail(g);
+  addWings(g);
+}
+
+// two feathery wings on her shoulders, each a pivot so it can flap; folded away until the sky
+function addWings(g) {
+  // a soft glow of their own, so seen from below they stay white
+  const feather = material(0xf3ecff, { emissive: 0xe8dcff, emissiveIntensity: 0.35 });
+  unicorn.wings = [-1, 1].map((side) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.45, 1.75, 0.35);
+    pivot.visible = false;
+    g.add(pivot);
+    // three overlapping feathers, longest at the front
+    [1.15, 0.95, 0.75].forEach((length, i) => {
+      const m = mesh(new THREE.SphereGeometry(0.5, 8, 6), feather);
+      m.scale.set(length, 0.08, 0.32);
+      m.position.set(side * length * 0.85, 0, -i * 0.3);
+      m.rotation.y = side * i * 0.18;
+      pivot.add(m);
+    });
+    return pivot;
+  });
 }
 
 // the head pivots at the top of the neck, so drooping it looks sad
@@ -192,6 +218,54 @@ function updateFollow(dt) {
     burst(g.position.clone().setY(0), { count: 1, color: [0xffd84d, 0xffffff], speed: 1, up: 1 });
 }
 
+// off the ship (if she's on it), wings out, and flying after Spartacus
+export function unicornFly() {
+  if (unicorn.g.parent !== scene) {
+    unicorn.g.parent?.remove(unicorn.g);
+    scene.add(unicorn.g);
+  }
+  unicorn.g.scale.setScalar(1);
+  unicorn.g.rotation.set(0, player.yaw, 0);
+  unicorn.flyPos = flySpot();
+  unicorn.g.position.copy(unicorn.flyPos);
+  unicorn.baseY = unicorn.flyPos.y;
+  for (const wing of unicorn.wings) wing.visible = true;
+  unicorn.state = 'fly';
+}
+
+// up and to one side behind Spartacus, so she never hides him from the camera
+const FLY_BEHIND = 2.5,
+  FLY_SIDE = 3,
+  FLY_UP = 1.8;
+function flySpot() {
+  const sin = Math.sin(player.yaw),
+    cos = Math.cos(player.yaw);
+  return vec3(
+    player.pos.x - sin * FLY_BEHIND - cos * FLY_SIDE,
+    player.pos.y + FLY_UP,
+    player.pos.z - cos * FLY_BEHIND + sin * FLY_SIDE,
+  );
+}
+
+// glide after her spot, bobbing, wings flapping; if he's suddenly far away (back on a
+// checkpoint cloud) she's there at once
+function updateFly(dt) {
+  const g = unicorn.g,
+    spot = flySpot(),
+    flyPos = unicorn.flyPos;
+  if (flyPos.distanceTo(spot) > 25) flyPos.copy(spot);
+  else flyPos.lerp(spot, 1 - Math.exp(-dt * 3));
+  g.position.x = flyPos.x;
+  g.position.z = flyPos.z;
+  g.rotation.y = lerpAngle(g.rotation.y, player.yaw, Math.min(1, dt * 4));
+  const time = game.time;
+  unicorn.baseY = flyPos.y + Math.sin(time * 2.2) * 0.25;
+  unicorn.wings.forEach((wing, i) => {
+    const side = i ? 1 : -1;
+    wing.rotation.z = side * (0.25 + Math.sin(time * 7) * 0.55);
+  });
+}
+
 function updateBoarding(dt) {
   unicorn.t += dt;
   const t = clamp(unicorn.t / 1.2, 0, 1);
@@ -208,6 +282,7 @@ function updateBoarding(dt) {
 export function updateUnicorn(dt) {
   if (!unicorn.g) return;
   if (unicorn.state === 'follow') updateFollow(dt);
+  if (unicorn.state === 'fly') updateFly(dt);
   if (unicorn.state === 'boarding') {
     updateBoarding(dt);
     return;
