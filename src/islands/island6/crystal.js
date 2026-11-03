@@ -10,15 +10,18 @@ import { burst } from '../../core/fx.js';
 import { toast } from '../../core/ui.js';
 import { addBox, inFootprint } from '../../core/colliders.js';
 import { player, RADIUS } from '../../player/player.js';
+import { addFader } from './fade.js';
 
-// the same options give the same cached material (core/materials.js), so this is shared
-export const crystalMaterial = () =>
+// the same options give the same cached material (core/materials.js), so this is shared;
+// clear: much more see-through (the fork's cubby, so you can see in and find the door)
+export const crystalMaterial = ({ clear = false } = {}) =>
   material(0xcfe3ff, {
     emissive: 0x8fb8ff,
-    emissiveIntensity: 0.25,
+    emissiveIntensity: clear ? 0.15 : 0.25,
     roughness: 0.2,
     transparent: true,
-    opacity: 0.88,
+    opacity: clear ? 0.3 : 0.88,
+    depthWrite: !clear,
   });
 
 // pale crystal with white zigzag cracks, so a breakable wall is easy to tell apart
@@ -61,15 +64,20 @@ const crackedWalls = [];
 // a crystal wall box centred on (x, z) from height y up; cracked ones need an id (saves).
 // Its collider reaches a little below y (so nothing slips under), unless it hangs in the air:
 // hanging: true for lintels and roofs, whose bottom has to be exactly at y
-export function addCrystalWall(x, z, { hw, hd, y, height, cracked = false, id, hanging = false }) {
+// clear: see crystalMaterial; fades: goes see-through while it's in the camera's way (fade.js)
+export function addCrystalWall(
+  x,
+  z,
+  { hw, hd, y, height, cracked = false, id, hanging = false, clear = false, fades = false },
+) {
   crackedMaterial ??= makeCrackedMaterial();
-  const m = mesh(
-    new THREE.BoxGeometry(hw * 2, height, hd * 2),
-    cracked ? crackedMaterial : crystalMaterial(),
-  );
+  let mat = cracked ? crackedMaterial : crystalMaterial({ clear });
+  if (fades) mat = mat.clone(); // its own, so it fades alone
+  const m = mesh(new THREE.BoxGeometry(hw * 2, height, hd * 2), mat);
   m.position.set(x, y + height / 2, z);
   scene.add(m);
   const col = addBox(x, z, { hw, hd, bottom: hanging ? y : y - 0.5, top: y + height });
+  if (fades) addFader([col], [mat]);
   if (cracked) crackedWalls.push({ id, col, m, broken: false });
   return col;
 }
@@ -126,10 +134,11 @@ export function restoreBrokenWalls(ids = []) {
 // 3 deep, so something at the back is out of reach from outside the door.
 const CUBBY = { hw: 1.5, hd: 1.2, height: 1.8, door: 0.75, doorHeight: 0.8, wall: 0.15 };
 export function addCubby(x, z, { y }) {
-  const { hw, hd, height, door, doorHeight, wall } = CUBBY;
-  addCrystalWall(x - hw, z, { hw: wall, hd, y, height }); // back
+  const { hw, hd, height, door, doorHeight, wall } = CUBBY,
+    clear = true;
+  addCrystalWall(x - hw, z, { hw: wall, hd, y, height, clear }); // back
   for (const side of [-1, 1]) {
-    addCrystalWall(x, z + side * hd, { hw, hd: wall, y, height }); // sides
+    addCrystalWall(x, z + side * hd, { hw, hd: wall, y, height, clear }); // sides
     // the front, either side of the doorway
     const pillarWidth = (hd - door) / 2;
     addCrystalWall(x + hw, z + side * (door + pillarWidth), {
@@ -137,6 +146,7 @@ export function addCubby(x, z, { y }) {
       hd: pillarWidth,
       y,
       height,
+      clear,
     });
   }
   addCrystalWall(x + hw, z, {
@@ -145,6 +155,7 @@ export function addCubby(x, z, { y }) {
     y: y + doorHeight,
     height: height - doorHeight,
     hanging: true,
+    clear,
   });
   addCrystalWall(x, z, {
     hw: hw + wall,
@@ -152,6 +163,13 @@ export function addCubby(x, z, { y }) {
     y: y + height,
     height: 0.15,
     hanging: true,
+    clear,
   }); // roof
-  return { back: vec3(x - hw + 0.6, y, z), door: vec3(x + hw, y, z) };
+  // door: the middle of the doorway, facing out along +x (yaw π/2 for its arch)
+  return {
+    back: vec3(x - hw + 0.6, y, z),
+    door: vec3(x + hw, y, z),
+    doorYaw: Math.PI / 2,
+    doorRadius: door,
+  };
 }
