@@ -1,7 +1,7 @@
 // Spartacus's state and movement physics: walk, run, jump, collide, land, wade and paddle.
 // There's no drowning and no bubble: in water he paddles at the surface, and the open sea
 // gently carries him back towards the island (Zoë found the bubble rescue frustrating).
-import { vec3 } from '../core/util.js';
+import { clamp, vec3 } from '../core/util.js';
 import { followCam, currentIsland } from '../core/state.js';
 import { keys, moveAxis, isJumpHeld } from '../core/input.js';
 import { sfx } from '../core/audio.js';
@@ -49,8 +49,13 @@ export const player = {
   poundTime: 0, // seconds since the pound started
   poundRecover: 0, // landing pause left (movement is locked meanwhile)
   flapsLeft: 0, // flaps left before landing again (sky island)
+  tiny: false, // Mini-Me power: shrinks him to TINY.size (one power at a time)
+  size: 1, // 1 = full size, eases to TINY.size and back; scales his body, radius and height
+  canSmash: false, // Smash-Smash power: running curls him into a rolling ball
+  rolling: false, // rolling as a ball right now (breaks cracked walls he rolls into)
 };
 export const RADIUS = 0.45,
+  BODY_HEIGHT = 1.1, // what can bump his head: a wall lower than this above his feet stops him
   STEP_HEIGHT = 0.5,
   GRAVITY = 30,
   SPEED = 7,
@@ -59,8 +64,19 @@ export const RADIUS = 0.45,
 // Movement tuning in one place, so it can be tweaked live with Zoë (__g.move in debug).
 //   sprint: speed multiplier while running; runAfter: seconds of a full push before running
 //   starts (Shift runs straight away); fullPush: how far the stick counts as "all the way";
-//   wadeSpeed: speed multiplier in water; current: how fast the open sea carries him back
-export const MOVE = { sprint: 1.5, runAfter: 1.1, fullPush: 0.9, wadeSpeed: 0.55, current: 4.5 };
+//   wadeSpeed: speed multiplier in water; current: how fast the open sea carries him back;
+//   rollAfter: with Smash-Smash, the run (and the roll) starts sooner, so short run-ups work
+export const MOVE = {
+  sprint: 1.5,
+  runAfter: 1.1,
+  fullPush: 0.9,
+  wadeSpeed: 0.55,
+  current: 4.5,
+  rollAfter: 0.4,
+};
+// Mini-Me: how small he gets (a full-size dog is too tall for the little gaps), and how much
+// lighter he is on Lina's wind (he floats a bit higher)
+export const TINY = { size: 0.45, gravity: 0.8 };
 // Floating on Lina's wind (islands with physics.flap), also live-tweakable (__g.fly):
 //   flapSpeed: the upward kick of a flap; flaps: how many before landing again;
 //   glideFall: top fall speed while Jump is held. Gentle on purpose (Rayman, not Flappy Bird).
@@ -74,7 +90,8 @@ export const isMovementLocked = () =>
   player.digTimer > 0 || !!player.placing || player.poundRecover > 0;
 
 // per-island tweaks; an island can override any of these with `physics:{…}`
-// bound: {x, z, r} circle the player can't leave; flap: Jump in the air flaps, holding it glides
+// bound: {x, z, r} circle the player can't leave; flap: Jump in the air flaps, holding it glides;
+// floor: a dropped item with nothing above this underneath floats home (the sky island)
 const DEFAULT_PHYSICS = {
   gravity: GRAVITY,
   maxFall: Infinity,
@@ -83,6 +100,7 @@ const DEFAULT_PHYSICS = {
   water: true,
   bound: null,
   flap: false,
+  floor: -Infinity,
 };
 export const physics = () => ({ ...DEFAULT_PHYSICS, ...currentIsland().physics });
 
@@ -95,6 +113,7 @@ export function stepPlayer(dt) {
   updatePoundRecovery(dt);
   const { forward, right, amount } = readMoveInput(locked);
   const heavy = player.carrying?.heavy;
+  updateSize(dt);
   player.wading = phys.water && pos.y < 0;
   const current = player.wading ? seaCurrent(pos) : null;
   updateSprint(dt, { amount, heavy });
@@ -109,7 +128,7 @@ export function stepPlayer(dt) {
   const ease = Math.min(1, dt * (player.grounded ? 12 : 4));
   vel.x += (move.x * speed + (current?.x ?? 0) - vel.x) * ease;
   vel.z += (move.z * speed + (current?.z ?? 0) - vel.z) * ease;
-  vel.y -= phys.gravity * dt;
+  vel.y -= phys.gravity * (player.tiny ? TINY.gravity : 1) * dt;
   if (vel.y < -phys.maxFall) vel.y = -phys.maxFall;
   updateJump(dt, { locked, heavy, phys });
   if (phys.flap) updateFlap(locked);
@@ -181,13 +200,22 @@ function splashAround(dt, amount) {
 // running: Shift, or keep the stick pushed all the way for a moment. Carrying something heavy
 // never runs. Once running he keeps going until the push eases off, even in the air.
 function updateSprint(dt, { amount, heavy }) {
-  const fullPush = amount >= MOVE.fullPush;
+  const fullPush = amount >= MOVE.fullPush,
+    runAfter = player.canSmash ? MOVE.rollAfter : MOVE.runAfter;
   player.runTime = fullPush ? player.runTime + dt : 0;
   player.sprinting =
-    !heavy && !player.wading && amount > 0.3 && (keys.shift || player.runTime > MOVE.runAfter);
+    !heavy && !player.wading && amount > 0.3 && (keys.shift || player.runTime > runAfter);
+  player.rolling = player.canSmash && player.sprinting;
   if (!player.sprinting) return;
   hintOnce('run', 'Zoom! Keep pushing to run fast!', 2400);
   if (player.grounded) kickDust(dt);
+}
+
+// shrinking (Mini-Me) and growing back take about a third of a second
+function updateSize(dt) {
+  const target = player.tiny ? TINY.size : 1,
+    step = dt * 2;
+  player.size = clamp(player.size + clamp(target - player.size, -step, step), TINY.size, 1);
 }
 
 // little sand puffs from the back paws while running
@@ -289,13 +317,15 @@ function updateFlap(locked) {
 // into, which starts a climb (returns true then)
 function collideSides(prevY, { move, amount, heavy }) {
   const pos = player.pos;
+  const radius = RADIUS * player.size,
+    height = BODY_HEIGHT * player.size;
   for (const c of colliders)
-    if (c.top > prevY + STEP_HEIGHT && pos.y + 1.1 > c.bottom) {
+    if (c.top > prevY + STEP_HEIGHT && pos.y + height > c.bottom) {
       if (isWalkingIntoVine(c, { move, amount, heavy })) {
         startClimb(c.tree);
         return true;
       }
-      pushOut(c, { pos, vel: player.vel, radius: RADIUS });
+      pushOut(c, { pos, vel: player.vel, radius });
     }
   return false;
 }
@@ -307,7 +337,8 @@ function isWalkingIntoVine(c, { move, amount, heavy }) {
     dz = c.z - player.pos.z,
     dist = Math.hypot(dx, dz) || 1;
   return (
-    dist < c.r + RADIUS + 0.08 && (move.x * dx + move.z * dz) / dist > 0.45 * Math.min(1, amount)
+    dist < c.r + RADIUS * player.size + 0.08 &&
+    (move.x * dx + move.z * dz) / dist > 0.45 * Math.min(1, amount)
   );
 }
 

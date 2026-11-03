@@ -29,7 +29,9 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 
 ## Powers and fruits (`systems/powers.js`)
 
-`POWERS` defines each power: `name`, `icon`, `sparkleColors`, `signColor`, `bushColor`, `intro()`, `introMs`. `addFruit(x, z, {type, y, bush})` places one (bush = regrowing bush with a name sign). Eating sets `player.power` and flags (`player.superJump`, `player.canStretch`) and completes any task with `power:type` on the current island.
+`POWERS` defines each power: `name`, `icon`, `sparkleColors`, `signColor`, `bushColor`, `intro()`, `introMs`. `addFruit(x, z, {type, y, bush})` places one (bush = regrowing bush with a name sign). Eating sets `player.power` and flags (`player.superJump`, `player.canStretch`, `player.tiny`, `player.canSmash`) and completes any task with `power:type` on the current island.
+
+**Mini-Me** (`tiny`): `player.size` eases to `TINY.size` (0.45) and scales the model, the collision radius and `BODY_HEIGHT`, so he fits under anything lower than a full-size dog (cloud-wall holes, the crystal cubby's door); the camera comes closer, and he's lighter on Lina's wind (`TINY.gravity`). **Smash-Smash** (`canSmash`): running starts sooner (`MOVE.rollAfter`) and sets `player.rolling`; the dog curls up and tumbles, and island 6's cracked crystal walls burst when he rolls into them.
 
 **Adding a power:** add an entry to `POWERS` and a texture to `fruitSkins`, then implement what it does, usually as an action (`chopAction`-style function returned from the island's `actions(p)`) or a physics flag read in `stepPlayer`.
 

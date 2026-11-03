@@ -29,17 +29,19 @@ export function updateCamera(dt) {
   if (keys.e) followCam.yaw -= 1.8 * dt;
   const turning = drag.id !== null || keys.q || keys.e;
   if (islandCam.assist && isPlaying() && !turning) islandCam.assist(dt);
+  // closer in while he's tiny (Mini-Me), so he doesn't get lost on screen
+  const zoom = 0.55 + 0.45 * player.size;
   // looser follow while swinging so the arc reads
   lookTarget.lerp(
     vec3()
       .copy(player.pos)
-      .add(vec3(0, 1.3, 0)),
+      .add(vec3(0, 1.3 * player.size, 0)),
     1 - Math.exp(-dt * (player.swing ? 5 : 8)),
   );
   const wanted = vec3(
-    lookTarget.x + Math.sin(followCam.yaw) * followCam.distance,
-    lookTarget.y + followCam.height,
-    lookTarget.z + Math.cos(followCam.yaw) * followCam.distance,
+    lookTarget.x + Math.sin(followCam.yaw) * followCam.distance * zoom,
+    lookTarget.y + followCam.height * zoom,
+    lookTarget.z + Math.cos(followCam.yaw) * followCam.distance * zoom,
   );
   camera.position.lerp(wanted, 1 - Math.exp(-dt * 6));
   const minY = islandCam.minY ? islandCam.minY(camera.position) : 1.2;

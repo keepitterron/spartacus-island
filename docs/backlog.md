@@ -5,7 +5,7 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 ## Story and levels
 
 - **Island 5, Rainbow Reef**: live. Next: Zoë play-tests it on her phone. The unicorn is called Lina.
-- **Island 6, the sky island**: being built (a preview: only reachable in dev/?debug). Flying on Lina's wind and the Windy Steps are in; next Mini-Me, Smash-Smash, Leo and the finale. Lina flaps an updraft, Mini-Me and Smash-Smash fruits, swap a fork with Leo the magpie for the Sky Jewel. See [island6.md](island6.md).
+- **Island 6, the sky island**: being built (a preview: only reachable in dev/?debug). Flying on Lina's wind, the Windy Steps, Mini-Me (Tickle Tunnels) and Smash-Smash (Crystal Wall, the fork) are in; next Leo's nest and the finale. Lina flaps an updraft, Mini-Me and Smash-Smash fruits, swap a fork with Leo the magpie for the Sky Jewel. See [island6.md](island6.md).
 - **Zoë's layouts** for Mossy Paw Woods and Bubbly Ocean (currently placeholders). Positions are island-local (`toWorld(x, z)` in each island), so her maps are a number edit. A next step could be moving those positions into a plain data object per island.
 
 ## Features
