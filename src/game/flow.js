@@ -71,6 +71,13 @@ export function enterIsland(n, arrived) {
   showIntro(island.intro || []);
 }
 
+// the "To be continued…" panel at the end of the islands so far; text replaces its paragraph
+export function showEnd(text) {
+  sfx.win();
+  if (text) $('#end p').textContent = text;
+  $('#end').classList.remove('hidden');
+}
+
 // the island after the current one, if it's ready to visit (a `preview` one only in dev/?debug)
 export function nextIsland() {
   const next = game.islands[game.island + 1];

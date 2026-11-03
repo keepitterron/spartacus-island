@@ -14,7 +14,7 @@ import { player } from '../../player/player.js';
 import { useUpCarried } from '../../systems/items.js';
 import { updatePowerHud } from '../../systems/powers.js';
 import { hideWin } from '../../game/tasks.js';
-import { enterIsland, nextIsland } from '../../game/flow.js';
+import { enterIsland, nextIsland, showEnd } from '../../game/flow.js';
 import { ensureEduardoCrew } from '../island4/eduardo.js';
 
 // outermost first, like a real rainbow (also the unicorn's mane stripes, in order)
@@ -169,15 +169,10 @@ function updateRide(dt) {
   $('#skip').classList.add('hidden');
   // up in the clouds: the sky island, or "To be continued…" while it's still a preview
   if (nextIsland()) enterIsland(game.island + 1, true);
-  else showEnd();
-}
-
-function showEnd() {
-  sfx.win();
-  $('#end .title').textContent = 'To be continued…';
-  $('#end p').textContent =
-    'Spartacus and the crew rode the rainbow up into the clouds. Next stop: the sky island! What happens up there? Make up the story!';
-  $('#end').classList.remove('hidden');
+  else
+    showEnd(
+      'Spartacus and the crew rode the rainbow up into the clouds. Next stop: the sky island! What happens up there? Make up the story!',
+    );
 }
 
 game.cutscenes.rainbowRide = { update: updateRide, skip: skipRide };

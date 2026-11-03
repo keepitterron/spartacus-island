@@ -11,13 +11,14 @@ import { CENTER_6 } from '../../world/layout.js';
 import { ship, shipState, shipBubble } from '../../world/ship.js';
 import { player } from '../../player/player.js';
 import { addFruit } from '../../systems/powers.js';
-import { addItem } from '../../systems/items.js';
+import { items, addItem, placeItem } from '../../systems/items.js';
 import { ensureMangoCrew } from '../../npcs/mango.js';
 import { wasabiToBucket } from '../../npcs/wasabi.js';
 import { unicorn, unicornFly, colourStripe } from '../../npcs/unicorn.js';
 import { ensureEduardoCrew } from '../island4/eduardo.js';
 import { BANDS } from '../island5/finale.js';
 import { completeTask } from '../../game/tasks.js';
+import { showEnd } from '../../game/flow.js';
 import {
   CLOUD_SEA_Y,
   addCloud,
@@ -32,6 +33,7 @@ import { buildLandingShadow, updateLandingShadow } from './shadow.js';
 import { buildNest } from './nest.js';
 import { addDoorArch, updateDoorArches } from './doors.js';
 import { updateFaders } from './fade.js';
+import { buildFountain } from './fountain.js';
 import {
   crystalMaterial,
   addCrystalWall,
@@ -45,9 +47,9 @@ import {
 // Island 6, the sky island: little clouds floating round Lina's crystal palace, high above a sea
 // of clouds. Back home, Lina's wings unfold and she flaps an updraft under Spartacus, so he
 // floats from cloud to cloud. Her Sky Jewel is gone: Leo the magpie took it to his nest at the
-// top. Still being built: the Windy Steps up to the palace, the Tickle Tunnels (Mini-Me), the
-// Crystal Wall (Smash-Smash) to the fork, and Leo's nest (nest.js), where the fork is swapped
-// for the jewel. The fountain finale comes next. See docs/island6.md.
+// top. The Windy Steps lead up to the palace; the Tickle Tunnels (Mini-Me) and the Crystal Wall
+// (Smash-Smash) lead to a fork; at Leo's nest (nest.js) the fork is swapped for the jewel, and
+// the jewel goes back in the palace fountain (fountain.js). See docs/island6.md.
 
 const toWorld = (x, z) => ({ x: CENTER_6.x + x, z: CENTER_6.z + z }); // island-local -> world
 
@@ -120,15 +122,7 @@ function buildPalace(cloud) {
       z = cloud.z + Math.sin(angle) * 6.5;
     addTower(x, z, { height, y: cloud.top, mat: crystal });
   });
-  const stone = material(0xe8e4f4);
-  const basin = mesh(new THREE.CylinderGeometry(2, 2.2, 0.8, 16), stone, { castShadow: false });
-  basin.position.set(cloud.x, cloud.top + 0.4, cloud.z);
-  scene.add(basin);
-  const spout = mesh(new THREE.CylinderGeometry(0.25, 0.4, 2, 8), stone);
-  spout.position.set(cloud.x, cloud.top + 1, cloud.z);
-  scene.add(spout);
-  addCylinder(cloud.x, cloud.z, { r: 2.2, bottom: cloud.top, top: cloud.top + 0.8 });
-  spots.fountain = { x: cloud.x, z: cloud.z, y: cloud.top }; // where the jewel goes, later
+  spots.fountain = buildFountain(cloud);
 }
 
 // a cloud wall across each tunnel cloud (north-south, so the way west goes through the holes)
@@ -326,11 +320,49 @@ function hintPowers(p) {
     hintOnce('cubby', 'Something shiny inside! The door is very small…', 3200);
 }
 
+// the palace fountain, where the Sky Jewel goes back on top of the spout
+const nearFountain = (p) =>
+  distXZ(p, spots.palace.x, spots.palace.z) < 3.6 && Math.abs(p.y - spots.palace.top) < 1;
+function fountainAction(p) {
+  if (player.carrying?.id !== 'jewel' || !nearFountain(p)) return null;
+  return { label: 'Place', run: () => placeItem(spots.fountain.top, lightFountain) };
+}
+
+// the jewel is home: the fountain sparkles again, Lina is overjoyed, and the island is done
+function lightFountain() {
+  spots.fountain.light();
+  unicorn.hop = 0.6;
+  completeTask('skyFountain');
+  const lines = [
+    [0, 'Lina: “My Sky Jewel! The fountain sparkles again!”', 3400],
+    [3600, 'Lina: “Thank you, Spartacus! And thank you, Leo!”', 3200],
+  ];
+  for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
+}
+
+// a save: the jewel back on the spout (the items system leaves placed items to the island)
+function putJewelInFountain() {
+  const jewel = items.find((it) => it.island === island.id && it.id === 'jewel');
+  jewel.mesh.position.copy(spots.fountain.top);
+  jewel.state = 'placed';
+  spots.fountain.light({ quiet: true });
+}
+
+// the end of the sky island, for now: back at the ship, "To be continued…"
+const atShip = (p) =>
+  distXZ(p, toWorld(6, 16).x, toWorld(6, 16).z) < 2.5 && Math.abs(p.y - SPAWN_CLOUD[3]) < 1;
+const sailOn = () =>
+  showEnd(
+    'The Sky Jewel is home, the fountain sparkles, and Leo the magpie is a new friend! Where does the ship float next? Make up the story!',
+  );
+
 function interact(p, dt) {
   updateCheckpoint(dt);
   smashWalls(p);
   hintPowers(p);
   spots.nest.interact(p);
+  if (player.carrying?.id === 'jewel' && nearFountain(p))
+    hintOnce('fountain', 'Put the Sky Jewel back on top of the fountain!', 3000);
   const { palace, spawnCloud } = spots;
   if (!player.grounded && p.y > spawnCloud.top + 1.5)
     hintOnce('flap', 'Tap Jump in the air to flap! Hold Jump to float down slowly.', 3800);
@@ -346,7 +378,6 @@ const island = {
   zMax: -1350,
   // no ground up here, only clouds: the "terrain" is far below the cloud sea
   height: () => CLOUD_SEA_Y - 30,
-  preview: true,
   savesProgress: true,
   // Lina flaps the whole time, so Spartacus always floats: low gravity, a slow fall, flapping
   physics: { gravity: 16, maxFall: 7, water: false, flap: true, floor: CLOUD_SEA_Y },
@@ -398,6 +429,13 @@ const island = {
     [3400, 'Lina is home in the sky! Her wings unfold ✨', 3400],
     [7400, 'Her wind makes Spartacus float. Jump from cloud to cloud!', 3600],
   ],
+  win: {
+    title: 'The fountain sparkles!',
+    text: 'The Sky Jewel is home and Leo the magpie is your friend. Lina’s palace shines again!',
+    tip: 'You can keep exploring and go back to the ship later.',
+    go: 'What happens next? ✨',
+  },
+  exit: { label: 'Sail', at: atShip, run: sailOn },
   build,
   buildLate,
   enter,
@@ -408,15 +446,17 @@ const island = {
     updateFaders(dt);
     glintFork(dt);
     spots.nest.update(dt);
+    spots.fountain.update(dt);
   },
   interact,
-  actions: (p) => spots.nest.action(p),
+  actions: (p) => spots.nest.action(p) || fountainAction(p),
   // the fork, the jewel and the power are saved for you; the smashed walls aren't, and the swap
-  // is put back from its task
+  // and the fountain are put back from their tasks
   saveState: () => ({ broken: brokenWallIds() }),
   loadState(state) {
     restoreBrokenWalls(state.broken);
     spots.nest.load();
+    if (island.done.skyFountain) putJewelInFountain();
   },
   bark(p) {
     if (spots.nest.bark(p)) return;

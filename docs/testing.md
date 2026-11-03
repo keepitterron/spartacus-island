@@ -51,6 +51,8 @@ The full game was play-tested this way after the Vite migration (Oct 2026). Re-r
 
 **Island 4**: Chop-Chop fruit; crabs (sand, Boing shelf, lift-vent ledge, inside a clump, top of the kelp pillar via Grow-Grow); chop the lane entrance (octopus wakes), approach Eduardo, chop his two hiding clumps; get bonked by a tentacle once; pillow at the end of the vent canyon, Give it to the octopus; Eduardo recognises you and rides your hat; walk to the ship; win; **Keep exploring**, then **Ride** at the ship; whale; "To be continued…".
 
+**Island 6**: float up the Windy Steps (flap, glide, fall into the cloud sea once); Lina's story at the palace; Mini-Me through both tunnel holes (a full-size dog is stopped); Smash-Smash, roll through the cracked wall and the fence panel; Mini-Me inside the fence, fork from the cubby; the way back drops onto the palace; sneak to Leo's nest (get spotted once, woof once), **Swap**; **Place** the jewel in the fountain; win; **Keep exploring**, then **Sail** at the ship; "To be continued…".
+
 **Exploration layer:** run (Shift / full stick); jump into the island 1 pond, paddle and climb out; swim out past the dock end and feel the current carry you back; slam (jump off something high, press F) onto a dig mound; bark at a palm, a flock of birds, a beach ball, and the fish on island 4; 🌙 night: fireflies; 🔊 and 🎵 toggles survive a reload.
 
 **Every time:** start screen with and without a save (Continue appears only with a save; "Start from the beginning" needs two taps when there is one); phone size (touch controls, toasts not covering buttons); island picker chips (one per island, the Continue one highlighted; any other island needs two taps when there is a save); no console errors.
