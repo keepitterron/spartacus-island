@@ -227,3 +227,16 @@ export function makeFork() {
   }
   return g;
 }
+
+// Lina's Sky Jewel: a glowing pink gem (an octahedron, stretched tall)
+export function makeJewel() {
+  const g = new THREE.Group();
+  const gem = mesh(
+    new THREE.OctahedronGeometry(0.28, 0),
+    material(0xff7ad9, { emissive: 0xff5ac8, emissiveIntensity: 0.6, roughness: 0.2 }),
+  );
+  gem.scale.set(1, 1.35, 1);
+  gem.position.y = 0.3;
+  g.add(gem);
+  return g;
+}

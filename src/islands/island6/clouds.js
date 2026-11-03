@@ -23,7 +23,7 @@ const cloudRand = seededRandom(606);
 // every platform (its collider: {type:'cyl', x, z, r, bottom, top}); instances: transforms
 // waiting for the instanced meshes
 const clouds = [];
-const instances = { cushions: [], puffs: [], seaPuffs: [] };
+const instances = { cushions: [], puffs: [], seaPuffs: [], bushPuffs: [] };
 // the last cloud stood on and the spot on it ({x, z}) a fall puts him back on, and seconds
 // left sinking (-1 while not sinking)
 const checkpoint = { cloud: null, spot: null, sinking: -1 };
@@ -94,6 +94,24 @@ export function addCloudWall(x, z, { top, axis, length, gapAt = 0 }) {
       addPuff(pos.x, pos.z, { y: top + h, size });
     }
 }
+// a puffy pink cloud bush on a cloud at height top, tall enough to hide Spartacus from Leo;
+// returns {x, z, r, top} for the magpie's sight check
+const BUSH = { r: 1.3, height: 2.2 };
+export function addCloudBush(x, z, { top }) {
+  addCylinder(x, z, { r: BUSH.r, bottom: top, top: top + BUSH.height });
+  for (let i = 0; i < 5; i++) {
+    const angle = (i / 5) * Math.PI * 2,
+      size = 0.75 + cloudRand() * 0.25,
+      out = i < 4 ? 0.65 : 0; // four round the edge, one on top
+    addPuff(x + Math.cos(angle) * out, z + Math.sin(angle) * out, {
+      y: top + (i < 4 ? 0.8 : 1.5),
+      size,
+      list: instances.bushPuffs,
+    });
+  }
+  return { x, z, r: BUSH.r, top: top + BUSH.height };
+}
+
 const transform = (pos, { scale, yaw = 0 }) =>
   new THREE.Matrix4().compose(
     vec3(pos.x, pos.y, pos.z),
@@ -120,8 +138,8 @@ export function buildCloudSea(cx, cz) {
   }
 }
 
-// once every cloud is added: one instanced mesh each for the cushions, the platforms' puffs
-// and the cloud sea's puffs
+// once every cloud is added: one instanced mesh each for the cushions, the platforms' puffs,
+// the cloud sea's puffs and the pink hiding bushes
 export function finishClouds() {
   // a warm glow of their own, as if the sun is on them
   const sunlit = material(0xffffff, { emissive: 0xfff1dc, emissiveIntensity: 0.3 });
@@ -132,6 +150,10 @@ export function finishClouds() {
   });
   addInstanced(puff, { mat: sunlit, matrices: instances.puffs });
   addInstanced(puff, { mat: material(SEA_COLOR), matrices: instances.seaPuffs });
+  addInstanced(puff, {
+    mat: material(0xffc2e2, { emissive: 0xffd6ec, emissiveIntensity: 0.2 }),
+    matrices: instances.bushPuffs,
+  });
 }
 
 function addInstanced(geometry, { mat, matrices }) {
