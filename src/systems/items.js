@@ -71,16 +71,23 @@ export function useUpCarried() {
   it.state = 'used';
   return it;
 }
-// drop it 1.1 in front of Spartacus, on whatever is there (or into the water)
+// drop it 1.1 in front of Spartacus, on whatever is there (or into the water, or the sky)
 export function dropCarried() {
   const it = releaseCarried();
   const fwd = forwardDir();
   const x = player.pos.x + fwd.x * 1.1,
     z = player.pos.z + fwd.z * 1.1;
-  const groundY = supportHeight(x, z, player.pos.y + 0.6);
+  const groundY = supportHeight(x, z, player.pos.y + 0.6),
+    phys = physics();
   sfx.drop();
-  if (physics().water && groundY < 0) {
+  if (phys.water && groundY < 0) {
     it.mesh.position.set(x, 0.2, z);
+    floatBack(it);
+    return;
+  }
+  // nothing underneath up in the sky: it floats home the same way
+  if (groundY < phys.floor) {
+    it.mesh.position.set(x, player.pos.y + 0.4, z);
     floatBack(it);
     return;
   }
@@ -116,8 +123,13 @@ function floatBack(it) {
   );
   scene.add(bubble);
   floaters.push({ it, bubble, t: 0, from: it.mesh.position.clone() });
-  sfx.splash();
-  toast(`Splash! The ${it.name} floats away in a bubble…`, 3000);
+  if (physics().water) {
+    sfx.splash();
+    toast(`Splash! The ${it.name} floats away in a bubble…`, 3000);
+  } else {
+    sfx.pop();
+    toast(`Whoops! The ${it.name} floats away in a bubble…`, 3000);
+  }
 }
 export function updateFloaters(dt) {
   for (let i = floaters.length - 1; i >= 0; i--) {

@@ -150,7 +150,8 @@ function makeDog() {
   tail.add(tailTip);
   return { root, body, head, ears, legs, tail, tongue, mouth, hat };
 }
-export const dog = makeDog();
+// roll: Smash-Smash tumble angle (radians)
+export const dog = { ...makeDog(), roll: 0 };
 scene.add(dog.root);
 
 // pose the model from the player every frame; speed = horizontal speed
@@ -164,6 +165,7 @@ export function animateDog(dt, speed) {
     player.yaw += turn;
   }
   dog.root.rotation.y = player.yaw;
+  dog.root.scale.setScalar(player.size); // Mini-Me
   const moving = clamp(speed / SPEED, 0, 1);
   const prevPhase = player.gaitPhase;
   player.gaitPhase += dt * (4 + speed * 1.9);
@@ -190,6 +192,7 @@ export function animateDog(dt, speed) {
     1 / Math.sqrt(player.squash),
   );
   dog.body.position.y = bob;
+  updateRoll(dt, speed);
   // wag faster when happy or busy
   dog.tail.rotation.z =
     Math.sin(time * (game.celebrateTime >= 0 || digging || player.swing ? 22 : 12)) *
@@ -213,6 +216,31 @@ function surfaceUnderfoot() {
   if (player.wading) return 'water';
   if (pos.y > terrainHeight(pos.x, pos.z) + 0.1) return 'wood';
   return currentIsland().underwater || pos.y < 0.6 ? 'sand' : 'grass';
+}
+
+// Smash-Smash: curled up (legs tucked, a little rounder) and tumbling forward like a wheel,
+// turning round the middle of his body rather than his feet
+const ROLL_CENTER = 0.7; // height of the middle of his body
+function updateRoll(dt, speed) {
+  if (!player.rolling) {
+    // just stopped: sit back up at once rather than spinning back the long way
+    if (dog.roll) dog.body.rotation.x = 0;
+    dog.roll = 0;
+    dog.body.position.z = 0;
+    return;
+  }
+  dog.roll = (dog.roll + dt * (4 + speed * 1.2)) % (Math.PI * 2);
+  const angle = dog.roll;
+  dog.body.rotation.x = angle;
+  dog.body.position.set(
+    0,
+    ROLL_CENTER - ROLL_CENTER * Math.cos(angle),
+    -ROLL_CENTER * Math.sin(angle),
+  );
+  dog.body.scale.set(0.95, 0.85, 0.85);
+  dog.legs.forEach((leg, i) => {
+    leg.rotation.x = i < 2 ? -1.5 : 1.5;
+  });
 }
 
 // legs 0-1 are the front pair, 2-3 the back pair; rotation.x swings them

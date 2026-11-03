@@ -11,7 +11,7 @@ import { material } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { hintOnce } from '../../core/ui.js';
-import { addCylinder, inFootprint, supportHeight } from '../../core/colliders.js';
+import { addBox, addCylinder, inFootprint, supportHeight } from '../../core/colliders.js';
 import { player } from '../../player/player.js';
 
 // the top of the cloud sea; anything that sinks into it pops back up
@@ -24,8 +24,9 @@ const cloudRand = seededRandom(606);
 // waiting for the instanced meshes
 const clouds = [];
 const instances = { cushions: [], puffs: [], seaPuffs: [] };
-// the last cloud stood on, and seconds left sinking (-1 while not sinking)
-const checkpoint = { cloud: null, sinking: -1 };
+// the last cloud stood on and the spot on it ({x, z}) a fall puts him back on, and seconds
+// left sinking (-1 while not sinking)
+const checkpoint = { cloud: null, spot: null, sinking: -1 };
 
 // a cloud to stand on: a flat cushion with top at `top`, a puffy rim and a few puffs underneath
 export function addCloud(x, z, { r, top }) {
@@ -59,6 +60,40 @@ function addPuff(x, z, { y, size, list = instances.puffs }) {
   );
 }
 
+// Tickle Tunnels: a tall wall of cloud standing on a cloud, centred on (x, z) and `length`
+// long along `axis` ('x' or 'z'), with a little hole at its foot (gapAt: offset from the
+// middle). The lintel over the hole is lower than a full-size Spartacus is tall (BODY_HEIGHT
+// in player.js), so only a Mini-Me dog fits under it; the wall is too tall to float over.
+const WALL_HEIGHT = 8,
+  HOLE_WIDTH = 1.3,
+  HOLE_HEIGHT = 0.8;
+export function addCloudWall(x, z, { top, axis, length, gapAt = 0 }) {
+  const alongX = axis === 'x',
+    at = (d) => (alongX ? { x: x + d, z } : { x, z: z + d });
+  const addSegment = (from, to, bottom) => {
+    const mid = at((from + to) / 2),
+      half = (to - from) / 2;
+    addBox(mid.x, mid.z, {
+      hw: alongX ? half : 0.5,
+      hd: alongX ? 0.5 : half,
+      bottom,
+      top: top + WALL_HEIGHT,
+    });
+  };
+  const holeFrom = gapAt - HOLE_WIDTH / 2,
+    holeTo = gapAt + HOLE_WIDTH / 2;
+  addSegment(-length / 2, holeFrom, top - 1);
+  addSegment(holeTo, length / 2, top - 1);
+  addSegment(holeFrom, holeTo, top + HOLE_HEIGHT); // the lintel
+  for (let d = -length / 2 + 0.5; d <= length / 2 - 0.5; d += 1)
+    for (let h = 0.45; h < WALL_HEIGHT; h += 1) {
+      const size = 0.6 + cloudRand() * 0.2;
+      // leave the hole open: skip puffs that would poke into it
+      if (Math.abs(d - gapAt) - size < HOLE_WIDTH / 2 && h - size * 0.75 < HOLE_HEIGHT) continue;
+      const pos = at(d);
+      addPuff(pos.x, pos.z, { y: top + h, size });
+    }
+}
 const transform = (pos, { scale, yaw = 0 }) =>
   new THREE.Matrix4().compose(
     vec3(pos.x, pos.y, pos.z),
@@ -113,19 +148,33 @@ function addInstanced(geometry, { mat, matrices }) {
 const cloudUnder = (pos) =>
   clouds.find((cloud) => inFootprint(cloud, pos) && Math.abs(pos.y - cloud.top) < 0.1);
 
-// where a fall puts him back: the middle of the last cloud he stood on (the first one to start)
+// where a fall puts him back (the middle of this cloud, until he stands somewhere on it)
 export function setCheckpoint(cloud) {
   checkpoint.cloud = cloud;
+  checkpoint.spot = { x: cloud.x, z: cloud.z };
   checkpoint.sinking = -1;
 }
 
-// every frame: remember the cloud he's on; falling with no cloud below, or into the cloud
+// remember where he stood, moved in from the edge (straight towards the middle, so a wall
+// across the cloud never ends up between him and the spot)
+const EDGE_MARGIN = 1.2;
+function rememberSpot(cloud, pos) {
+  const dx = pos.x - cloud.x,
+    dz = pos.z - cloud.z,
+    dist = Math.hypot(dx, dz),
+    maxDist = Math.max(0, cloud.r - EDGE_MARGIN),
+    k = dist > maxDist ? maxDist / dist : 1;
+  checkpoint.cloud = cloud;
+  checkpoint.spot = { x: cloud.x + dx * k, z: cloud.z + dz * k };
+}
+
+// every frame: remember the spot he's on; falling with no cloud below, or into the cloud
 // sea, sinks him in with a poof and pops him back onto that cloud a moment later
 export function updateCheckpoint(dt) {
   const pos = player.pos;
   if (player.grounded) {
     const cloud = cloudUnder(pos);
-    if (cloud) checkpoint.cloud = cloud;
+    if (cloud) rememberSpot(cloud, pos);
   }
   if (checkpoint.sinking >= 0) {
     sink(dt);
@@ -154,8 +203,8 @@ function sink(dt) {
   checkpoint.sinking -= dt;
   if (checkpoint.sinking > 0) return;
   checkpoint.sinking = -1;
-  const { x, z, top } = checkpoint.cloud;
-  player.pos.set(x, top + 0.05, z);
+  const { x, z } = checkpoint.spot;
+  player.pos.set(x, checkpoint.cloud.top + 0.05, z);
   player.vel.set(0, 0, 0);
   player.squashVel = 5;
   sfx.boing();

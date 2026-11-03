@@ -1,13 +1,16 @@
 import * as THREE from 'three';
 import { distXZ, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
-import { material, mesh } from '../../core/materials.js';
+import { material, mesh, canvasTexture } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce } from '../../core/ui.js';
 import { addCylinder } from '../../core/colliders.js';
+import { makeFork } from '../../models/items.js';
 import { CENTER_6 } from '../../world/layout.js';
 import { ship, shipState, shipBubble } from '../../world/ship.js';
 import { player } from '../../player/player.js';
+import { addFruit } from '../../systems/powers.js';
+import { addItem } from '../../systems/items.js';
 import { ensureMangoCrew } from '../../npcs/mango.js';
 import { wasabiToBucket } from '../../npcs/wasabi.js';
 import { unicorn, unicornFly, colourStripe } from '../../npcs/unicorn.js';
@@ -17,6 +20,7 @@ import { completeTask } from '../../game/tasks.js';
 import {
   CLOUD_SEA_Y,
   addCloud,
+  addCloudWall,
   buildCloudSea,
   finishClouds,
   setCheckpoint,
@@ -24,11 +28,21 @@ import {
 } from './clouds.js';
 import { buildUpdraft, updateUpdraft } from './updraft.js';
 import { buildLandingShadow, updateLandingShadow } from './shadow.js';
+import {
+  crystalMaterial,
+  addCrystalWall,
+  addCubby,
+  smashWalls,
+  crackedWallNear,
+  brokenWallIds,
+  restoreBrokenWalls,
+} from './crystal.js';
 
 // Island 6, the sky island: little clouds floating round Lina's crystal palace, high above a sea
 // of clouds. Back home, Lina's wings unfold and she flaps an updraft under Spartacus, so he
 // floats from cloud to cloud. Her Sky Jewel is gone: Leo the magpie took it to his nest at the
-// top. Still being built (a preview): so far the Windy Steps up to the palace. See docs/island6.md.
+// top. Still being built: the Windy Steps up to the palace, the Tickle Tunnels (Mini-Me) and the
+// Crystal Wall (Smash-Smash) to the fork. Leo's nest comes next. See docs/island6.md.
 
 const toWorld = (x, z) => ({ x: CENTER_6.x + x, z: CENTER_6.z + z }); // island-local -> world
 
@@ -43,6 +57,27 @@ const WINDY_STEPS = [
   [-1, -37, 3, 6],
 ];
 const PALACE_CLOUD = [0, -56, 10, 7];
+// Tickle Tunnels, west of the palace: a cloud wall across each cloud, with a hole only a
+// Mini-Me dog fits through. Then the cloud with the Smash-Smash bush (and a Mini-Me one for the
+// way back).
+const TUNNEL_CLOUDS = [
+  [-23, -58, 7, 8],
+  [-38, -62, 6, 9],
+];
+const SMASH_CLOUD = [-46, -75, 6, 10];
+// Crystal Wall: a cracked wall across the first cloud to learn smashing, a step, then the
+// picnic cloud inside a crystal fence (one cracked panel, facing the way in)
+const CRACKED_CLOUD = [-36, -92, 8, 12];
+const STEP_CLOUD = [-22, -103, 5, 13];
+const PICNIC_CLOUD = [-4, -112, 11, 14];
+const FENCE = { x: -4, z: -112, half: 5, height: 7 };
+// the way back from the picnic: level hops high above the palace, then one big drop onto it.
+// Too high to climb up from the palace (it floats ~5-7 up), so nobody skips the puzzles.
+const WAY_BACK = [
+  [-1, -97, 3, 15],
+  [1, -86, 3, 15],
+  [0, -76, 3, 15],
+];
 const SHIP_SPOT = [9, 16]; // island-local, alongside the spawn cloud
 
 // filled in by build(): the clouds and spots the triggers use
@@ -59,6 +94,8 @@ function build() {
   for (const step of WINDY_STEPS) addCloudAt(step);
   spots.palace = addCloudAt(PALACE_CLOUD);
   buildPalace(spots.palace);
+  buildTunnels();
+  buildCrystalWall();
   finishClouds();
   buildUpdraft();
   buildLandingShadow();
@@ -69,13 +106,7 @@ function build() {
 // Lina's crystal palace: a half ring of crystal towers behind a dry fountain (the jewel made it
 // sparkle). She tells the story when Spartacus lands on this cloud.
 function buildPalace(cloud) {
-  const crystal = material(0xcfe3ff, {
-    emissive: 0x8fb8ff,
-    emissiveIntensity: 0.25,
-    roughness: 0.2,
-    transparent: true,
-    opacity: 0.88,
-  });
+  const crystal = crystalMaterial();
   const towerHeights = [5, 7.5, 9, 7.5, 5];
   towerHeights.forEach((height, i) => {
     const angle = Math.PI + 0.45 + i * 0.55, // a half ring on the far side from the steps
@@ -92,6 +123,85 @@ function buildPalace(cloud) {
   scene.add(spout);
   addCylinder(cloud.x, cloud.z, { r: 2.2, bottom: cloud.top, top: cloud.top + 0.8 });
   spots.fountain = { x: cloud.x, z: cloud.z, y: cloud.top }; // where the jewel goes, later
+}
+
+// a cloud wall across each tunnel cloud (north-south, so the way west goes through the holes)
+function buildTunnels() {
+  spots.holes = TUNNEL_CLOUDS.map((def) => {
+    const cloud = addCloudAt(def);
+    addCloudWall(cloud.x, cloud.z, { top: cloud.top, axis: 'z', length: cloud.r * 2 + 4 });
+    return { x: cloud.x, z: cloud.z, y: cloud.top };
+  });
+  spots.smash = addCloudAt(SMASH_CLOUD);
+}
+
+function buildCrystalWall() {
+  const cracked = addCloudAt(CRACKED_CLOUD);
+  // east-west across the cloud: solid either side, cracked in the middle
+  const wall = { y: cracked.top, height: 7, hd: 0.3 };
+  addCrystalWall(cracked.x - 6, cracked.z, { ...wall, hw: 4 });
+  addCrystalWall(cracked.x, cracked.z, { ...wall, hw: 2, cracked: true, id: 'skyWall' });
+  addCrystalWall(cracked.x + 6, cracked.z, { ...wall, hw: 4 });
+  spots.cracked = cracked;
+  addCloudAt(STEP_CLOUD);
+  spots.picnic = addCloudAt(PICNIC_CLOUD);
+  buildFence(toWorld(FENCE.x, FENCE.z), { y: spots.picnic.top });
+  buildPicnic(spots.picnic);
+  for (const step of WAY_BACK) addCloudAt(step);
+}
+
+// a square crystal fence round the picnic; the west side's middle panel is cracked
+function buildFence(center, { y }) {
+  const { half, height } = FENCE,
+    thick = 0.3,
+    side = { y, height };
+  for (const dir of [-1, 1]) {
+    // north and south sides, a bit longer so the corners close
+    addCrystalWall(center.x, center.z + dir * half, { ...side, hw: half + thick, hd: thick });
+    // the west side is three panels: solid, cracked, solid
+    addCrystalWall(center.x - half, center.z + dir * 3.5, { ...side, hw: thick, hd: 1.5 });
+  }
+  addCrystalWall(center.x - half, center.z, {
+    ...side,
+    hw: thick,
+    hd: 2,
+    cracked: true,
+    id: 'skyFence',
+  });
+  addCrystalWall(center.x + half, center.z, { ...side, hw: thick, hd: half });
+}
+
+// a picnic inside the fence: a chequered blanket, a basket, and the crystal cubby where the
+// fork is (its door is only big enough for a Mini-Me dog)
+function buildPicnic(cloud) {
+  const y = cloud.top;
+  const blanketTexture = canvasTexture(128, 128, (ctx, w, h) => {
+    for (let row = 0; row < 8; row++)
+      for (let col = 0; col < 8; col++) {
+        ctx.fillStyle = (row + col) % 2 ? '#ff6b6b' : '#fff6e2';
+        ctx.fillRect((col * w) / 8, (row * h) / 8, w / 8, h / 8);
+      }
+  });
+  const blanketAt = toWorld(FENCE.x + 2, FENCE.z + 1);
+  const blanket = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.4, 3.4),
+    new THREE.MeshStandardMaterial({ map: blanketTexture, roughness: 0.9 }),
+  );
+  blanket.rotation.x = -Math.PI / 2;
+  blanket.position.set(blanketAt.x, y + 0.03, blanketAt.z);
+  blanket.receiveShadow = true;
+  scene.add(blanket);
+  const basketAt = toWorld(FENCE.x + 2.5, FENCE.z - 2.5);
+  const wicker = material(0xc48a54);
+  const basket = mesh(new THREE.CylinderGeometry(0.6, 0.5, 0.6, 10), wicker);
+  basket.position.set(basketAt.x, y + 0.3, basketAt.z);
+  scene.add(basket);
+  const handle = mesh(new THREE.TorusGeometry(0.45, 0.06, 6, 12, Math.PI), wicker);
+  handle.position.set(basketAt.x, y + 0.6, basketAt.z);
+  scene.add(handle);
+  addCylinder(basketAt.x, basketAt.z, { r: 0.6, bottom: y, top: y + 0.6 });
+  const cubbyAt = toWorld(FENCE.x - 2, FENCE.z - 2.2);
+  spots.cubby = addCubby(cubbyAt.x, cubbyAt.z, { y });
 }
 
 // a six-sided crystal with a pointed cap, standing at height y
@@ -124,6 +234,35 @@ function enter() {
   setCheckpoint(spots.spawnCloud);
 }
 
+// fruit bushes (no rand() here) and the fork. One power at a time, so there's a bush wherever
+// you need to swap: Mini-Me by the palace (into the tunnels), both on the Smash-Smash cloud
+// (Mini-Me again for the way back), and Mini-Me inside the picnic fence (for the cubby door).
+function buildLate() {
+  const { palace, smash, picnic } = spots;
+  const bushes = [
+    ['mini', toWorld(-6, -50), palace.top],
+    ['smash', toWorld(SMASH_CLOUD[0] - 1.5, SMASH_CLOUD[1] - 1), smash.top],
+    ['mini', toWorld(SMASH_CLOUD[0] + 2.5, SMASH_CLOUD[1] + 1.5), smash.top],
+    ['mini', toWorld(FENCE.x + 2.5, FENCE.z + 3), picnic.top],
+  ];
+  for (const [type, pos, y] of bushes) addFruit(pos.x, pos.z, { type, y, bush: true });
+  const { back } = spots.cubby;
+  addItem('fork', {
+    model: makeFork(),
+    pos: vec3(back.x, back.y + 0.1, back.z),
+    name: 'fork',
+    lift: 0.1,
+    yaw: Math.PI / 2,
+    onCarry: foundFork,
+  });
+}
+
+function foundFork() {
+  if (island.done.skyFork) return;
+  completeTask('skyFork');
+  toast('A shiny fork! Leo the magpie loves shiny things…', 3400);
+}
+
 // arriving at the palace: Lina tells what happened
 function meetAtPalace() {
   completeTask('skyFly');
@@ -136,8 +275,29 @@ function meetAtPalace() {
   for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
 }
 
+// one-time hints for the tunnels, the cracked crystal and the cubby
+function hintPowers(p) {
+  const nearHole = spots.holes.some(
+    (hole) => distXZ(p, hole.x, hole.z) < 3 && Math.abs(p.y - hole.y) < 1,
+  );
+  if (nearHole && !player.tiny)
+    hintOnce('tinyHole', 'A teeny hole! Only a teeny dog fits. Try a Mini-Me fruit.', 3600);
+  if (nearHole && player.tiny && player.size < 0.5)
+    hintOnce('tickle', 'Hee hee! The cloud tickles!', 2400);
+  if (crackedWallNear(p, 3)) {
+    if (player.canSmash) hintOnce('smashRun', 'Run fast at the crack to roll and SMASH!', 3200);
+    else hintOnce('cracked', 'Cracked crystal! A Smash-Smash fruit could break it.', 3400);
+  }
+  const { door } = spots.cubby;
+  const nearDoor = distXZ(p, door.x, door.z) < 2.5 && Math.abs(p.y - door.y) < 1;
+  if (nearDoor && !player.tiny && !island.done.skyFork)
+    hintOnce('cubby', 'Something shiny inside! The door is very small…', 3200);
+}
+
 function interact(p, dt) {
   updateCheckpoint(dt);
+  smashWalls(p);
+  hintPowers(p);
   const { palace, spawnCloud } = spots;
   if (!player.grounded && p.y > spawnCloud.top + 1.5)
     hintOnce('flap', 'Tap Jump in the air to flap! Hold Jump to float down slowly.', 3800);
@@ -156,7 +316,7 @@ const island = {
   preview: true,
   savesProgress: true,
   // Lina flaps the whole time, so Spartacus always floats: low gravity, a slow fall, flapping
-  physics: { gravity: 16, maxFall: 7, water: false, flap: true },
+  physics: { gravity: 16, maxFall: 7, water: false, flap: true, floor: CLOUD_SEA_Y },
   camera: { minY: () => CLOUD_SEA_Y + 1 },
   // a deeper blue than the sea islands' pale sky, so white clouds stand out against it (and
   // fade into blue in the distance); lilac light from below instead of green grass
@@ -206,12 +366,16 @@ const island = {
     [7400, 'Her wind makes Spartacus float. Jump from cloud to cloud!', 3600],
   ],
   build,
+  buildLate,
   enter,
   update(dt) {
     updateUpdraft(dt);
     updateLandingShadow();
   },
   interact,
+  // the fork and the power are saved for you; the smashed walls aren't
+  saveState: () => ({ broken: brokenWallIds() }),
+  loadState: (state) => restoreBrokenWalls(state.broken),
   bark(p) {
     if (unicorn.g.position.distanceTo(p) > 8) return;
     sfx.flutter();

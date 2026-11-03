@@ -71,6 +71,31 @@ const fruitSkins = {
       ctx.fill();
     }
   }),
+  // pink with lots of tiny white dots (placeholder until Zoë says what it looks like)
+  mini: canvasTexture(256, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#ff8fc8';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#fff0f8';
+    for (let i = 0; i < 40; i++) {
+      ctx.beginPath();
+      ctx.arc((i * 29) % w, (i * 47) % h, 4, 0, 7);
+      ctx.fill();
+    }
+  }),
+  // crystal blue with white cracks (placeholder until Zoë says what it looks like)
+  smash: canvasTexture(256, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#5a8cff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#eaf2ff';
+    ctx.lineWidth = 5;
+    ctx.lineJoin = 'round';
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(20 + i * 64, 0);
+      for (let y = 16; y <= h; y += 16) ctx.lineTo(20 + i * 64 + (y % 32 ? 12 : -6), y);
+      ctx.stroke();
+    }
+  }),
 };
 // sparkleColors: [main, light, accent]; signColor: bush label colour;
 // intro() is the first-time toast, shown for introMs
@@ -110,6 +135,24 @@ export const POWERS = {
     bushColor: 0x58a83a,
     intro: () =>
       `Chop-Chop fruit! Spartacus’s hat can chop seaweed. Use ${actionKeyName()} near it.`,
+    introMs: 3800,
+  },
+  mini: {
+    name: 'Mini-Me',
+    icon: '🤏',
+    sparkleColors: [0xff8fc8, 0xfff0f8, 0xffd84d],
+    signColor: '#ffb3dc',
+    bushColor: 0x58a83a,
+    intro: () => 'Mini-Me fruit! Spartacus is teeny tiny. Squeeze through little gaps!',
+    introMs: 3800,
+  },
+  smash: {
+    name: 'Smash-Smash',
+    icon: '💥',
+    sparkleColors: [0x5a8cff, 0xeaf2ff, 0xffd84d],
+    signColor: '#9cbcff',
+    bushColor: 0x58a83a,
+    intro: () => 'Smash-Smash fruit! Run fast to roll into a ball and smash cracked walls!',
     introMs: 3800,
   },
 };
@@ -216,6 +259,8 @@ export function setPower(type) {
   player.power = type;
   player.superJump = type === 'boing';
   player.canStretch = type === 'stretch';
+  player.tiny = type === 'mini';
+  player.canSmash = type === 'smash';
   updatePowerHud();
   if (prev && prev !== type) toast(`Swapped to ${POWERS[type].name}! One power at a time.`, 3000);
   else toast(POWERS[type].intro(), POWERS[type].introMs);

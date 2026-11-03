@@ -209,3 +209,21 @@ export function makeStar(color) {
   );
   return g;
 }
+
+// a shiny silver fork, lying flat: a handle and four tines (Leo the magpie loves shiny things)
+export function makeFork() {
+  const g = new THREE.Group(),
+    silver = material(0xdfe6f0, { metalness: 0.7, roughness: 0.25 });
+  const handle = mesh(new THREE.BoxGeometry(0.08, 0.04, 0.5), silver);
+  handle.position.z = -0.2;
+  g.add(handle);
+  const neck = mesh(new THREE.BoxGeometry(0.22, 0.04, 0.08), silver);
+  neck.position.z = 0.08;
+  g.add(neck);
+  for (const x of [-0.09, -0.03, 0.03, 0.09]) {
+    const tine = mesh(new THREE.BoxGeometry(0.03, 0.04, 0.22), silver);
+    tine.position.set(x, 0, 0.22);
+    g.add(tine);
+  }
+  return g;
+}
