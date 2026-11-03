@@ -28,6 +28,7 @@ import {
 } from './clouds.js';
 import { buildUpdraft, updateUpdraft } from './updraft.js';
 import { buildLandingShadow, updateLandingShadow } from './shadow.js';
+import { buildNest } from './nest.js';
 import {
   crystalMaterial,
   addCrystalWall,
@@ -41,8 +42,9 @@ import {
 // Island 6, the sky island: little clouds floating round Lina's crystal palace, high above a sea
 // of clouds. Back home, Lina's wings unfold and she flaps an updraft under Spartacus, so he
 // floats from cloud to cloud. Her Sky Jewel is gone: Leo the magpie took it to his nest at the
-// top. Still being built: the Windy Steps up to the palace, the Tickle Tunnels (Mini-Me) and the
-// Crystal Wall (Smash-Smash) to the fork. Leo's nest comes next. See docs/island6.md.
+// top. Still being built: the Windy Steps up to the palace, the Tickle Tunnels (Mini-Me), the
+// Crystal Wall (Smash-Smash) to the fork, and Leo's nest (nest.js), where the fork is swapped
+// for the jewel. The fountain finale comes next. See docs/island6.md.
 
 const toWorld = (x, z) => ({ x: CENTER_6.x + x, z: CENTER_6.z + z }); // island-local -> world
 
@@ -96,6 +98,7 @@ function build() {
   buildPalace(spots.palace);
   buildTunnels();
   buildCrystalWall();
+  spots.nest = buildNest(toWorld, { island });
   finishClouds();
   buildUpdraft();
   buildLandingShadow();
@@ -298,6 +301,7 @@ function interact(p, dt) {
   updateCheckpoint(dt);
   smashWalls(p);
   hintPowers(p);
+  spots.nest.interact(p);
   const { palace, spawnCloud } = spots;
   if (!player.grounded && p.y > spawnCloud.top + 1.5)
     hintOnce('flap', 'Tap Jump in the air to flap! Hold Jump to float down slowly.', 3800);
@@ -371,12 +375,19 @@ const island = {
   update(dt) {
     updateUpdraft(dt);
     updateLandingShadow();
+    spots.nest.update(dt);
   },
   interact,
-  // the fork and the power are saved for you; the smashed walls aren't
+  actions: (p) => spots.nest.action(p),
+  // the fork, the jewel and the power are saved for you; the smashed walls aren't, and the swap
+  // is put back from its task
   saveState: () => ({ broken: brokenWallIds() }),
-  loadState: (state) => restoreBrokenWalls(state.broken),
+  loadState(state) {
+    restoreBrokenWalls(state.broken);
+    spots.nest.load();
+  },
   bark(p) {
+    if (spots.nest.bark(p)) return;
     if (unicorn.g.position.distanceTo(p) > 8) return;
     sfx.flutter();
     toast('Lina: “Whee! Up we go!”', 2200);
