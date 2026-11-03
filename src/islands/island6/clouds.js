@@ -13,6 +13,7 @@ import { burst } from '../../core/fx.js';
 import { hintOnce } from '../../core/ui.js';
 import { addBox, addCylinder, inFootprint, supportHeight } from '../../core/colliders.js';
 import { player } from '../../player/player.js';
+import { addFader } from './fade.js';
 
 // the top of the cloud sea; anything that sinks into it pops back up
 export const CLOUD_SEA_Y = -6;
@@ -23,7 +24,10 @@ const cloudRand = seededRandom(606);
 // every platform (its collider: {type:'cyl', x, z, r, bottom, top}); instances: transforms
 // waiting for the instanced meshes
 const clouds = [];
-const instances = { cushions: [], puffs: [], seaPuffs: [], bushPuffs: [] };
+// walls: each cloud wall's own puffs and material, so it can fade out on its own (fade.js)
+const instances = { cushions: [], puffs: [], seaPuffs: [], bushPuffs: [], walls: [] };
+// clouds you can land on: white with a warm glow of their own, as if the sun is on them
+const sunlitMaterial = () => material(0xffffff, { emissive: 0xfff1dc, emissiveIntensity: 0.3 });
 // the last cloud stood on and the spot on it ({x, z}) a fall puts him back on, and seconds
 // left sinking (-1 while not sinking)
 const checkpoint = { cloud: null, spot: null, sinking: -1 };
@@ -62,7 +66,7 @@ function addPuff(x, z, { y, size, list = instances.puffs }) {
 
 // Tickle Tunnels: a tall wall of cloud standing on a cloud, centred on (x, z) and `length`
 // long along `axis` ('x' or 'z'), with a little hole at its foot (gapAt: offset from the
-// middle). The lintel over the hole is lower than a full-size Spartacus is tall (BODY_HEIGHT
+// middle); returns the hole. The lintel over the hole is lower than a full-size Spartacus is tall (BODY_HEIGHT
 // in player.js), so only a Mini-Me dog fits under it; the wall is too tall to float over.
 const WALL_HEIGHT = 8,
   HOLE_WIDTH = 1.3,
@@ -70,15 +74,19 @@ const WALL_HEIGHT = 8,
 export function addCloudWall(x, z, { top, axis, length, gapAt = 0 }) {
   const alongX = axis === 'x',
     at = (d) => (alongX ? { x: x + d, z } : { x, z: z + d });
+  const wall = { matrices: [], mat: sunlitMaterial().clone() },
+    cols = [];
+  instances.walls.push(wall);
   const addSegment = (from, to, bottom) => {
     const mid = at((from + to) / 2),
       half = (to - from) / 2;
-    addBox(mid.x, mid.z, {
+    const col = addBox(mid.x, mid.z, {
       hw: alongX ? half : 0.5,
       hd: alongX ? 0.5 : half,
       bottom,
       top: top + WALL_HEIGHT,
     });
+    cols.push(col);
   };
   const holeFrom = gapAt - HOLE_WIDTH / 2,
     holeTo = gapAt + HOLE_WIDTH / 2;
@@ -91,8 +99,11 @@ export function addCloudWall(x, z, { top, axis, length, gapAt = 0 }) {
       // leave the hole open: skip puffs that would poke into it
       if (Math.abs(d - gapAt) - size < HOLE_WIDTH / 2 && h - size * 0.75 < HOLE_HEIGHT) continue;
       const pos = at(d);
-      addPuff(pos.x, pos.z, { y: top + h, size });
+      addPuff(pos.x, pos.z, { y: top + h, size, list: wall.matrices });
     }
+  addFader(cols, [wall.mat]);
+  // where the hole is, and which way it goes through (yaw of its arch: see doors.js)
+  return { ...at(gapAt), y: top, yaw: alongX ? 0 : Math.PI / 2, radius: HOLE_WIDTH / 2 };
 }
 // a puffy pink cloud bush on a cloud at height top, tall enough to hide Spartacus from Leo;
 // returns {x, z, r, top} for the magpie's sight check
@@ -139,10 +150,9 @@ export function buildCloudSea(cx, cz) {
 }
 
 // once every cloud is added: one instanced mesh each for the cushions, the platforms' puffs,
-// the cloud sea's puffs and the pink hiding bushes
+// the cloud sea's puffs, the pink hiding bushes and each cloud wall
 export function finishClouds() {
-  // a warm glow of their own, as if the sun is on them
-  const sunlit = material(0xffffff, { emissive: 0xfff1dc, emissiveIntensity: 0.3 });
+  const sunlit = sunlitMaterial();
   const puff = new THREE.IcosahedronGeometry(1, 1);
   addInstanced(new THREE.CylinderGeometry(1, 0.8, 1, 14), {
     mat: sunlit,
@@ -154,6 +164,8 @@ export function finishClouds() {
     mat: material(0xffc2e2, { emissive: 0xffd6ec, emissiveIntensity: 0.2 }),
     matrices: instances.bushPuffs,
   });
+  for (const wall of instances.walls)
+    addInstanced(puff, { mat: wall.mat, matrices: wall.matrices });
 }
 
 function addInstanced(geometry, { mat, matrices }) {

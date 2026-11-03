@@ -4,6 +4,7 @@ import { scene } from '../../core/renderer.js';
 import { material, mesh, canvasTexture } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce } from '../../core/ui.js';
+import { burst } from '../../core/fx.js';
 import { addCylinder } from '../../core/colliders.js';
 import { makeFork } from '../../models/items.js';
 import { CENTER_6 } from '../../world/layout.js';
@@ -29,6 +30,8 @@ import {
 import { buildUpdraft, updateUpdraft } from './updraft.js';
 import { buildLandingShadow, updateLandingShadow } from './shadow.js';
 import { buildNest } from './nest.js';
+import { addDoorArch, updateDoorArches } from './doors.js';
+import { updateFaders } from './fade.js';
 import {
   crystalMaterial,
   addCrystalWall,
@@ -132,8 +135,15 @@ function buildPalace(cloud) {
 function buildTunnels() {
   spots.holes = TUNNEL_CLOUDS.map((def) => {
     const cloud = addCloudAt(def);
-    addCloudWall(cloud.x, cloud.z, { top: cloud.top, axis: 'z', length: cloud.r * 2 + 4 });
-    return { x: cloud.x, z: cloud.z, y: cloud.top };
+    const hole = addCloudWall(cloud.x, cloud.z, {
+      top: cloud.top,
+      axis: 'z',
+      length: cloud.r * 2 + 4,
+    });
+    // a golden arch just in front of both faces of the wall (it runs north-south; its puffs
+    // stick out about 0.8 either side)
+    for (const side of [-1, 1]) addDoorArch(vec3(hole.x + side * 0.9, hole.y, hole.z), hole);
+    return hole;
   });
   spots.smash = addCloudAt(SMASH_CLOUD);
 }
@@ -141,7 +151,7 @@ function buildTunnels() {
 function buildCrystalWall() {
   const cracked = addCloudAt(CRACKED_CLOUD);
   // east-west across the cloud: solid either side, cracked in the middle
-  const wall = { y: cracked.top, height: 7, hd: 0.3 };
+  const wall = { y: cracked.top, height: 7, hd: 0.3, fades: true };
   addCrystalWall(cracked.x - 6, cracked.z, { ...wall, hw: 4 });
   addCrystalWall(cracked.x, cracked.z, { ...wall, hw: 2, cracked: true, id: 'skyWall' });
   addCrystalWall(cracked.x + 6, cracked.z, { ...wall, hw: 4 });
@@ -157,7 +167,7 @@ function buildCrystalWall() {
 function buildFence(center, { y }) {
   const { half, height } = FENCE,
     thick = 0.3,
-    side = { y, height };
+    side = { y, height, fades: true };
   for (const dir of [-1, 1]) {
     // north and south sides, a bit longer so the corners close
     addCrystalWall(center.x, center.z + dir * half, { ...side, hw: half + thick, hd: thick });
@@ -205,6 +215,8 @@ function buildPicnic(cloud) {
   addCylinder(basketAt.x, basketAt.z, { r: 0.6, bottom: y, top: y + 0.6 });
   const cubbyAt = toWorld(FENCE.x - 2, FENCE.z - 2.2);
   spots.cubby = addCubby(cubbyAt.x, cubbyAt.z, { y });
+  const { door, doorYaw, doorRadius } = spots.cubby;
+  addDoorArch(door.clone().setX(door.x + 0.2), { yaw: doorYaw, radius: doorRadius });
 }
 
 // a six-sided crystal with a pointed cap, standing at height y
@@ -257,6 +269,23 @@ function buildLate() {
     lift: 0.1,
     yaw: Math.PI / 2,
     onCarry: foundFork,
+  });
+}
+
+// the fork glints in its cubby until it's found, so you can spot it through the crystal
+const glint = { timeLeft: 0 };
+function glintFork(dt) {
+  glint.timeLeft -= dt;
+  if (island.done.skyFork || glint.timeLeft > 0) return;
+  glint.timeLeft = 0.5;
+  const { back } = spots.cubby;
+  burst(back.clone().add(vec3(0, 0.25, 0)), {
+    count: 3,
+    color: [0xffffff, 0xdfe6f0, 0xffd84d],
+    speed: 1,
+    up: 1.2,
+    life: 0.6,
+    size: 0.7,
   });
 }
 
@@ -375,6 +404,9 @@ const island = {
   update(dt) {
     updateUpdraft(dt);
     updateLandingShadow();
+    updateDoorArches(dt);
+    updateFaders(dt);
+    glintFork(dt);
     spots.nest.update(dt);
   },
   interact,
