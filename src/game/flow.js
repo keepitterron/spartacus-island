@@ -71,6 +71,12 @@ export function enterIsland(n, arrived) {
   showIntro(island.intro || []);
 }
 
+// the island after the current one, if it's ready to visit (a `preview` one only in dev/?debug)
+export function nextIsland() {
+  const next = game.islands[game.island + 1];
+  return next && (!next.preview || game.debug) ? next : null;
+}
+
 export function restartFromBeginning() {
   writeSave({ island: 1, progress: null });
   // drop any #hash so the reload really starts fresh

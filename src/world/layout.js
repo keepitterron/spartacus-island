@@ -6,3 +6,6 @@ export const CENTER_2 = { x: 0, z: -170 }; // Hook Rock Bay
 export const CENTER_3 = { x: 0, z: -322 }; // Mossy Paw Woods
 export const CENTER_4 = { x: 0, z: -720 }; // Bubbly Ocean (sea floor)
 export const CENTER_5 = { x: 0, z: -1100 }; // Rainbow Reef: a ring of islets, far enough that fog hides island 4
+// the sky island: clouds at about sea level, past the end of island 5's sea so no water shows
+// under it (the height is faked with a sea of clouds and the fog)
+export const CENTER_6 = { x: 0, z: -1550 };

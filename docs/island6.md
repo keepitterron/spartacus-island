@@ -65,3 +65,13 @@ Plus a "collect a number" task (feathers?) to reward exploring the edges.
 - Does Leo join the crew on the ship, and help on the next island?
 - What's collected around the edges (feathers?), and how many.
 - What the fruits look like.
+
+## Built so far
+
+- **Plumbing:** `islands/island6/` (`preview: true`), `CENTER_6` at z = −1550, past the end of island 5's sea. Island 5's rainbow ride carries the ship straight here when it's reachable (dev/?debug), otherwise it still shows "To be continued…".
+- **Floating:** `physics: { gravity: 16, maxFall: 7, flap: true }`. In the air, a Jump press flaps (`FLY.flaps` per jump, reset on landing) and holding Jump caps the fall at `FLY.glideFall`. Tune live with `__g.fly` while Zoë plays.
+- **Lina:** `unicornFly()` shows her wings; she flies behind and to one side so she never blocks the camera.
+- **Clouds** (`clouds.js`): each platform is a cylinder collider drawn as instanced cushions and puffs; the cloud sea is one plane plus instanced puffs. Its own `seededRandom`, so the shared `rand()` sequence (and every other island's scenery) is untouched.
+- **Checkpoints:** sinking into the cloud sea, or falling 8 below the last cloud with nothing underneath, poofs and pops him back onto the middle of the last cloud he stood on (0.6 s).
+- **Windy Steps:** five clouds from the ship up to the palace cloud; landing there ticks "Fly with Lina" and she tells the story.
+- **Updraft sparkles** (`updraft.js`): one `Points` of 100, only while he's in the air.

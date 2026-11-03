@@ -10,7 +10,7 @@ import { player } from '../../player/player.js';
 import { useUpCarried } from '../../systems/items.js';
 import { updatePowerHud } from '../../systems/powers.js';
 import { hideWin } from '../../game/tasks.js';
-import { enterIsland } from '../../game/flow.js';
+import { enterIsland, nextIsland } from '../../game/flow.js';
 import { startSail } from '../../cutscenes/sail.js';
 
 // Ending of island 4: a big friendly whale swims under the ship and pushes it back up
@@ -116,12 +116,6 @@ function popShipBubble() {
     size: 1.3,
   });
   sfx.splashy();
-}
-
-// the next island, if there is one that's ready to visit
-function nextIsland() {
-  const next = game.islands[game.island + 1];
-  return next && (!next.preview || game.debug) ? next : null;
 }
 
 // at the surface: the whale spouts, and after 2.5s the ship sails on (or the end screen shows)

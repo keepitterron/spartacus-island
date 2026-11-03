@@ -32,6 +32,7 @@ Always on in dev; on the live site add `?debug` to the URL. From the browser con
 | `__g.action()` / `__g.act()`                               | What the action button would do / press it                                            |
 | `__g.night()` / `__g.night(false)`                         | Switch to night / day instantly                                                       |
 | `__g.move`                                                 | Movement tuning (run speed, wading), live                                             |
+| `__g.fly`                                                  | Sky island floating (flap kick, flaps per jump, glide fall speed), live               |
 | `__g.game`, `__g.player`, `__g.followCam`, `__g.colliders` | Raw state                                                                             |
 
 In dev you can also import any module from the console, e.g. `(await import('/spartacus-island/src/npcs/wasabi.js')).wasabi.state`.

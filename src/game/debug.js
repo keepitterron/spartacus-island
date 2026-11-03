@@ -7,11 +7,12 @@
 //   __g.where()             current island-local position
 //   __g.night(true)         switch to night (false for day), instantly
 //   __g.move.sprint = 1.7  live movement tuning (see MOVE in player/player.js)
+//   __g.fly.flaps = 3      live tuning of floating on the sky island (see FLY in player/player.js)
 // Raw state is there too: __g.game, __g.player, __g.followCam, __g.colliders.
 import { game, followCam, currentIsland } from '../core/state.js';
 import { colliders } from '../core/colliders.js';
 import { terrainHeight } from '../world/terrain.js';
-import { player, MOVE } from '../player/player.js';
+import { player, MOVE, FLY } from '../player/player.js';
 import { setPower } from '../systems/powers.js';
 import { completeTask, renderTasks } from './tasks.js';
 import { currentAction, doAction } from './actions.js';
@@ -31,6 +32,7 @@ export function installDebug() {
     followCam,
     colliders,
     move: MOVE,
+    fly: FLY,
     go(n) {
       if (game.state === 'start') startGame(n);
       else enterIsland(n, false);

@@ -33,6 +33,7 @@ import { buildCritters, updateCritters } from './systems/critters.js';
 import { updateGull } from './npcs/gull.js';
 import { updateMango } from './npcs/mango.js';
 import { updateWasabi } from './npcs/wasabi.js';
+import { updateUnicorn } from './npcs/unicorn.js';
 import { initTasks, renderTasks, showWin, hideWin } from './game/tasks.js';
 import { bark, doAction, updatePrompt, updateWoof } from './game/actions.js';
 import { checkTriggers } from './game/interact.js';
@@ -44,10 +45,11 @@ import island2 from './islands/island2/index.js';
 import island3 from './islands/island3/index.js';
 import island4 from './islands/island4/index.js';
 import island5 from './islands/island5/index.js';
+import island6 from './islands/island6/index.js';
 
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
-const ISLANDS = [island1, island2, island3, island4, island5];
+const ISLANDS = [island1, island2, island3, island4, island5, island6];
 for (const island of ISLANDS) {
   game.islands[island.id] = island;
   initTasks(island);
@@ -264,6 +266,7 @@ function updateWorld(dt) {
   updateGull(dt);
   updateMango(dt);
   updateWasabi(dt);
+  updateUnicorn(dt);
   currentIsland().update?.(dt);
   updateFloaters(dt);
   updateParticles(dt);

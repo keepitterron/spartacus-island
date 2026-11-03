@@ -1,7 +1,7 @@
 // The end of island 5. With every star home, at night the unicorn's horn lights the arch and the
 // rainbow comes back; she follows Spartacus down to the ship and hops aboard. Then "Ride the
 // rainbow": a rainbow road grows ahead of the ship and carries it up into the clouds, towards
-// the sky island (island 6, still to come).
+// the sky island (island 6).
 import * as THREE from 'three';
 import { $, clamp, smoothstep, vec3 } from '../../core/util.js';
 import { scene, camera } from '../../core/renderer.js';
@@ -14,10 +14,11 @@ import { player } from '../../player/player.js';
 import { useUpCarried } from '../../systems/items.js';
 import { updatePowerHud } from '../../systems/powers.js';
 import { hideWin } from '../../game/tasks.js';
+import { enterIsland, nextIsland } from '../../game/flow.js';
 import { ensureEduardoCrew } from '../island4/eduardo.js';
 
-// outermost first, like a real rainbow
-const BANDS = [0xff5a5a, 0xff9a3d, 0xffd84d, 0x5aa8ff];
+// outermost first, like a real rainbow (also the unicorn's mane stripes, in order)
+export const BANDS = [0xff5a5a, 0xff9a3d, 0xffd84d, 0x5aa8ff];
 const GROW_TIME = 3; // seconds for the rainbow over the arch to grow
 const RIDE_TIME = 14; // seconds up the rainbow road (skippable)
 
@@ -166,7 +167,9 @@ function updateRide(dt) {
   if (ride.t < 1 || ride.ended) return;
   ride.ended = true;
   $('#skip').classList.add('hidden');
-  showEnd();
+  // up in the clouds: the sky island, or "To be continued…" while it's still a preview
+  if (nextIsland()) enterIsland(game.island + 1, true);
+  else showEnd();
 }
 
 function showEnd() {
