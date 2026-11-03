@@ -240,3 +240,27 @@ export function makeJewel() {
   g.add(gem);
   return g;
 }
+
+// a soft white feather with a lilac tip, standing on its quill (the sky island's collectible)
+export function makeFeather() {
+  const g = new THREE.Group();
+  const vane = mesh(
+    new THREE.SphereGeometry(0.2, 10, 6),
+    material(0xffffff, { emissive: 0xf3ecff, emissiveIntensity: 0.3 }),
+  );
+  vane.scale.set(0.7, 2.2, 0.15);
+  vane.position.y = 0.45;
+  g.add(vane);
+  const tip = mesh(new THREE.SphereGeometry(0.12, 8, 6), material(0xc8a8ff));
+  tip.scale.set(0.8, 1.6, 0.2);
+  tip.position.y = 0.78;
+  g.add(tip);
+  const quill = mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.9, 5), material(0xe8ddc4));
+  quill.position.y = 0.4;
+  g.add(quill);
+  g.rotation.z = 0.25;
+  g.position.y = -0.35;
+  const holder = new THREE.Group(); // spins round the upright, whatever the feather's lean
+  holder.add(g);
+  return holder;
+}

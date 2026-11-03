@@ -37,4 +37,4 @@ The real Spartacus: half pitbull, half labrador, shiny black coat, thin white st
 
 ## IP note
 
-The straw hat and the "Chop-Chop fruit" name are One Piece nods. Fine for a private family game; **rename/redesign before sharing publicly**. The GitHub repo and Pages site are currently public.
+The straw hat and the "Chop-Chop fruit" name are One Piece nods; the Mini-Me mushroom is a Super Mario nod and the spiky blue Smash-Smash fruit a Sonic nod (Zoë's picks). Fine for a private family game; **rename/redesign before sharing publicly**. The GitHub repo and Pages site are currently public.
