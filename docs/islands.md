@@ -25,6 +25,7 @@ const island = {
   preview:false,             // still being built: the island before only sails on here in dev/?debug
   physics:{…},               // optional overrides: gravity, maxFall, speed, jump, water, bound, flap
   camera:{minY(pos), maxY, assist(dt)},   // optional camera hooks
+  sky:{day, night, ground},  // optional THREE.Colors: own sky/fog colours, hemisphere light from below
 
   tasks:{title, list:[{id, ic, t:()=>text, power?}]},   // ic = emoji icon, t = label text
   //   ids must be unique across the whole game; power:'grow' ticks itself when that fruit is eaten

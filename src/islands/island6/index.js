@@ -23,6 +23,7 @@ import {
   updateCheckpoint,
 } from './clouds.js';
 import { buildUpdraft, updateUpdraft } from './updraft.js';
+import { buildLandingShadow, updateLandingShadow } from './shadow.js';
 
 // Island 6, the sky island: little clouds floating round Lina's crystal palace, high above a sea
 // of clouds. Back home, Lina's wings unfold and she flaps an updraft under Spartacus, so he
@@ -60,6 +61,7 @@ function build() {
   buildPalace(spots.palace);
   finishClouds();
   buildUpdraft();
+  buildLandingShadow();
   const spawn = toWorld(0, 12);
   island.spawn = vec3(spawn.x, SPAWN_CLOUD[3], spawn.z);
 }
@@ -156,6 +158,13 @@ const island = {
   // Lina flaps the whole time, so Spartacus always floats: low gravity, a slow fall, flapping
   physics: { gravity: 16, maxFall: 7, water: false, flap: true },
   camera: { minY: () => CLOUD_SEA_Y + 1 },
+  // a deeper blue than the sea islands' pale sky, so white clouds stand out against it (and
+  // fade into blue in the distance); lilac light from below instead of green grass
+  sky: {
+    day: new THREE.Color(0x4f9be6),
+    night: new THREE.Color(0x18214d),
+    ground: new THREE.Color(0xb7a8e0),
+  },
   tasks: {
     title: 'Sky Island',
     list: [
@@ -198,7 +207,10 @@ const island = {
   ],
   build,
   enter,
-  update: updateUpdraft,
+  update(dt) {
+    updateUpdraft(dt);
+    updateLandingShadow();
+  },
   interact,
   bark(p) {
     if (unicorn.g.position.distanceTo(p) > 8) return;

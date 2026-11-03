@@ -75,3 +75,4 @@ Plus a "collect a number" task (feathers?) to reward exploring the edges.
 - **Checkpoints:** sinking into the cloud sea, or falling 8 below the last cloud with nothing underneath, poofs and pops him back onto the middle of the last cloud he stood on (0.6 s).
 - **Windy Steps:** five clouds from the ship up to the palace cloud; landing there ticks "Fly with Lina" and she tells the story.
 - **Updraft sparkles** (`updraft.js`): one `Points` of 100, only while he's in the air.
+- **Telling things apart** (Claudio's play-test: everything was white): the island has its own deeper blue `sky` (daylight.js reads `island.sky`), the cloud sea is a shady lilac blue, the clouds you land on are a sunlit warm white, and a soft round shadow (`shadow.js`) marks where Spartacus will land while he floats.

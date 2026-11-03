@@ -4,13 +4,20 @@
 import * as THREE from 'three';
 import { lerp } from '../core/util.js';
 import { scene, camera, sun, hemi, ambience } from '../core/renderer.js';
+import { currentIsland } from '../core/state.js';
 
 // night: 0 = full day … 1 = full night (eased towards `target`)
 export const daylight = { night: 0, target: 0 };
 export const isNight = () => daylight.night > 0.5;
 
 const FADE_TIME = 2.5;
-const SKY = { day: new THREE.Color(0xa8e6f7), night: new THREE.Color(0x1d2b52) };
+// an island can have its own sky with `sky:{day, night, ground}` (THREE.Colors; ground is the
+// hemisphere light's colour from below, green grass by default)
+const SKY = {
+  day: new THREE.Color(0xa8e6f7),
+  night: new THREE.Color(0x1d2b52),
+  ground: new THREE.Color(0x8fcf7a),
+};
 const SEA = { day: new THREE.Color(0x1a6f9e), night: new THREE.Color(0x0b2a48) };
 const SUN = { day: new THREE.Color(0xfff2d6), night: new THREE.Color(0xa9bcff) };
 const HEMI = { day: new THREE.Color(0xffffff), night: new THREE.Color(0x8fa6ff) };
@@ -52,7 +59,9 @@ export function updateDaylight(dt) {
   const step = dt / FADE_TIME;
   daylight.night += Math.max(-step, Math.min(step, daylight.target - daylight.night));
   const night = daylight.night,
-    colors = ambience.under ? SEA : SKY;
+    sky = currentIsland().sky ?? SKY,
+    colors = ambience.under ? SEA : sky;
+  hemi.groundColor.copy(sky.ground);
   scene.background.copy(colors.day).lerp(colors.night, night);
   scene.fog.color.copy(scene.background);
   sun.intensity = lerp(2.3, 0.55, night);
