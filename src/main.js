@@ -177,7 +177,12 @@ $('#winExplore').addEventListener('click', () => {
   canvas.focus();
 });
 $('#winGo').addEventListener('click', () => currentIsland().exit.run());
-$('#restart').addEventListener('click', restartFromBeginning);
+// the end panel: look around some more, or start over (a second tap, it loses the save)
+$('#endExplore').addEventListener('click', () => {
+  $('#end').classList.add('hidden');
+  canvas.focus();
+});
+armButton($('#restart'), 'Tap again to start over', restartFromBeginning);
 
 const JUMP_BUFFER = 0.15; // s a jump press is remembered, so pressing just before landing still jumps
 bindInput({

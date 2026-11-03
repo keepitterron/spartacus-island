@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { $, lerpAngle, vec3 } from '../../core/util.js';
+import { lerpAngle, vec3 } from '../../core/util.js';
 import { scene, camera, ambience, setUnderwater } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { game, isPlaying } from '../../core/state.js';
@@ -10,7 +10,7 @@ import { player } from '../../player/player.js';
 import { useUpCarried } from '../../systems/items.js';
 import { updatePowerHud } from '../../systems/powers.js';
 import { hideWin } from '../../game/tasks.js';
-import { enterIsland, nextIsland } from '../../game/flow.js';
+import { enterIsland, nextIsland, showEnd } from '../../game/flow.js';
 import { startSail } from '../../cutscenes/sail.js';
 
 // Ending of island 4: a big friendly whale swims under the ship and pushes it back up
@@ -134,8 +134,7 @@ function spoutThenEnd(dt) {
   ride.endShown = true;
   const next = nextIsland();
   if (!next) {
-    sfx.win();
-    $('#end').classList.remove('hidden');
+    showEnd();
     return;
   }
   game.state = 'play'; // startSail only starts from play
