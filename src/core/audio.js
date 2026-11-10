@@ -63,10 +63,11 @@ export function setMuted(muted) {
 
 export const sfx = {
   // a big dog's WOOF-WOOF: low growly body + chesty sub + breathy burst, second one a bit lower
-  bark() {
+  // scale < 1 makes it deeper (a giant dog)
+  bark(scale = 1) {
     for (const [delay, pitch] of [
-      [0, 1],
-      [0.24, 0.9],
+      [0, scale],
+      [0.24, 0.9 * scale],
     ]) {
       tone(240 * pitch, { to: 120 * pitch, duration: 0.22, type: 'sawtooth', volume: 0.26, delay });
       tone(120 * pitch, { to: 70 * pitch, duration: 0.26, type: 'sine', volume: 0.4, delay });
@@ -203,5 +204,50 @@ export const sfx = {
   whale() {
     tone(180, { to: 320, duration: 1.4, type: 'sine', volume: 0.14 });
     tone(320, { to: 200, duration: 1.6, type: 'sine', volume: 0.1, delay: 1.2 });
+  },
+  /* the funfair (island 7) */
+  // a jelly (or anything musical) playing one note
+  note(hz) {
+    tone(hz, { to: hz * 1.004, duration: 0.5, type: 'triangle', volume: 0.16 });
+    tone(hz * 2, { to: hz * 2, duration: 0.22, type: 'sine', volume: 0.05 });
+  },
+  // the cannon going off, and a firework bursting high up
+  boom() {
+    tone(110, { to: 32, duration: 0.55, type: 'sine', volume: 0.45 });
+    noise(0.5, { freq: 220, volume: 0.7 });
+    noise(0.25, { freq: 1400, volume: 0.25 });
+  },
+  bang() {
+    tone(170, { to: 55, duration: 0.3, type: 'sine', volume: 0.22 });
+    noise(0.35, { freq: 900, volume: 0.35 });
+    for (let i = 0; i < 6; i++)
+      noise(0.04, { freq: 3500 + i * 300, volume: 0.1, delay: 0.25 + i * 0.07 });
+  },
+  // a rocket whizzing up
+  whistle() {
+    tone(500, { to: 2300, duration: 0.9, type: 'sine', volume: 0.06 });
+    noise(0.8, { freq: 2600, volume: 0.05 });
+  },
+  whoosh() {
+    noise(0.55, { freq: 700, volume: 0.3 });
+    tone(260, { to: 620, duration: 0.5, type: 'sine', volume: 0.05 });
+  },
+  // a Fuzzle's happy squeak
+  squeak() {
+    tone(1300, { to: 1900, duration: 0.08, type: 'sine', volume: 0.06 });
+    tone(1700, { to: 2400, duration: 0.08, type: 'sine', volume: 0.05, delay: 0.09 });
+  },
+  // a giant paw coming down
+  stomp() {
+    tone(95, { to: 40, duration: 0.22, type: 'sine', volume: 0.3 });
+    noise(0.14, { freq: 220, volume: 0.3 });
+  },
+  tick() {
+    tone(1250, { to: 1250, duration: 0.04, type: 'square', volume: 0.04 });
+  },
+  // coaster wheels over a rail joint
+  clack() {
+    noise(0.03, { freq: 2400, volume: 0.14 });
+    tone(190, { to: 150, duration: 0.04, type: 'triangle', volume: 0.06 });
   },
 };

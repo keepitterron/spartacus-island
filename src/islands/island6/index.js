@@ -20,7 +20,8 @@ import { leoToShip, leoAboard } from '../../npcs/leo.js';
 import { ensureEduardoCrew } from '../island4/eduardo.js';
 import { BANDS } from '../island5/finale.js';
 import { completeTask } from '../../game/tasks.js';
-import { showEnd } from '../../game/flow.js';
+import { showEnd, nextIsland } from '../../game/flow.js';
+import { startRainbowSlide } from '../island7/arrive.js';
 import {
   CLOUD_SEA_Y,
   addCloud,
@@ -375,13 +376,16 @@ function putJewelInFountain() {
   spots.fountain.light({ quiet: true });
 }
 
-// the end of the sky island, for now: back at the ship, "To be continued…"
+// leaving the sky island: back at the ship, a rainbow slide down to the funfair (island 7)
 const atShip = (p) =>
   distXZ(p, toWorld(6, 16).x, toWorld(6, 16).z) < 2.5 && Math.abs(p.y - SPAWN_CLOUD[3]) < 1;
-const sailOn = () =>
-  showEnd(
-    'The Sky Jewel is home, the fountain sparkles, and Leo the magpie joined the crew! Where does the ship float next? Make up the story!',
-  );
+const sailOn = () => {
+  if (nextIsland()) startRainbowSlide();
+  else
+    showEnd(
+      'The Sky Jewel is home, the fountain sparkles, and Leo the magpie joined the crew! Where does the ship float next? Make up the story!',
+    );
+};
 
 function interact(p, dt) {
   updateCheckpoint(dt);
@@ -469,7 +473,7 @@ const island = {
     title: 'The fountain sparkles!',
     text: 'The Sky Jewel is home, Lina’s palace shines again, and Leo the magpie joined the crew!',
     tip: 'You can keep exploring and go back to the ship later.',
-    go: 'What happens next? ✨',
+    go: 'Slide down the rainbow! 🌈',
   },
   exit: { label: 'Sail', at: atShip, run: sailOn },
   build,

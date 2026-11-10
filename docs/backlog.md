@@ -6,6 +6,7 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 
 - **Island 5, Rainbow Reef**: live. Next: Zoë play-tests it on her phone. The unicorn is called Lina.
 - **Island 6, Cottoncrest Islets**: built and playable to "To be continued…", with Zoë's name, fruit looks, feathers and Leo joining the crew. See [island6.md](island6.md).
+- **Island 7, Jamboree Island**: built and playable as a surprise for Zoë (Nov 2026): a funfair of rides, the Mega-Me fruit and a fireworks finale that spells her name. Next: she plays it, then her answers to the questions in [island7.md](island7.md) (names, the Mega-Me fruit's look, who joins the crew, what happens next). Ideas kept for later: giant bowling, riding Leo as a Mini-Me dog, a carousel.
 - **Zoë's layouts** for Mossy Paw Woods and Bubbly Ocean (currently placeholders). Positions are island-local (`toWorld(x, z)` in each island), so her maps are a number edit. A next step could be moving those positions into a plain data object per island.
 
 ## Features

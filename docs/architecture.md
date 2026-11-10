@@ -30,10 +30,11 @@ src/
   player/
     player.js         player (state), stepPlayer physics (walk, run, jump, wade, paddle)
     pound.js          the ground pound
+    mega.js           Mega-Me: the timer and the giant's stomps
     dog.js            Spartacus model + animateDog
   models/items.js     small reusable models (plank, key, bone, acorn, flower, pillow, seed…)
   systems/            reusable gameplay building blocks (see systems.md)
-    items.js  collect.js  digs.js  powers.js  vines.js  hooks.js  hat.js
+    items.js  collect.js  digs.js  powers.js  vines.js  hooks.js  hat.js  rides.js
   npcs/               crew members that travel between islands: gull, mango, wasabi
   cutscenes/          sail.js, bubble.js (island-agnostic)
   game/
@@ -45,7 +46,7 @@ src/
     debug.js          window.__g helpers (dev / ?debug)
     progress.js       mid-island saves (islands with savesProgress)
   islands/
-    island1/ … island5/   one module per island (see islands.md)
+    island1/ … island7/   one module per island (see islands.md)
 ```
 
 ## Boot order (main.js)
@@ -62,7 +63,7 @@ ES modules can't reassign each other's `let`s, so mutable game state lives on ob
 
 - `game` (`core/state.js`): `state`, `island`, `islands`, `cutscenes`, `time` (seconds since boot, drives idle animation), `flagUp`, celebration, hint cooldown.
 - `followCam`: follow-camera `yaw`/`height`/`distance`.
-- `player` (`player/player.js`): `pos`, `vel`, `power`, `carrying`, and sub-states `swing`, `climb`, `zip`, `digTimer`, `placing`. Timers ending in `Timer`/`Cooldown` count down in seconds.
+- `player` (`player/player.js`): `pos`, `vel`, `power`, `carrying`, and sub-states `ride`, `swing`, `climb`, `zip`, `digTimer`, `placing`. Timers ending in `Timer`/`Cooldown` count down in seconds.
 - `currentIsland()` = the current island module; `isPlaying()`, `isInCutscene()` for the common state checks.
 
 There are a few circular imports (e.g. `player.js` ↔ `systems/vines.js`). They are fine because they only use each other inside functions, never at module top level. Keep it that way: don't call imported functions while a module is being evaluated, put that work in `build()`.
@@ -77,7 +78,9 @@ There are a few circular imports (e.g. `player.js` ↔ `systems/vines.js`). They
 | `play`                    | normal play                          | `startGame`, `enterIsland`                                                    |
 | `sail`, `bubble`, `whale` | cutscenes                            | registered in `game.cutscenes`; each has `update(dt)` and optionally `skip()` |
 
-Inside `play`, one of these drives the player each frame: `player.swing` → `updateSwing`, `player.climb` → `updateClimb`, `player.zip` → `updateZip`, otherwise `stepPlayer` (+ digging and item placing).
+Later islands add their own cutscenes the same way: `rainbowRide` (island 5), `rainbowSlide` and `fireworks` (island 7).
+
+Inside `play`, one of these drives the player each frame: `player.ride` → `ride.update` (a fairground ride, `systems/rides.js`), `player.swing` → `updateSwing`, `player.climb` → `updateClimb`, `player.zip` → `updateZip`, otherwise `stepPlayer` (+ digging and item placing).
 
 ## The frame (main.js `update`)
 

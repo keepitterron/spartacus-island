@@ -193,6 +193,7 @@ export function unicornAboard() {
   unicorn.g.position.copy(DECK_SPOT);
   unicorn.g.rotation.set(0, 0, 0);
   unicorn.g.scale.setScalar(0.55);
+  for (const wing of unicorn.wings) wing.visible = false; // they only work up in the sky
   unicorn.state = 'crew';
 }
 

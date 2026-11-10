@@ -79,6 +79,10 @@ export function restorePickups(island, { taken = [], count = 0 }) {
   if (collect) collect.count = count;
 }
 
+// the pickups of an island that are still out there (island 7: Leo flies to the nearest one)
+export const remainingPickups = (island) =>
+  pickups.filter((pickup) => pickup.island === island && !pickup.taken);
+
 // "Find 6 bones (2/6)" for the to-do list
 export const pickupText = (island, what) => {
   const collect = game.islands[island].collect;

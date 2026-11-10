@@ -8,6 +8,7 @@ import { sfx } from '../core/audio.js';
 import { terrainHeight } from '../world/terrain.js';
 import { player, SPEED } from './player.js';
 import { poundPose } from './pound.js';
+import { megaStomp } from './mega.js';
 
 // Spartacus: half pitbull, half labrador. Shiny black coat, thin white stripe down the
 // muzzle, white chest patch and paw tips, floppy ears, straw hat with a red band.
@@ -164,22 +165,25 @@ export function animateDog(dt, speed) {
     game.spinLeft -= turn;
     player.yaw += turn;
   }
-  dog.root.rotation.y = player.yaw;
-  dog.root.scale.setScalar(player.size); // Mini-Me
+  dog.root.rotation.set(0, player.yaw, 0);
+  // a ride can turn him any way up (the coaster's loop)
+  if (player.ride?.quaternion) dog.root.quaternion.copy(player.ride.quaternion);
+  dog.root.scale.setScalar(player.size); // Mini-Me and Mega-Me
   const moving = clamp(speed / SPEED, 0, 1);
   const prevPhase = player.gaitPhase;
-  player.gaitPhase += dt * (4 + speed * 1.9);
+  // a giant dog takes slow, heavy steps
+  player.gaitPhase += dt * (4 + speed * 1.9) * (player.giant ? 0.4 : 1);
   // a footstep each time a pair of paws comes down
   if (
     moving > 0.3 &&
     player.grounded &&
     Math.floor(player.gaitPhase / Math.PI) !== Math.floor(prevPhase / Math.PI)
   )
-    sfx.step(surfaceUnderfoot());
+    footstep();
   const digging = player.digTimer > 0;
   poseLegs({ time, moving, digging });
-  // a ground pound poses the body directly (its somersault must not be smoothed away)
-  const pound = poundPose();
+  // a ground pound (or a ride) poses the body directly: a somersault must not be smoothed away
+  const pound = poundPose() ?? player.ride?.pose?.();
   dog.body.rotation.x = pound
     ? pound.pitch
     : lerp(dog.body.rotation.x, bodyPitch(digging), Math.min(1, dt * 10));
@@ -207,6 +211,12 @@ export function animateDog(dt, speed) {
   dog.tongue.visible = barking && !player.carrying;
   dog.head.rotation.x = headPitch(barking, time);
   dog.head.rotation.z = Math.sin(time * 0.9) * 0.05;
+}
+
+// a quiet footstep, or with Mega-Me a stomp that shakes things
+function footstep() {
+  if (player.giant) megaStomp();
+  else sfx.step(surfaceUnderfoot());
 }
 
 // what the footsteps sound like: shallow water, wood (docks, bridges, anything built), sand

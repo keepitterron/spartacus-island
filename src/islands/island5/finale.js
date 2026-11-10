@@ -116,8 +116,10 @@ const skipRide = () => {
   if (game.state === 'rainbowRide') ride.t = 1;
 };
 
-// one coloured band of the road: a tube along the ship's path, a bit to one side and under it
-function addRoadBand(path, { color, offset, side }) {
+// one coloured band of a rainbow road: a tube along the ship's path, a bit to one side and
+// under it. Returns its geometry, drawn from the start as far as setDrawRange says (nothing yet).
+// Island 7's rainbow slide is made of these too.
+export function addRoadBand(path, { color, offset, side }) {
   const points = path.getPoints(60).map((p) =>
     p
       .clone()

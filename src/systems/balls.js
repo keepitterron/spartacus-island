@@ -82,12 +82,17 @@ export function updateBalls(dt) {
 
 // running into a ball kicks it the way Spartacus is going
 function kickByPlayer(ball) {
-  const reach = RADIUS + BALL_RADIUS,
+  const reach = RADIUS * player.size + BALL_RADIUS, // a Mega-Me dog kicks from further away
     dx = ball.pos.x - player.pos.x,
     dz = ball.pos.z - player.pos.z,
     dist = Math.hypot(dx, dz);
   const ballBottom = ball.pos.y - BALL_RADIUS;
-  if (dist >= reach || ballBottom > player.pos.y + 1.2 || ballBottom < player.pos.y - 0.8) return;
+  if (
+    dist >= reach ||
+    ballBottom > player.pos.y + 1.2 * player.size ||
+    ballBottom < player.pos.y - 0.8
+  )
+    return;
   const nx = dx / (dist || 1),
     nz = dz / (dist || 1);
   // move it out of his way, then kick with his speed towards it

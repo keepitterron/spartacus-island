@@ -264,3 +264,50 @@ export function makeFeather() {
   holder.add(g);
   return holder;
 }
+
+// a golden fairground ticket standing on its edge (island 7's pickups)
+export function makeTicket() {
+  const g = new THREE.Group(),
+    gold = material(0xffc93c, { metalness: 0.35, roughness: 0.4 });
+  g.add(mesh(new THREE.BoxGeometry(0.74, 0.44, 0.06), gold));
+  // a red star punched in the middle, on both faces
+  for (const side of [-1, 1]) {
+    const star = mesh(new THREE.CircleGeometry(0.13, 5), material(0xe8332f), {
+      castShadow: false,
+    });
+    star.position.z = side * 0.035;
+    star.rotation.y = side < 0 ? Math.PI : 0;
+    g.add(star);
+  }
+  // the torn-off stub at one end
+  const stub = mesh(new THREE.BoxGeometry(0.03, 0.44, 0.07), material(0xd99a1c));
+  stub.position.x = 0.24;
+  g.add(stub);
+  return g;
+}
+
+// a firework rocket on its stick: a striped body in `color`, a pointed nose and three fins
+export function makeRocket(color) {
+  const g = new THREE.Group(),
+    paint = material(color, { emissive: color, emissiveIntensity: 0.25 });
+  const body = mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.8, 10), paint);
+  body.position.y = 0.9;
+  g.add(body);
+  const band = mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.16, 10), material(0xffffff));
+  band.position.y = 0.9;
+  g.add(band);
+  const nose = mesh(new THREE.ConeGeometry(0.24, 0.42, 10), material(0xffd84d));
+  nose.position.y = 1.51;
+  g.add(nose);
+  const stick = mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 5), material(0xc48a54));
+  stick.position.y = 0.25;
+  g.add(stick);
+  for (let i = 0; i < 3; i++) {
+    const fin = mesh(new THREE.BoxGeometry(0.03, 0.26, 0.22), material(0xffffff));
+    const angle = (i / 3) * Math.PI * 2;
+    fin.position.set(Math.sin(angle) * 0.24, 0.6, Math.cos(angle) * 0.24);
+    fin.rotation.y = angle;
+    g.add(fin);
+  }
+  return g;
+}

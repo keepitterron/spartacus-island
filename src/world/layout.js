@@ -9,3 +9,5 @@ export const CENTER_5 = { x: 0, z: -1100 }; // Rainbow Reef: a ring of islets, f
 // the sky island: clouds at about sea level, past the end of island 5's sea so no water shows
 // under it (the height is faked with a sea of clouds and the fog)
 export const CENTER_6 = { x: 0, z: -1550 };
+// the funfair: back down on the sea, far past the sky island so its cloud sea is lost in the fog
+export const CENTER_7 = { x: 0, z: -2000 }; // Jamboree Island

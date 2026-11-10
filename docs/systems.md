@@ -21,7 +21,7 @@ addItem('pillow', { model: makePillow(), pos, heavy: false, name: 'pillow', lift
 
 ## Pickups (`systems/collect.js`)
 
-Spinning collectibles counted per island (bones, golden acorns). Configure `collect` on the island, then `addPickup(x, z, {y, island, pop})`. The task text: `pickupText(id,'bones')`.
+Spinning collectibles counted per island (bones, golden acorns). Configure `collect` on the island, then `addPickup(x, z, {y, island, pop})`. The task text: `pickupText(id,'bones')`. `remainingPickups(island)` lists the ones still out there (island 7: Leo flies to the nearest).
 
 ## Dig spots (`systems/digs.js`)
 
@@ -32,6 +32,8 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 `POWERS` defines each power: `name`, `icon`, `sparkleColors`, `signColor`, `bushColor`, `intro()`, `introMs`. `addFruit(x, z, {type, y, bush})` places one (bush = regrowing bush with a name sign). Eating sets `player.power` and flags (`player.superJump`, `player.canStretch`, `player.tiny`, `player.canSmash`) and completes any task with `power:type` on the current island.
 
 **Mini-Me** (`tiny`): `player.size` eases to `TINY.size` (0.45) and scales the model, the collision radius and `BODY_HEIGHT`, so he fits under anything lower than a full-size dog (cloud-wall holes, the crystal cubby's door); the camera comes closer, and he's lighter on Lina's wind (`TINY.gravity`). **Smash-Smash** (`canSmash`): running starts sooner (`MOVE.rollAfter`) and sets `player.rolling`; the dog curls up and tumbles, and island 6's cracked crystal walls burst when he rolls into them.
+
+**Mega-Me** (`giant`, `player/mega.js`): `player.size` eases to `MEGA.size` (3.5) for `MEGA.time` seconds (30), then `clearPower()` pops him back; the power badge counts down and he wobbles for the last few seconds. It's the only power that wears off, so a giant dog is never stuck being too big for something. While it lasts he's faster (`MEGA.speed`), jumps higher, wades where a small dog paddles, and anything up to `MEGA.step` (3) tall is a step, not a wall, so he walks over hedges and onto stall roofs. Every footstep is a stomp (`megaStomp`): a thump, dust, shaking palms (`stompReactions`) and the island's `stomp(pos)`. His woof is deeper (`sfx.bark(0.6)`). The tuning is `MEGA` in `player/player.js`.
 
 **Adding a power:** add an entry to `POWERS` and a texture to `fruitSkins`, then implement what it does, usually as an action (`chopAction`-style function returned from the island's `actions(p)`) or a physics flag read in `stepPlayer`.
 
@@ -50,6 +52,14 @@ Spinning collectibles counted per island (bones, golden acorns). Configure `coll
 ## Hat (`systems/hat.js`), Chop-Chop
 
 `addChoppable({x,y,z,onChop(c)})` registers something the hat can cut. `chopAction(p)` throws the hat at the nearest one; everything within 1.9 of the target is cut too.
+
+## Rides (`systems/rides.js`)
+
+A ride carries Spartacus along: island 7's cannon shot, gondola seat and coaster cart. `startRide(ride)` sets `player.ride`, and while it's set the main loop calls `ride.update(dt)` instead of walking him (like swing, climb and zip; the action button is off meanwhile). The ride moves `player.pos` itself and ends with `endRide(vel)`, which hands him back to normal movement with that velocity (a hop out).
+
+- `ride.pose()` may return `{pitch, stretch}` to pose his body directly (the cannon's somersaults), and `ride.quaternion` turns the whole dog any way up (the coaster's loop).
+- `jumpPressed()` reads a Jump press as "hop out"; `tooBigToRide()` tells a Mega-Me dog he doesn't fit (and returns true); `cameraBehind(heading, dt)` eases the camera round behind the way he's travelling unless the player is turning it.
+- Pickups and the island's `interact(p)` still run during a ride, so tickets on a flight path or along the track are collected on the way.
 
 ## Bark and pound reactions (`systems/reactions.js`)
 
@@ -82,6 +92,9 @@ Crew members who travel live in `src/npcs/`; island-only characters live in thei
 - **Leo** (`npcs/leo.js`): the magpie on the sky island. `placeLeo(spots, {jewel})` puts him on his nest with far perches, hiding bushes and the cloud he watches; `updateLeo(dt, {onSpotted})`, `distractLeo()` (a woof), `leoHome()`, `leoHappy()`, `leoToShip(onAboard)` and `leoAboard()` (crew: on the ship's figurehead). States `watch` (looking round, a pale wedge on the cloud shows where) | `curious` ("?") | `spotted` ("!") | `flying` | `away` (on a perch with the jewel for 4 s) | `distracted` | `happy` | `boarding` | `crew`. Sight is plain maths: range (12, or 6 for a Mini-Me dog), a view cone, and no bush in between; only on his cloud, never mid-flight. Updated from island 6 for now.
 - **Unicorn** (`npcs/unicorn.js`): met on island 5. `addUnicorn(x, z, {y, yaw})`, `colourStripe(i, color)` (one of her four grey mane/tail stripes gets its colour back, with a hop), `setHornGlow(k)`, `unicornFollow()`, `unicornBoard(onAboard)`, `unicornAboard()`, `unicornFly()` (off the ship, wings out, flapping along behind and to one side of Spartacus on the sky island). States `sad` | `happy` | `follow` | `boarding` | `crew` | `fly`. Updated from the main loop.
 
+- **Leo on island 7** (`islands/island7/scout.js`): perched on the welcome arch (`leoToPerch`); a woof sends him to the nearest golden ticket still to find (`sendLeo(pos)`), where he flutters for a few seconds. That module moves him there, since `updateLeo` only runs on the sky island.
+- **Fuzzles and Pip** (`islands/island7/fuzzles.js`): the funfair's folk, all drawn with four instanced meshes. `addFuzzles(x, z, {count, spread})`, `exciteFuzzles(pos, {reach, up, away})` (a woof, a stomp), `gatherFuzzles` / `scatterFuzzles` for the show.
+
 Pattern: each NPC has a `state` string and an `update…(dt)` function that switches over the states, one small helper per state. Riders are attached to `dog.head`; crew on the ship are attached to `ship`.
 
 ## Cutscenes
@@ -92,6 +105,8 @@ Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'na
 - `startBubble(onDone)`: island 3 → 4.
 - `startWhale()`: island 4 ending; it sails on to island 5 unless that's a `preview` (then dev/`?debug` only). `makeWhale()` builds the model (island 5's lagoon has one whose spout throws Spartacus up).
 - `startRainbowRide()` (`islands/island5/finale.js`): island 5 ending, the ship rides a rainbow road up into the sky.
+- `startRainbowSlide()` (`islands/island7/arrive.js`): island 6 ending, the ship slides down a rainbow to the funfair. The rainbow is part of island 7's scenery (`addRoadBand`, shared with the rainbow ride).
+- `startShow(origin, {onDone})` (`islands/island7/fireworks.js`): the fireworks finale, a list of timed events (rockets, pictures, the name). `encore(origin)` sends up one more afterwards.
 
 ## Tasks, celebration, hints (`game/`)
 

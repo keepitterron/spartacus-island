@@ -30,6 +30,12 @@ export function poundReactions(pos) {
   shoveBalls(pos, { reach: 5, push: 3, up: 10 });
 }
 
+// a Mega-Me footstep: palms shake and balls hop, a little less than for a ground pound
+export function stompReactions(pos) {
+  shakePalms(pos, 6);
+  shoveBalls(pos, { reach: 6, push: 2, up: 5 });
+}
+
 function shakePalms(pos, reach) {
   for (const palm of palms) {
     if (distXZ(pos, palm.x, palm.z) > reach || Math.abs(pos.y - palm.ground) > 4) continue;

@@ -9,9 +9,9 @@ These came from Zoë and are the whole point of the game. Check every new featur
   - Items dropped in water float back to where they were found, in a visible bubble, with sparkles.
 - **Cute even when challenging.** Challenge comes from timing, platforming and figuring things out. Her references: Rayman, Sackboy, Humans Fall Flat, Untitled Goose Game.
 - **One power at a time.** Each fruit gives a power; eating another swaps it. Bushes regrow, so swapping can be part of a puzzle.
-- **The friend you rescue helps on the next island.** Mango (parrot) fetches things on island 3; Wasabi (axolotl) is the breathing bubble on island 4; Eduardo (crab) pinches through ropes on island 5; Lina (the unicorn) flaps an updraft on the sky island (island 6).
+- **The friend you rescue helps on the next island.** Mango (parrot) fetches things on island 3; Wasabi (axolotl) is the breathing bubble on island 4; Eduardo (crab) pinches through ropes on island 5; Lina (the unicorn) flaps an updraft on the sky island (island 6); Leo (magpie) finds golden tickets at the funfair (island 7).
 - **Every new thing gets a one-time hint toast** (`hintOnce`). If a kid can't tell what to do, that's a bug.
-- **Zoë writes the story.** Ask her (via Claudio) rather than inventing big story beats. She enjoys story-making more than drawing.
+- **Zoë writes the story.** Ask her (via Claudio) rather than inventing big story beats. She enjoys story-making more than drawing. (Island 7 is the exception: Claudio asked for it as a surprise for her. Its names and story are placeholders she can change, listed in [island7.md](island7.md).)
 - **Never lose progress by accident.** Destructive buttons (restart, start over) need a second tap (`armButton`).
 - **Spartacus is Spartacus.** He's the real family dog in his straw hat, and that never changes: no outfits, accessories, skins or dress-up.
 
@@ -37,4 +37,4 @@ The real Spartacus: half pitbull, half labrador, shiny black coat, thin white st
 
 ## IP note
 
-The straw hat and the "Chop-Chop fruit" name are One Piece nods; the Mini-Me mushroom is a Super Mario nod and the spiky blue Smash-Smash fruit a Sonic nod (Zoë's picks). Fine for a private family game; **rename/redesign before sharing publicly**. The GitHub repo and Pages site are currently public.
+The straw hat and the "Chop-Chop fruit" name are One Piece nods; the Mini-Me mushroom is a Super Mario nod and the spiky blue Smash-Smash fruit a Sonic nod (Zoë's picks); the Mega-Me fruit is the mushroom's big yellow twin (a placeholder, also a Mario nod). Fine for a private family game; **rename/redesign before sharing publicly**. The GitHub repo and Pages site are currently public.
