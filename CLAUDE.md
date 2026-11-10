@@ -8,7 +8,7 @@ Vite + plain ES modules + three.js 0.160.0, deployed as a PWA to https://keepitt
 
 - **[docs/design-rules.md](docs/design-rules.md) before changing gameplay.** No conflict, failing costs seconds never progress, one power at a time, every new thing gets a hint, Zoë writes the story, Spartacus never changes (no dress-up). Its feedback log lists what she has already said no to.
 - [docs/architecture.md](docs/architecture.md): folders, boot order, state machine, the frame.
-- [docs/islands.md](docs/islands.md): the island interface and how to add a level. Island designs: [island5.md](docs/island5.md), [island6.md](docs/island6.md).
+- [docs/islands.md](docs/islands.md): the island interface and how to add a level. Island designs: [island5.md](docs/island5.md), [island6.md](docs/island6.md), [island7.md](docs/island7.md).
 - [docs/systems.md](docs/systems.md): items, pickups, digs, powers, vines, hooks, hat, NPCs, cutscenes.
 - [docs/code-style.md](docs/code-style.md): naming, parameters, comments, modern JS. **Follow it for every change.**
 - [docs/testing.md](docs/testing.md): debug console (`window.__g`) and the play-test checklist.

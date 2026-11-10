@@ -46,10 +46,11 @@ import island3 from './islands/island3/index.js';
 import island4 from './islands/island4/index.js';
 import island5 from './islands/island5/index.js';
 import island6 from './islands/island6/index.js';
+import island7 from './islands/island7/index.js';
 
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
-const ISLANDS = [island1, island2, island3, island4, island5, island6];
+const ISLANDS = [island1, island2, island3, island4, island5, island6, island7];
 for (const island of ISLANDS) {
   game.islands[island.id] = island;
   initTasks(island);
@@ -278,11 +279,13 @@ function updateWorld(dt) {
   updateWoof(dt);
 }
 
-// move the player the way their current mode moves them (swinging, climbing, zip line,
-// or ordinary walking, which is the only mode that can dig or place items)
+// move the player the way their current mode moves them (a fairground ride, swinging, climbing,
+// zip line, or ordinary walking, which is the only mode that can dig or place items)
 function stepPlayerForState(dt) {
-  const onRopeOrVine = player.swing || player.climb || player.zip; // before this step changes it
-  if (player.swing) updateSwing(dt);
+  // before this step changes it
+  const onRopeOrVine = player.ride || player.swing || player.climb || player.zip;
+  if (player.ride) player.ride.update(dt);
+  else if (player.swing) updateSwing(dt);
   else if (player.climb) updateClimb(dt);
   else if (player.zip) updateZip(dt);
   else stepPlayer(dt);
@@ -292,9 +295,10 @@ function stepPlayerForState(dt) {
   updatePlacing(dt);
 }
 
-// horizontal speed while walking freely in play; 0 during swing, climb or zip
+// horizontal speed while walking freely in play; 0 on a ride and during swing, climb or zip
 function groundSpeed() {
-  const walking = game.state === 'play' && !player.swing && !player.climb && !player.zip;
+  const walking =
+    game.state === 'play' && !player.ride && !player.swing && !player.climb && !player.zip;
   return walking ? Math.hypot(player.vel.x, player.vel.z) : 0;
 }
 

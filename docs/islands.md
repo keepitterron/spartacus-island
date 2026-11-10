@@ -11,7 +11,9 @@ Each island is one module, `src/islands/islandN/index.js`, that default-exports 
 | 5   | Rainbow Reef                 | none: every fruit comes back                          | the unicorn             | Four islets, four colour stars for the unicorn's rainbow: Crab Cove (Eduardo pinches ropes, slam a crate), the sea stack (Boing → hooks → vine), the tide pools (night lowers the tide), the kelp garden (chop, beach balls on plates, Wasabi). At night the rainbow comes back and lifts the ship into the sky. Design: [island5.md](island5.md) |
 | 6   | Cottoncrest Islets (sky)     | Mini-Me (shrink) and Smash-Smash (roll through walls) | Leo the magpie          | Float on Lina's updraft cloud to cloud, squeeze through gaps, smash crystal walls, find a fork, sneak up to Leo's nest and swap it for the Sky Jewel, light the fountain. Design: [island6.md](island6.md)                                                                                                                                        |
 
-Layouts for islands 3 and 4 are **placeholders** until Zoë draws them.
+| 7 | Jamboree Island (funfair) | Mega-Me (GIANT for 30 s) | — (Zoë picks) | Five show rockets, one per ride: bounce up the Jelly Jumps, fly from the Kaboom Cannon, step over the Secret Garden's hedge as a giant, wake the Big Wheel with a giant woof and ride it to the Sky Deck, loop the Loop-de-Woof coaster. Leo finds golden tickets. At night, light the fireworks. Design: [island7.md](island7.md) |
+
+Layouts for islands 3 and 4 are **placeholders** until Zoë draws them. Island 7 was built as a surprise for her, so its names and story are placeholders too.
 
 ## The island interface
 
@@ -47,6 +49,7 @@ const island = {
   actions(p),       // context-button actions: return {label, run} or null
   bark(p),          // what barking does here
   pound(p),         // optional: a ground-pound landed at p (island 5 breaks a crate with it)
+  stomp(p),         // optional: a Mega-Me footstep landed at p (island 7's Fuzzles hop)
   saveState(),      // optional, with savesProgress: anything the systems don't save (crew, gates…)
   loadState(state), // optional: put that back on Continue
 };
@@ -68,11 +71,11 @@ Every action check should test both **distance and height** (`Math.abs(p.y-targe
 
 ## Adding an island: step by step
 
-Island 5 is the latest example (`islands/island5/`, a land island past the underwater one).
+Island 5 is a good example (`islands/island5/`, a land island past the underwater one); island 7 (`islands/island7/`) keeps its whole map in a `layout.js`.
 
 1. **Story first.** Get Zoë's story, or a design you make together (see [island5.md](island5.md)).
 2. **Place it in the world.** Add `CENTER_N` to `world/layout.js` and pick a `zMax` so its terrain band doesn't overlap a neighbour. Islands past z=−460 need their own water: call `addSea(cx, cz, {width, depth})` in `build()` (island 5's patch also covers the route from island 4).
-3. **Copy a template.** `islands/island2/index.js` (land, compact), `island4/` (underwater, split into files) or `island5/` (big, several islets, mid-island saves). Point `toWorld(x, z)` at the new centre and set `id`, `center`, `name`.
+3. **Copy a template.** `islands/island2/index.js` (land, compact), `island4/` (underwater, split into files), `island5/` (big, several islets, mid-island saves) or `island7/` (big, one module per toy, the map as data). Point `toWorld(x, z)` at the new centre and set `id`, `center`, `name`.
 4. **Terrain.** Write `height(x,z)`: base height, features, then the shore falloff (`lerp(h, -4, smoothstep(e, e + 2.5, r))`). Water deeper than −0.55 is for paddling, deeper than −3.5 is open sea (the current carries Spartacus back to the island centre). In `build()` call `buildGround(cx, cz, {size, segments, palette})` first.
 5. **Spawn + dock.** Set `island.spawn` in `build()` and add a `dock()`. Keep the area behind the spawn clear (the camera sits there).
 6. **Content.** Use the systems: `addPickup`, `addItem`, `addDig`, `addFruit`, `addHook`, `climbVine`/`zipVine`, `addChoppable`. Positions in `toWorld(x, z)` so a new map is a number edit.

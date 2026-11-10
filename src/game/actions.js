@@ -17,7 +17,13 @@ import { allTasksDone } from './tasks.js';
 //   2. the island's own actions(p)  (give an item, open a gate, grow, chop…)
 //   3. swing, drop, grab, dig, and in the air the ground pound
 export function currentAction() {
-  const busy = player.digTimer > 0 || player.placing || player.swing || player.climb || player.zip;
+  const busy =
+    player.digTimer > 0 ||
+    player.placing ||
+    player.ride ||
+    player.swing ||
+    player.climb ||
+    player.zip;
   if (!isPlaying() || busy) return null;
   const island = currentIsland(),
     pos = player.pos;
@@ -67,7 +73,7 @@ export function bark() {
   if (game.state === 'start' || isInCutscene() || player.barkCooldown > 0) return;
   player.barkCooldown = 0.45;
   player.barkTimer = 0.35;
-  sfx.bark();
+  sfx.bark(player.giant ? 0.6 : 1); // a giant dog has a giant, deep woof
   if (!woofSprite) {
     woofSprite = textSprite('WOOF!', '#ffd84d');
     woofSprite.scale.set(3.2, 0.8, 1);
@@ -86,8 +92,10 @@ export function updateWoof(dt) {
   }
   woofTimer -= dt;
   woofSprite.visible = true;
-  woofSprite.position.copy(player.pos).add(vec3(0, 2.6 + (WOOF_TIME - woofTimer) * 1.2, 0));
+  // above his head, however big he is right now
+  const big = Math.max(1, player.size);
+  woofSprite.position.copy(player.pos).add(vec3(0, 2.6 * big + (WOOF_TIME - woofTimer) * 1.2, 0));
   woofSprite.material.opacity = clamp(woofTimer / 0.4, 0, 1);
-  const size = 1.6 + (WOOF_TIME - woofTimer);
+  const size = (1.6 + (WOOF_TIME - woofTimer)) * big;
   woofSprite.scale.set(size * 2, size / 2, 1);
 }

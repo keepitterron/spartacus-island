@@ -9,7 +9,7 @@ import { sfx } from '../core/audio.js';
 import { burst, textSprite, onFontsReady } from '../core/fx.js';
 import { toast, actionKeyName } from '../core/ui.js';
 import { completeTask } from '../game/tasks.js';
-import { player } from '../player/player.js';
+import { player, MEGA } from '../player/player.js';
 
 // a painted skin per fruit, so each power is recognisable by its pattern too (Mini-Me and
 // Smash-Smash have whole models instead, see fruitModels)
@@ -131,6 +131,16 @@ export const POWERS = {
     intro: () => 'Smash-Smash fruit! Run fast to roll into a ball and smash cracked walls!',
     introMs: 3800,
   },
+  // the only power that wears off by itself (player/mega.js)
+  mega: {
+    name: 'Mega-Me',
+    icon: '🦖',
+    sparkleColors: [0xffc21f, 0xfff3b0, 0xe8332f],
+    signColor: '#ffd84d',
+    bushColor: 0x58a83a,
+    intro: () => 'Mega-Me fruit! Spartacus is GIANT for a little while. Stomp, stomp!',
+    introMs: 3800,
+  },
 };
 
 // {type, model, x, z, y (rest height), regrow (seconds until it's back)}
@@ -151,13 +161,23 @@ export function addFruit(x, z, { type, y, bush }) {
 
 // Mini-Me and Smash-Smash have their own shapes (Zoë's picks): a red mushroom with white spots,
 // and a spiky blue ball, like a hedgehog curled up
-const fruitModels = { mini: makeMushroom, smash: makeSpikyBall };
+// Mega-Me is the Mini-Me mushroom's big twin: fatter, yellow with red spots (a placeholder
+// look until Zoë says what it is)
+const fruitModels = {
+  mini: () => makeMushroom(),
+  smash: makeSpikyBall,
+  mega: () => {
+    const g = makeMushroom({ cap: 0xffc21f, spots: 0xe8332f });
+    g.scale.set(1.5, 1.35, 1.5);
+    return g;
+  },
+};
 
-function makeMushroom() {
+function makeMushroom({ cap: capColor = 0xe8332f, spots: spotColor = 0xffffff } = {}) {
   const g = new THREE.Group();
   const cap = mesh(
     new THREE.SphereGeometry(0.42, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-    material(0xe8332f, { flatShading: false, roughness: 0.5 }),
+    material(capColor, { flatShading: false, roughness: 0.5 }),
   );
   cap.position.y = 0.05;
   g.add(cap);
@@ -165,7 +185,7 @@ function makeMushroom() {
   for (let i = 0; i < 6; i++) {
     const angle = (i / 6) * Math.PI * 2,
       up = i % 2 ? 0.55 : 0.9;
-    const spot = mesh(new THREE.SphereGeometry(0.1, 8, 6), material(0xffffff), {
+    const spot = mesh(new THREE.SphereGeometry(0.1, 8, 6), material(spotColor), {
       castShadow: false,
     });
     spot.scale.set(1, 0.35, 1);
@@ -178,7 +198,7 @@ function makeMushroom() {
     spot.rotateX(Math.PI / 2);
     g.add(spot);
   }
-  const top = mesh(new THREE.SphereGeometry(0.1, 8, 6), material(0xffffff), { castShadow: false });
+  const top = mesh(new THREE.SphereGeometry(0.1, 8, 6), material(spotColor), { castShadow: false });
   top.scale.set(1, 0.35, 1);
   top.position.y = 0.46;
   g.add(top);
@@ -314,11 +334,24 @@ export function setPower(type) {
   player.canStretch = type === 'stretch';
   player.tiny = type === 'mini';
   player.canSmash = type === 'smash';
+  player.giant = type === 'mega';
+  if (player.giant) player.megaTime = MEGA.time;
   updatePowerHud();
   if (prev && prev !== type) toast(`Swapped to ${POWERS[type].name}! One power at a time.`, 3000);
   else toast(POWERS[type].intro(), POWERS[type].introMs);
   // "Eat a … fruit" tasks on this island are marked with power:'…'
   for (const task of currentIsland().tasks.list) if (task.power === type) completeTask(task.id);
+}
+
+// no power at all again (Mega-Me wearing off)
+export function clearPower() {
+  player.power = null;
+  player.superJump = false;
+  player.canStretch = false;
+  player.tiny = false;
+  player.canSmash = false;
+  player.giant = false;
+  updatePowerHud();
 }
 
 export function updatePowerHud() {
@@ -329,5 +362,7 @@ export function updatePowerHud() {
   }
   hud.classList.remove('hidden');
   const power = POWERS[player.power];
-  $('#powerName').textContent = `${power.icon} ${power.name}`;
+  // Mega-Me counts down the seconds it has left
+  const timeLeft = player.giant ? ` ${Math.max(0, Math.ceil(player.megaTime))}` : '';
+  $('#powerName').textContent = `${power.icon} ${power.name}${timeLeft}`;
 }

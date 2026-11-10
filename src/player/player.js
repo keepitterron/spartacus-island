@@ -12,6 +12,7 @@ import { terrainHeight } from '../world/terrain.js';
 import { startClimb } from '../systems/vines.js';
 import { POWERS } from '../systems/powers.js';
 import { poundAction, holdPound, landPound, updatePoundRecovery } from './pound.js';
+import { megaSize, updateMega } from './mega.js';
 
 // Spartacus's physical state. Sub-states: swing / climb / zip are set by their systems
 // and replace normal walking while active; digTimer>0 or placing locks movement.
@@ -53,6 +54,11 @@ export const player = {
   size: 1, // 1 = full size, eases to TINY.size and back; scales his body, radius and height
   canSmash: false, // Smash-Smash power: running curls him into a rolling ball
   rolling: false, // rolling as a ball right now (breaks cracked walls he rolls into)
+  giant: false, // Mega-Me power: grows him to MEGA.size until megaTime runs out
+  megaTime: 0, // seconds of Mega-Me left
+  // a fairground ride carrying him (cannon, gondola, coaster cart): {update(dt), pose?(),
+  // quaternion?}. While set it replaces normal walking, like swing / climb / zip.
+  ride: null,
 };
 export const RADIUS = 0.45,
   BODY_HEIGHT = 1.1, // what can bump his head: a wall lower than this above his feet stops him
@@ -77,6 +83,9 @@ export const MOVE = {
 // Mini-Me: how small he gets (a full-size dog is too tall for the little gaps), and how much
 // lighter he is on Lina's wind (he floats a bit higher)
 export const TINY = { size: 0.45, gravity: 0.8 };
+// Mega-Me: how big he gets and for how long (seconds), and what being huge changes: longer
+// strides, a higher jump, and he steps up onto anything up to `step` tall (hedges, stalls)
+export const MEGA = { size: 3.5, time: 30, speed: 1.35, jump: 1.5, step: 3 };
 // Floating on Lina's wind (islands with physics.flap), also live-tweakable (__g.fly):
 //   flapSpeed: the upward kick of a flap; flaps: how many before landing again;
 //   glideFall: top fall speed while Jump is held. Gentle on purpose (Rayman, not Flappy Bird).
@@ -114,6 +123,7 @@ export function stepPlayer(dt) {
   const { forward, right, amount } = readMoveInput(locked);
   const heavy = player.carrying?.heavy;
   updateSize(dt);
+  updateMega(dt);
   player.wading = phys.water && pos.y < 0;
   const current = player.wading ? seaCurrent(pos) : null;
   updateSprint(dt, { amount, heavy });
@@ -122,6 +132,7 @@ export function stepPlayer(dt) {
     (heavy ? 0.6 : 1) *
     (player.sprinting ? MOVE.sprint : 1) *
     (player.wading ? MOVE.wadeSpeed : 1) *
+    (player.giant ? MEGA.speed : 1) *
     phys.speed;
   const move = cameraRelative(forward, right);
   // ease towards the wanted velocity: snappy on the ground, floatier in the air
@@ -139,9 +150,11 @@ export function stepPlayer(dt) {
   const wasSwimming = player.swimming,
     fallSpeed = -vel.y;
   // in water deeper than he can stand in, the surface holds him up like ground
+  // (a giant dog's legs are longer, so he wades where a small one has to paddle)
   const ground = groundHeightUnder(pos, prevY),
-    deep = phys.water && ground < SWIM_Y;
-  landOn(deep ? SWIM_Y : ground);
+    swimY = SWIM_Y * (player.giant ? player.size : 1),
+    deep = phys.water && ground < swimY;
+  landOn(deep ? swimY : ground);
   player.swimming = deep && player.grounded;
   if (player.swimming && !wasSwimming && fallSpeed > 4) splashDown();
   if (phys.bound) keepInBound(pos, phys.bound);
@@ -211,12 +224,15 @@ function updateSprint(dt, { amount, heavy }) {
   if (player.grounded) kickDust(dt);
 }
 
-// shrinking (Mini-Me) and growing back take about a third of a second
+// shrinking (Mini-Me) and growing back take about a third of a second; Mega-Me half a second
 function updateSize(dt) {
-  const target = player.tiny ? TINY.size : 1,
-    step = dt * 2;
-  player.size = clamp(player.size + clamp(target - player.size, -step, step), TINY.size, 1);
+  const target = megaSize() ?? (player.tiny ? TINY.size : 1),
+    step = dt * (Math.abs(target - player.size) > 0.6 ? 5 : 2);
+  player.size = clamp(player.size + clamp(target - player.size, -step, step), TINY.size, MEGA.size);
 }
+
+// anything up to this high above his feet is a step, not a wall
+const stepHeight = () => (player.giant ? MEGA.step : STEP_HEIGHT);
 
 // little sand puffs from the back paws while running
 function kickDust(dt) {
@@ -269,7 +285,7 @@ function updateJump(dt, { locked, heavy, phys }) {
   if (locked || player.jumpBuffer <= 0 || player.coyoteTimer <= 0) return;
   // no Boing-Boing from the water: the hops out are ordinary ones
   const boing = player.superJump && !heavy && !player.swimming;
-  player.vel.y = jumpSpeed(heavy, boing) * phys.jump;
+  player.vel.y = jumpSpeed(heavy, boing) * phys.jump * (player.giant ? MEGA.jump : 1);
   player.coyoteTimer = 0;
   player.jumpBuffer = 0;
   player.grounded = false;
@@ -320,7 +336,7 @@ function collideSides(prevY, { move, amount, heavy }) {
   const radius = RADIUS * player.size,
     height = BODY_HEIGHT * player.size;
   for (const c of colliders)
-    if (c.top > prevY + STEP_HEIGHT && pos.y + height > c.bottom) {
+    if (c.top > prevY + stepHeight() && pos.y + height > c.bottom) {
       if (isWalkingIntoVine(c, { move, amount, heavy })) {
         startClimb(c.tree);
         return true;
@@ -346,7 +362,7 @@ function isWalkingIntoVine(c, { move, amount, heavy }) {
 function groundHeightUnder(pos, prevY) {
   let support = terrainHeight(pos.x, pos.z);
   for (const c of colliders)
-    if (c.top <= prevY + STEP_HEIGHT && inFootprint(c, pos, 0.15))
+    if (c.top <= prevY + stepHeight() && inFootprint(c, pos, 0.15))
       support = Math.max(support, c.top);
   return support;
 }
