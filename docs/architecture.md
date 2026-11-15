@@ -1,11 +1,13 @@
 # Architecture
 
-Plain JavaScript ES modules, bundled by Vite. `three` is pinned to **0.160.0** (the version the game was built against). No framework, no assets except the font and icons: every model is built from three.js primitives and every sound is synthesised.
+Plain JavaScript ES modules, bundled by Vite. `three` is pinned to **0.160.0** (the version the game was built against). No framework. Islands 1–7 are built entirely in code from three.js primitives; island 8 is laid out in Blender and loaded from a `.glb` ([levels.md](levels.md)). Every sound is synthesised.
 
 ## Folders
 
 ```
 index.html            HUD, touch controls, overlays (start, win, end, error)
+levels/               islandN.blend: islands laid out in Blender (levels.md)
+tools/levels/         Blender scripts: export.py (.blend -> .glb), make_test_island.py
 src/
   main.js             boot: register islands, build the world in order, wire menus/input, main loop
   style.css
@@ -23,6 +25,7 @@ src/
   world/              things shared by all islands
     layout.js         island centres CENTER_1..CENTER_5
     terrain.js        addTerrain / terrainHeight dispatcher, buildGround()
+    level.js          Blender levels: makeLevel, ground -> height grid, colliders, markers
     props.js          palm, rock, rockTop, crate, scatter, dock
     ocean.js          sea patches: floor + animated water surface (addSea)
     ship.js           the ship, its bubble, placeShipAt, onDeck, addBucket
@@ -46,14 +49,15 @@ src/
     debug.js          window.__g helpers (dev / ?debug)
     progress.js       mid-island saves (islands with savesProgress)
   islands/
-    island1/ … island7/   one module per island (see islands.md)
+    island1/ … island8/   one module per island (see islands.md); island8/level.glb is its Blender export
 ```
 
 ## Boot order (main.js)
 
+0. **Load levels:** islands with a `level` (Blender, [levels.md](levels.md)) load their `.glb` first, with a top-level `await` (hence the `es2022` build target): their terrain comes from it.
 1. **Register** each island: `game.islands[island.id] = island`, `initTasks(island)`, `addTerrain(island.zMax, island.height)`. All terrain must exist before anything is built, because props sit on `terrainH`.
 2. **Build** every island in play order (`island.build()`), then `buildSky()`, then `island.buildLate()`.
-   **Order matters:** all scenery uses one seeded generator (`rand()` in `core/util.js`). Building in a different order, or adding a `rand()` call in the middle of an existing island, moves trees/flowers/coral around. Put new random scenery at the end of your island's `build()`, or add a new island after the others.
+   **Order matters:** all scenery uses one seeded generator (`rand()` in `core/util.js`). Building in a different order, or adding a `rand()` call in the middle of an existing island, moves trees/flowers/coral around. Put new random scenery at the end of your island's `build()`, or add a new island after the others. Islands with a `level` build with their own seed and then put `rand` back where it was, so they never shift anyone else's scenery.
    `buildLate()` is for things that don't use `rand()` (fruit bushes, dig spots).
 3. Wire HUD/menus and input, start `frame()`.
 

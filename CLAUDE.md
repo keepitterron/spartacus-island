@@ -8,7 +8,8 @@ Vite + plain ES modules + three.js 0.160.0, deployed as a PWA to https://keepitt
 
 - **[docs/design-rules.md](docs/design-rules.md) before changing gameplay.** No conflict, failing costs seconds never progress, one power at a time, every new thing gets a hint, Zoë writes the story, Spartacus never changes (no dress-up). Its feedback log lists what she has already said no to.
 - [docs/architecture.md](docs/architecture.md): folders, boot order, state machine, the frame.
-- [docs/islands.md](docs/islands.md): the island interface and how to add a level. Island designs: [island5.md](docs/island5.md), [island6.md](docs/island6.md), [island7.md](docs/island7.md).
+- [docs/islands.md](docs/islands.md): the island interface and how to add a level.
+- [docs/levels.md](docs/levels.md): laying out islands in Blender (`levels/*.blend` → `.glb`): ground, colliders, markers. Island 8 is the example. Island designs: [island5.md](docs/island5.md), [island6.md](docs/island6.md), [island7.md](docs/island7.md).
 - [docs/systems.md](docs/systems.md): items, pickups, digs, powers, vines, hooks, hat, NPCs, cutscenes.
 - [docs/code-style.md](docs/code-style.md): naming, parameters, comments, modern JS. **Follow it for every change.**
 - [docs/testing.md](docs/testing.md): debug console (`window.__g`) and the play-test checklist.
@@ -18,6 +19,7 @@ Vite + plain ES modules + three.js 0.160.0, deployed as a PWA to https://keepitt
 
 - `npm run dev`: http://localhost:5173/spartacus-island/ (debug helpers on)
 - `npm run build` / `npm run preview`: production build incl. service worker
+- `npm run levels`: re-export `levels/*.blend` to each island's `level.glb` (needs Blender)
 - `npm run lint` (oxlint), `npm run format` (oxfmt), `npm run check` (lint + format check + build, run before pushing)
 
 ## Rules of thumb
@@ -30,3 +32,4 @@ Vite + plain ES modules + three.js 0.160.0, deployed as a PWA to https://keepitt
 - Every action check tests distance **and** height.
 - Readable over dense: descriptive names, one subject + an options object, short "why" comments (see docs/code-style.md).
 - Keep assets local (no CDNs): the game must work offline.
+- Edit a Blender level in its `.blend`, then re-export: never hand-edit a `level.glb`. Commit both.

@@ -4,7 +4,7 @@ import '@fontsource/fredoka/latin-600.css';
 import '@fontsource/fredoka/latin-700.css';
 import './style.css';
 import * as THREE from 'three';
-import { $, lerpAngle, vec3 } from './core/util.js';
+import { $, lerpAngle, rand, vec3 } from './core/util.js';
 import { renderer, scene, camera, canvas, followSun } from './core/renderer.js';
 import { game, currentIsland } from './core/state.js';
 import { burst, updateParticles } from './core/fx.js';
@@ -47,10 +47,13 @@ import island4 from './islands/island4/index.js';
 import island5 from './islands/island5/index.js';
 import island6 from './islands/island6/index.js';
 import island7 from './islands/island7/index.js';
+import island8 from './islands/island8/index.js';
 
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
-const ISLANDS = [island1, island2, island3, island4, island5, island6, island7];
+const ISLANDS = [island1, island2, island3, island4, island5, island6, island7, island8];
+// islands made in Blender (world/level.js) load their .glb first: their terrain comes from it
+await Promise.all(ISLANDS.map((island) => island.level?.load()));
 for (const island of ISLANDS) {
   game.islands[island.id] = island;
   initTasks(island);
@@ -58,9 +61,14 @@ for (const island of ISLANDS) {
 }
 // Build order matters: all scenery shares one seeded random sequence (see core/util.js rand).
 // game.building tells systems which island the digs, seeds and items they add belong to
+// A Blender island uses a random sequence of its own and then puts the shared one back where it
+// was, so editing its level never moves any other island's scenery (or the clouds, built next).
 for (const island of ISLANDS) {
+  const shared = rand.seed();
+  if (island.level) rand.reseed(island.id);
   game.building = island.id;
   island.build();
+  if (island.level) rand.reseed(shared);
 }
 buildSky();
 buildStars();
@@ -163,7 +171,10 @@ function pickIsland(chip, island) {
   clearTimeout(picker.timer);
   picker.timer = setTimeout(disarmPicker, ARM_TIME);
 }
+// islands still being built (`preview`) only get a chip in dev / ?debug
+const showPreviews = import.meta.env.DEV || new URLSearchParams(location.search).has('debug');
 for (const island of ISLANDS) {
+  if (island.preview && !showPreviews) continue;
   const chip = document.createElement('button');
   chip.className = 'cta ghost chip';
   chip.textContent = island.id;

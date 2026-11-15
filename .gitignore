@@ -4,3 +4,5 @@ dev-dist
 .DS_Store
 *.local
 .claude/settings.local.json
+# Blender backups
+*.blend1

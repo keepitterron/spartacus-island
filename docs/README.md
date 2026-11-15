@@ -9,6 +9,7 @@ Live: https://keepitterron.github.io/spartacus-island/
 | [design-rules.md](design-rules.md) | **Before changing any gameplay.** Zoë's rules for the game.                                                  |
 | [architecture.md](architecture.md) | You need to find your way around `src/`, the loop or the state machine.                                      |
 | [islands.md](islands.md)           | You're adding or changing an island (level). Includes a step-by-step for island 5.                           |
+| [levels.md](levels.md)             | You're laying out an island in Blender (the level pipeline: ground, colliders, markers).                     |
 | [systems.md](systems.md)           | You're using or adding a building block: items, pickups, digs, powers, vines, hooks, NPCs, cutscenes, hints. |
 | [code-style.md](code-style.md)     | Before writing any code: names, parameters, comments, lint and format.                                       |
 | [testing.md](testing.md)           | You want to run, debug or play-test the game (debug console, manual checklist).                              |
