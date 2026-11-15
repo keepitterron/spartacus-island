@@ -11,7 +11,8 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "check": "oxlint && oxfmt --check && vite build"
+    "check": "oxlint && oxfmt --check && vite build",
+    "levels": "sh tools/levels/export-all.sh"
   },
   "dependencies": {
     "@fontsource/fredoka": "^5.3.0",

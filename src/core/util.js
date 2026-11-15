@@ -14,15 +14,22 @@ export function lerpAngle(a, b, t) {
   const diff = ((((b - a + Math.PI) % TURN) + TURN) % TURN) - Math.PI;
   return a + diff * t;
 }
-// mulberry32: a tiny, fast PRNG that returns 0..1 and repeats for the same seed
+// mulberry32: a tiny, fast PRNG that returns 0..1 and repeats for the same seed.
+// random.reseed(seed) starts the sequence over from a new seed; random.seed() is where it is now
+// (reseed with it later to carry on from there).
 export function seededRandom(seed) {
-  return function () {
+  const random = function () {
     seed |= 0;
     seed = (seed + 0x6d2b79f5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  random.reseed = (newSeed) => {
+    seed = newSeed;
+  };
+  random.seed = () => seed;
+  return random;
 }
 // one seeded generator for all scenery: islands must be built in the same order every time
 // (see main.js) or trees, flowers and coral move around

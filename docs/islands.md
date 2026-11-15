@@ -13,6 +13,8 @@ Each island is one module, `src/islands/islandN/index.js`, that default-exports 
 
 | 7 | Jamboree Island (funfair) | Mega-Me (GIANT for 30 s) | — (Zoë picks) | Five show rockets, one per ride: bounce up the Jelly Jumps, fly from the Kaboom Cannon, step over the Secret Garden's hedge as a giant, wake the Big Wheel with a giant woof and ride it to the Sky Deck, loop the Loop-de-Woof coaster. Leo finds golden tickets. At night, light the fireworks. Design: [island7.md](island7.md) |
 
+| 8 | Big Test Island (`preview`) | none (Boing-Boing, Stretchy) | — | **Made in Blender** ([levels.md](levels.md)): a big sandbox to try the level pipeline. Ten bones, a Boing-only mesa, a fort with crate stairs, a hill with a flag, a lagoon swing route. Placeholder name and tasks. |
+
 Layouts for islands 3 and 4 are **placeholders** until Zoë draws them. Island 7 was built as a surprise for her, so its names and story are placeholders too.
 
 ## The island interface
@@ -70,6 +72,8 @@ actions(p) {
 Every action check should test both **distance and height** (`Math.abs(p.y-target.y)<…`), or the button shows up from the ground under a tree top.
 
 ## Adding an island: step by step
+
+An island can be laid out in **Blender** instead: ground, scenery, colliders and markers in a `.blend`, story and puzzles in code. See [levels.md](levels.md); the steps below still apply, except the terrain and placement steps.
 
 Island 5 is a good example (`islands/island5/`, a land island past the underwater one); island 7 (`islands/island7/`) keeps its whole map in a `layout.js`.
 
