@@ -17,7 +17,7 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 
 ## Tech
 
-- **Blender levels** ([levels.md](levels.md)), live with island 8 as a test. Next: rebuild an existing island bigger in Blender (island 1 is a good first one), sail into level islands, a few CC0 models (Kenney, Quaternius) in a level, instanced palms/flowers for big maps. Rapier physics only when a level needs rotated or mesh colliders, overhangs or real stacking props (it would replace `stepPlayer`).
+- **Blender levels** ([levels.md](levels.md)), live with island 8 as a test. Next: rebuild an existing island bigger in Blender (island 1 is a good first one), sail into level islands, instanced palms/flowers for big maps. Rapier physics only when a level needs rotated or mesh colliders, overhangs or real stacking props (it would replace `stepPlayer`).
 - **Phone performance**: instancing for repeated props (flowers, coral, seaweed strips, rocks) and merging static meshes per island.
 - **Automated smoke tests** (Playwright): blocked on BUG-1 for software-GL runners; see [testing.md](testing.md).
 - Upgrade three.js past 0.160 (check `CapsuleGeometry`, lighting and colour management for visual changes).

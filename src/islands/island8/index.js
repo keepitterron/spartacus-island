@@ -41,8 +41,8 @@ function build() {
   scatter(CENTER_8.x, CENTER_8.z, {
     radius: 58,
     allowed: (x, z) => supportHeight(x, z, Infinity) - terrainHeight(x, z) < 0.05,
-    bushes: 30,
-    flowers: 150,
+    bushes: 12,
+    flowers: 90,
   });
 }
 

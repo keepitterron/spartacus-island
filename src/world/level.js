@@ -170,7 +170,9 @@ function prepareScenery(object) {
 }
 
 // custom property collider = "box" or "cyl": an axis-aligned box, or an upright cylinder,
-// around the object's bounds (rotate boxes in 90° steps: colliders don't turn)
+// around the object's bounds (rotate boxes in 90° steps: colliders don't turn).
+// A `radius` property makes the cylinder that wide round the object's origin instead: a tree's
+// trunk, not its whole canopy.
 function addColliderFor(object) {
   const bounds = new THREE.Box3().setFromObject(object);
   const x = (bounds.min.x + bounds.max.x) / 2,
@@ -178,7 +180,11 @@ function addColliderFor(object) {
     hw = (bounds.max.x - bounds.min.x) / 2,
     hd = (bounds.max.z - bounds.min.z) / 2,
     height = { bottom: bounds.min.y, top: bounds.max.y };
-  if (object.userData.collider === 'cyl') addCylinder(x, z, { r: Math.max(hw, hd), ...height });
+  const { collider, radius } = object.userData;
+  if (collider === 'cyl' && radius) {
+    const origin = object.getWorldPosition(vec3());
+    addCylinder(origin.x, origin.z, { r: radius, ...height });
+  } else if (collider === 'cyl') addCylinder(x, z, { r: Math.max(hw, hd), ...height });
   else addBox(x, z, { hw, hd, ...height });
 }
 

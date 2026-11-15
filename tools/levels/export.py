@@ -23,12 +23,22 @@ def output_path():
     return os.path.join(ROOT, "src", "islands", f"island{match.group(1)}", "level.glb")
 
 
+# everything in the scene except the Library collection (a palette of models to copy from)
+def select_level_objects():
+    library = bpy.data.collections.get("Library")
+    skip = set(library.all_objects) if library else set()
+    for obj in bpy.context.view_layer.objects:
+        obj.select_set(obj not in skip)
+
+
 def main():
     path = output_path()
+    select_level_objects()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     bpy.ops.export_scene.gltf(
         filepath=path,
         export_format="GLB",
+        use_selection=True,
         export_extras=True,  # custom properties: collider, length, look, color…
         export_yup=True,
         export_apply=True,  # apply modifiers (sculpt with a Subdivision or Displace and it still exports)

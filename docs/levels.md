@@ -4,14 +4,16 @@ An island can be laid out in [Blender](https://www.blender.org/) (free) instead 
 
 Island 8 (Big Test Island, `preview`, so dev / `?debug` only) is the example. It is about ten times the area of Hook Rock Bay.
 
-| File                               | What                                                           |
-| ---------------------------------- | -------------------------------------------------------------- |
-| `levels/island8.blend`             | The level source: open this in Blender                         |
-| `src/islands/island8/level.glb`    | The export the game loads (commit it: the site has no Blender) |
-| `src/islands/island8/index.js`     | The island module: tasks, hints, hooks, exit                   |
-| `src/world/level.js`               | The loader: ground → heights, colliders, markers               |
-| `tools/levels/export.py`           | Exports a `.blend` with the right settings                     |
-| `tools/levels/make_test_island.py` | Made `island8.blend` from scratch (a one-off; it overwrites)   |
+| File                                | What                                                           |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `levels/island8.blend`              | The level source: open this in Blender                         |
+| `src/islands/island8/level.glb`     | The export the game loads (commit it: the site has no Blender) |
+| `src/islands/island8/index.js`      | The island module: tasks, hints, hooks, exit                   |
+| `src/world/level.js`                | The loader: ground → heights, colliders, markers               |
+| `tools/levels/export.py`            | Exports a `.blend` with the right settings                     |
+| `tools/levels/make_test_island.py`  | Made `island8.blend` from scratch (a one-off; it overwrites)   |
+| `tools/levels/dress_test_island.py` | Adds the model Library and places models round island 8        |
+| `levels/assets/quaternius/`         | The CC0 models (originals) and their credits                   |
 
 ## Workflow
 
@@ -38,7 +40,7 @@ Objects are recognised by **name**. Blender adds `.001`, `.002` to copies; they'
 | a mesh named `ground`              | The island's terrain. Its top surface is baked into a height grid (half a metre apart) that becomes the island's `height(x, z)`. It's drawn the game's way (painted grass and sand by height), unless custom property `look` = `model`. |
 | any other mesh                     | Scenery, as modelled. A plain colour becomes the game's flat-shaded material; textured models (asset packs) keep their own.                                                                                                             |
 | custom property `collider` = `box` | Also a collider: an upright box around the object's bounds. Colliders don't rotate, so rotate boxes in 90° steps.                                                                                                                       |
-| custom property `collider` = `cyl` | Also a collider: an upright cylinder around its bounds (posts, towers, mesas).                                                                                                                                                          |
+| custom property `collider` = `cyl` | Also a collider: an upright cylinder around its bounds (posts, towers, mesas). With `radius` too: a cylinder that wide round the object's origin (a tree's trunk).                                                                      |
 | custom property `invisible` = 1    | Not drawn (an invisible wall, with `collider`).                                                                                                                                                                                         |
 
 Custom properties are in the **Object Properties** tab (orange square) → **Custom Properties** → **New**.
@@ -106,9 +108,23 @@ const island = {
 3. Add it at the end of `ISLANDS` in `main.js`, keep `preview: true` until Zoë has played it.
 4. `npm run levels`, `npm run dev`.
 
-## Assets
+## Assets (models from packs)
 
-Models from free CC0 packs (e.g. [Kenney](https://kenney.nl/assets), [Quaternius](https://quaternius.com/)) can be imported into the `.blend` (File → Import → glTF / FBX / OBJ) and placed like any mesh; they're exported into the level, so they stay local and work offline. Keep an eye on the `.glb` size (it's precached for offline play, limit 8 MB): reuse models rather than importing a whole pack, and keep the ground smooth-shaded (a flat-shaded ground exports four times bigger).
+Island 8 is dressed with 23 free [Quaternius](https://quaternius.com/) models (CC0: public domain): trees, willows, berry bushes, flowers, water lilies, mossy rocks and logs, a tent, a campfire, benches, barrels, crates, a well and two boats. The originals are in `levels/assets/quaternius/` (with a README crediting the packs); GitHub mirrors are the easy source, since the packs' own sites are often blocked for scripts.
+
+**The Library.** `island8.blend` has a **Library** collection with one copy of each model, already scaled for a dog about 1.1 m tall and recoloured to the game's palette (Quaternius greens and browns are muted; the game's are bright). It's excluded from the scene and never exported. Each model is also marked as an asset, so in Blender: open an **Asset Browser**, pick **Current File**, and drag a tree onto the island. Or copy one with **Alt+D** (a linked duplicate: the `.glb` stores the mesh once however many you place).
+
+**Placing them:** a dragged-in model is plain scenery. Give it a custom property `collider` (`box` for crates, benches, boats; `cyl` for barrels, rocks, stumps) if Spartacus should bump into it or stand on it. For trees use `collider` = `cyl` plus `radius` = `0.45`: the collider is then just the trunk, not the whole canopy. Leave flowers, bushes, grass and lilies without colliders.
+
+**Adding a model:** put its `.glb` in `levels/assets/quaternius/`, add it to `MODELS` (with its scale) in `tools/levels/dress_test_island.py`, and add any new colours to `PALETTE` there (the script prints colours it doesn't know). Then re-run it.
+
+**`tools/levels/dress_test_island.py`** rebuilds the Library and the **Dressing** collection (where it placed the models: the pirate camp by the dock, shade trees, the lagoon's willows and lilies, the mossy glade, the fort's supplies, the well, the summit bench, a grove). It only replaces those two collections, but hand edits _inside_ Dressing are lost when it runs, so once you start arranging things by hand in Blender, stop running it (or move your models to another collection).
+
+```bash
+blender -b levels/island8.blend --python tools/levels/dress_test_island.py && npm run levels
+```
+
+**Keep it light:** a few groups of things with space between them, not a carpet. Every model is a few draw calls on a phone, and the `.glb` is precached for offline play (limit 8 MB; island 8 is 2.2 MB, half of it the ground). Models are exported smooth-shaded (shared corners, a smaller file); the game draws them flat-shaded anyway. Keep the ground smooth-shaded too (flat exports four times bigger). Skip anything that breaks Zoë's rules (weapons, traps, skulls, enemies).
 
 ## Not done yet
 
