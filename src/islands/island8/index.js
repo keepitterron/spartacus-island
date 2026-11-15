@@ -1,7 +1,8 @@
 // Island 8, Big Test Island: the first island made in Blender (levels/island8.blend, see
 // docs/levels.md). About ten times the area of Hook Rock Bay, to try the level pipeline on a big
 // map: the hill, fort, lagoon, bones, fruit and palms are all placed in Blender. The name, story
-// and tasks are placeholders until Zoë makes it hers, so it's a `preview` (dev / ?debug only).
+// and tasks are placeholders until Zoë makes it hers. Reached from its chip on the start screen
+// (island 7's dock still ends the game).
 import * as THREE from 'three';
 import { distXZ, vec3 } from '../../core/util.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
@@ -90,7 +91,6 @@ const island = {
   center: CENTER_8,
   name: 'Big Test Island',
   zMax: -2300,
-  preview: true,
   level,
   height: level.height,
   physics: { bound: { x: CENTER_8.x, z: CENTER_8.z, r: 88 } },

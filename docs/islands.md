@@ -13,7 +13,7 @@ Each island is one module, `src/islands/islandN/index.js`, that default-exports 
 
 | 7 | Jamboree Island (funfair) | Mega-Me (GIANT for 30 s) | — (Zoë picks) | Five show rockets, one per ride: bounce up the Jelly Jumps, fly from the Kaboom Cannon, step over the Secret Garden's hedge as a giant, wake the Big Wheel with a giant woof and ride it to the Sky Deck, loop the Loop-de-Woof coaster. Leo finds golden tickets. At night, light the fireworks. Design: [island7.md](island7.md) |
 
-| 8 | Big Test Island (`preview`) | none (Boing-Boing, Stretchy) | — | **Made in Blender** ([levels.md](levels.md)): a big sandbox to try the level pipeline. Ten bones, a Boing-only mesa, a fort with crate stairs, a hill with a flag, a lagoon swing route. Placeholder name and tasks. |
+| 8 | Big Test Island | none (Boing-Boing, Stretchy) | — | **Made in Blender** ([levels.md](levels.md)): a big sandbox to try the level pipeline. Ten bones, a Boing-only mesa, a fort with crate stairs, a hill with a flag, a lagoon swing route. Placeholder name and tasks. |
 
 Layouts for islands 3 and 4 are **placeholders** until Zoë draws them. Island 7 was built as a surprise for her, so its names and story are placeholders too.
 
@@ -26,7 +26,7 @@ const island = {
   height(x,z){…},            // terrain height function
   underwater:false,          // switches fog/background, hides the gull
   savesProgress:false,       // mid-island saves (game/progress.js); see saveState/loadState below
-  preview:false,             // still being built: the island before only sails on here in dev/?debug
+  preview:false,             // still being built: only in dev/?debug (no start-screen chip, the island before doesn't sail on here)
   physics:{…},               // optional overrides: gravity, maxFall, speed, jump, water, bound, flap
   camera:{minY(pos), maxY, assist(dt)},   // optional camera hooks
   sky:{day, night, ground},  // optional THREE.Colors: own sky/fog colours, hemisphere light from below

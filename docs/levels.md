@@ -2,7 +2,7 @@
 
 An island can be laid out in [Blender](https://www.blender.org/) (free) instead of in code. You sculpt the ground, place scenery and drop markers (empties) where things go, then export a `.glb` that the game loads. The island's code then only holds what's special about it: its story, tasks and puzzles.
 
-Island 8 (Big Test Island, `preview`, so dev / `?debug` only) is the example. It is about ten times the area of Hook Rock Bay.
+Island 8 (Big Test Island, reached from its chip on the start screen) is the example. It is about ten times the area of Hook Rock Bay.
 
 | File                                | What                                                           |
 | ----------------------------------- | -------------------------------------------------------------- |
@@ -19,7 +19,7 @@ Island 8 (Big Test Island, `preview`, so dev / `?debug` only) is the example. It
 
 1. Open `levels/islandN.blend` in Blender and edit it.
 2. Save, then export: `npm run levels` (needs `blender` on your PATH; on a Mac, `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender npm run levels`). Or in Blender: **Scripting** tab → open `tools/levels/export.py` → **Run Script**.
-3. `npm run dev` and go to the island (`__g.go(8)`, or its chip on the start screen in dev). Vite reloads the page when the `.glb` changes.
+3. `npm run dev` and go to the island (`__g.go(8)`, or its chip on the start screen). Vite reloads the page when the `.glb` changes.
 
 Don't export from **File → Export → glTF** by hand unless you tick **Include → Custom Properties** and **Data → Mesh → Apply Modifiers**: the script does that for you.
 
@@ -105,7 +105,7 @@ const island = {
 
 1. Copy `levels/island8.blend` to `levels/islandN.blend` (or start fresh: a mesh named `ground` is all it needs).
 2. Copy `src/islands/island8/` to `src/islands/islandN/`, set `id`, `name`, tasks, and add `CENTER_N` to `world/layout.js` (far enough along −z, see [islands.md](islands.md)).
-3. Add it at the end of `ISLANDS` in `main.js`, keep `preview: true` until Zoë has played it.
+3. Add it at the end of `ISLANDS` in `main.js`, with `preview: true` if it should stay hidden from the start screen (dev / `?debug` only) while you build it.
 4. `npm run levels`, `npm run dev`.
 
 ## Assets (models from packs)
