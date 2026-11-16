@@ -33,6 +33,7 @@ export function bindInput({ onKey, onJump, onBark, onAct }) {
   bindCameraDrag();
   bindTouchControls({ onJump, onBark, onAct });
   blockPageZoom();
+  bindReleaseOnLeave();
 }
 
 // A zoomed-in page can't be zoomed back out mid-game (every touch is a game control), so never
@@ -72,6 +73,20 @@ function bindKeyboard(onKey) {
   });
 }
 
+// Let go of every touch control. Phones don't always send the "finger lifted" event (a
+// notification or the control centre slides over, the app is switched), and a stick that never
+// hears it keeps walking forward. So leaving the page lets go, like it does for the keys.
+const touchReleases = [];
+function releaseAllTouches() {
+  for (const release of touchReleases) release();
+}
+function bindReleaseOnLeave() {
+  addEventListener('blur', releaseAllTouches);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) releaseAllTouches();
+  });
+}
+
 // dragging on the 3D view turns the camera (sideways) and raises/lowers it (up/down)
 function bindCameraDrag() {
   canvas.addEventListener('pointerdown', (e) => {
@@ -90,6 +105,10 @@ function bindCameraDrag() {
   });
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('lostpointercapture', endDrag);
+  touchReleases.push(() => {
+    drag.id = null;
+  });
 }
 function endDrag(e) {
   if (e.pointerId === drag.id) drag.id = null;
@@ -122,8 +141,9 @@ function bindTouchControls({ onJump, onBark, onAct }) {
     stick.x = dx / STICK_RADIUS;
     stick.y = dy / STICK_RADIUS;
   }
+  // a new touch always takes the stick over, even if the last finger never said it let go
+  // (otherwise a lost "lifted" event leaves the stick stuck with no way to grab it again)
   zone.addEventListener('pointerdown', (e) => {
-    if (stickPointerId !== null) return;
     stickPointerId = e.pointerId;
     zone.setPointerCapture(e.pointerId);
     const rect = base.getBoundingClientRect();
@@ -135,15 +155,20 @@ function bindTouchControls({ onJump, onBark, onAct }) {
   zone.addEventListener('pointermove', (e) => {
     if (e.pointerId === stickPointerId) moveStick(e);
   });
-  const endStick = (e) => {
-    if (e.pointerId !== stickPointerId) return;
+  const releaseStick = () => {
     stickPointerId = null;
     stick.x = 0;
     stick.y = 0;
     knob.style.transform = '';
   };
+  const endStick = (e) => {
+    if (e.pointerId === stickPointerId) releaseStick();
+  };
   zone.addEventListener('pointerup', endStick);
   zone.addEventListener('pointercancel', endStick);
+  // the browser dropped the touch without a pointerup (e.g. the zone was hidden under the finger)
+  zone.addEventListener('lostpointercapture', endStick);
+  touchReleases.push(releaseStick);
   const jump = $('#btnJump');
   jump.addEventListener('pointerdown', (e) => {
     e.preventDefault();
@@ -154,6 +179,8 @@ function bindTouchControls({ onJump, onBark, onAct }) {
   });
   jump.addEventListener('pointerup', releaseJump);
   jump.addEventListener('pointercancel', releaseJump);
+  jump.addEventListener('lostpointercapture', releaseJump);
+  touchReleases.push(releaseJump);
   $('#btnBark').addEventListener('pointerdown', (e) => {
     e.preventDefault();
     onBark();

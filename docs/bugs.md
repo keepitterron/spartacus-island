@@ -22,6 +22,12 @@
 
 **Repro:** `npm run build && npm run preview`, then open http://localhost:4173/spartacus-island/ in headless Chrome with `--use-gl=swiftshader --enable-unsafe-swiftshader` and watch the console for `CONTEXT_LOST_WEBGL`.
 
+## Fixed since v1
+
+| Bug                                                                                                                                                                                                                                                                                                                                                               | Fix                                                                                                                                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Phones: the touch stick could get stuck walking forward, and touching it again did nothing. The stick only let go on its own finger's "lifted" event, which phones sometimes never send (a notification or the control centre slides over, the app is switched, an edge swipe), and it ignored new touches while it thought that finger was still down (Nov 2026) | A new touch always takes the stick over; a lost touch (`lostpointercapture`) counts as lifting the finger; leaving the page (blur, hidden) lets go of the stick, Jump and the camera drag, like the keyboard already did (`core/input.js`) |
+
 ## Fixed in v1 (Vite migration, Oct 2026)
 
 | Bug                                                                                                | Fix                                                                                     |
