@@ -1,92 +1,61 @@
 import * as THREE from 'three';
-import { distXZ, lerp, smoothstep, rand, vec3 } from '../../core/util.js';
-import { scene, LOW_POWER } from '../../core/renderer.js';
+import { distXZ, lerp, rand, vec3 } from '../../core/util.js';
+import { scene } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
-import { addCylinder, addBox } from '../../core/colliders.js';
-import { terrainHeight, buildGround } from '../../world/terrain.js';
+import { addCylinder, addBox, supportHeight } from '../../core/colliders.js';
+import { terrainHeight } from '../../world/terrain.js';
 import { CENTER_1, CENTER_2 } from '../../world/layout.js';
-import { palm, rock, crate, scatter, dock } from '../../world/props.js';
+import { makeLevel } from '../../world/level.js';
+import { rock, scatter } from '../../world/props.js';
+import { placeShipAt } from '../../world/ship.js';
 import { makePlank, makeKey, makeBoot, makeBone } from '../../models/items.js';
 import { player } from '../../player/player.js';
 import { addItem, carryItem, useUpCarried, placeItem } from '../../systems/items.js';
 import { addPickup, pickupText } from '../../systems/collect.js';
-import { addFruit } from '../../systems/powers.js';
 import { addDig, digNear } from '../../systems/digs.js';
 import { gull, perchGull, wakeGull } from '../../npcs/gull.js';
 import { startSail } from '../../cutscenes/sail.js';
 import { completeTask } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
 import { hintTooHigh } from '../../game/interact.js';
+import levelUrl from './level.glb?url';
 
 // Island 1, the starter island: bones, the Boing-Boing fruit, a sleepy seagull, the lighthouse
 // bell, a broken bridge, a buried key and a treasure chest with the map to island 2.
+// Laid out in Blender (levels/island1.blend, made by tools/levels/make_island1.py from the map in
+// docs/island1.md): the terrain, the cave, camp, grove ledges, reeds and ruins come from there,
+// and every place this code builds at is a `spot:` marker.
 
-const POND = { x: 8, z: -8 };
-const HILL = { x: -11, z: -15, r: 9, h: 4.5 }; // r: radius, h: height of the bump
+const level = makeLevel(levelUrl, { center: CENTER_1 });
 
-// distance from the island centre to the shoreline at `angle`, wobbly so it isn't a circle
-function shoreRadius(angle) {
-  return 30 + Math.sin(angle * 3) * 1.8 + Math.sin(angle * 5 + 1) * 1.0;
-}
-
-// pond profile by distance from its centre: islet in the middle, sloping down to a -2 basin,
-// blending back up to the land height `landY` at the rim
-function pondHeight(dist, landY) {
-  if (dist < 2.5) return 1;
-  if (dist < 3.5) return lerp(1, -2, dist - 2.5);
-  if (dist < 12) return -2;
-  return lerp(-2, landY, smoothstep(12, 14, dist));
-}
-
-// terrain: gentle bumps, the hill, the pond, a flat beach ring, then dropping into the sea
-function height(x, z) {
-  const r = Math.hypot(x, z),
-    shore = shoreRadius(Math.atan2(z, x));
-  let h = 1.2 + 0.35 * Math.sin(x * 0.3) * Math.cos(z * 0.27) + 0.2 * Math.sin(x * 0.7 + z * 0.55);
-  const hillDist = Math.hypot(x - HILL.x, z - HILL.z);
-  if (hillDist < HILL.r) {
-    const t = 1 - hillDist / HILL.r;
-    h += HILL.h * t * t * (3 - 2 * t); // smoothstep-shaped bump
-  }
-  const pondDist = Math.hypot(x - POND.x, z - POND.z);
-  if (pondDist < 14) h = pondHeight(pondDist, h);
-  h = lerp(h, 0.35, smoothstep(shore - 6, shore - 2.5, r));
-  return lerp(h, -4, smoothstep(shore, shore + 2.5, r));
-}
-
-// Fixed spots; build() adds more fields to some of them (meshes, heights, animation state).
-const GULL_POST = { x: -1.8, z: 35.3, top: 1.6 }; // the seagull's post on the dock
+// Filled in by build() from the level's spots.
+const GULL_POST = {}; // {x, z, top}: the top of the beached boat's mast
 // + bell, deckTop, swing (bell swing amount 1..0), rockX/rockZ/rockTop (the rock you climb to reach it)
-const LIGHTHOUSE = { x: -19, z: -3 };
-const FRUIT_ROCK = { x: 21, z: 6 }; // rock with the Boing-Boing fruit; + top
-// bridge over the pond along x at z, deck height y; the broken gap runs from x gapStart to gapEnd
-const BRIDGE = { z: -8, y: 1.3, gapStart: -2.5, gapEnd: 3.5 };
-// on top of the hill; + y, lid, flag, openAmount (lid 0..1), opening
-const CHEST = { x: HILL.x, z: HILL.z };
-const LOG_PILE = { x: -12, z: 7 }; // where the plank is
+const LIGHTHOUSE = {};
+// bridge along x at z, deck height y, from `from` to `to`; the broken gap runs from gapStart to gapEnd
+const BRIDGE = {};
+const POND = {}; // {x, z, radius}
+// on top of the ruins hill; + y, lid, flag, openAmount (lid 0..1), opening
+const CHEST = {};
+const DOCK = {}; // {x, zFrom, zTo}
 const lilies = []; // {g, phase}: bobbing lily pads
 let plankGhost, mapScroll; // see-through plank showing where it goes; the map that pops out of the chest
 
+// from the ship at the dock, round the east of the island and north to Hook Rock Bay
 const sailPath = new THREE.CatmullRomCurve3([
-  vec3(5.6, 0, 33.5),
-  vec3(14, 0, 47),
-  vec3(40, 0, 32),
-  vec3(48, 0, -40),
-  vec3(40, 0, -108),
-  vec3(22, 0, -128),
+  vec3(5.6, 0, 72),
+  vec3(22, 0, 86),
+  vec3(62, 0, 74),
+  vec3(88, 0, 20),
+  vec3(86, 0, -50),
+  vec3(56, 0, -108),
+  vec3(22, 0, -130),
   vec3(5.6, 0, CENTER_2.z + 26.5),
 ]);
-
-function addGullPost() {
-  const post = mesh(new THREE.CylinderGeometry(0.24, 0.26, 4, 7), material(0x8b5a3c));
-  post.position.set(GULL_POST.x, GULL_POST.top - 2, GULL_POST.z);
-  scene.add(post);
-  addCylinder(GULL_POST.x, GULL_POST.z, { r: 0.26, bottom: -3, top: GULL_POST.top });
-}
 
 // the bell hangs from a gallows on the lighthouse deck; returns the swinging bell group
 function addBell(g) {
@@ -229,10 +198,10 @@ function addBridgeSection(xFrom, xTo) {
   addBox((xFrom + xTo) / 2, BRIDGE.z, { hw: length / 2, hd: 0.9, bottom: -3, top: BRIDGE.y });
 }
 
-// pond: a bridge with a gap (fix it with the plank) + lily pads to hop across
+// the bridge to the islet, with a gap the plank fills
 function buildBridge() {
-  addBridgeSection(-7.5, BRIDGE.gapStart);
-  addBridgeSection(BRIDGE.gapEnd, 6.2);
+  addBridgeSection(BRIDGE.from, BRIDGE.gapStart);
+  addBridgeSection(BRIDGE.gapEnd, BRIDGE.to);
   plankGhost = mesh(
     new THREE.BoxGeometry(BRIDGE.gapEnd - BRIDGE.gapStart, 0.16, 1.6),
     new THREE.MeshBasicMaterial({
@@ -247,16 +216,16 @@ function buildBridge() {
   scene.add(plankGhost);
 }
 
-// six lily pads in an arc 10.5 m from the pond centre; every other one (and the last, bigger
-// one, which holds a bone) has a flower
+// six lily pads in an arc across the south of the pond, well clear of the islet (the bridge is
+// the only way there); every other one (and the last, bigger one, which holds a bone) has a flower
 function buildLilyPads() {
-  const angles = [100, 79, 58, 37, 16, -5];
+  const angles = [125, 105, 85, 65, 45, 25];
   for (const [i, deg] of angles.entries()) {
     const angle = (deg * Math.PI) / 180,
       last = i === angles.length - 1,
       r = last ? 1.15 : 0.85;
-    const x = POND.x + Math.cos(angle) * 10.5,
-      z = POND.z + Math.sin(angle) * 10.5;
+    const x = POND.x + Math.cos(angle) * (POND.radius - 4.5),
+      z = POND.z + Math.sin(angle) * (POND.radius - 4.5);
     const g = new THREE.Group();
     g.position.set(x, 0.16, z);
     // a pad with a notch cut out
@@ -278,7 +247,7 @@ function buildLilyPads() {
   }
 }
 
-// treasure chest on the hill, with an X-marks-the-spot flag beside it
+// treasure chest in the ruins, with an X-marks-the-spot flag beside it
 function buildChest() {
   const groundY = terrainHeight(CHEST.x, CHEST.z);
   CHEST.y = groundY;
@@ -355,89 +324,53 @@ function buildMapScroll() {
   scene.add(mapScroll);
 }
 
-// five logs stacked 3 + 2
-function buildLogPile() {
-  const groundY = terrainHeight(LOG_PILE.x, LOG_PILE.z);
-  for (let i = 0; i < 5; i++) {
-    const log = mesh(
-      new THREE.CylinderGeometry(0.28, 0.28, 2.2, 7),
-      material(i % 2 ? 0x9c6436 : 0x8b5a3c),
-    );
-    log.rotation.x = Math.PI / 2;
-    const row = i < 3 ? 0 : 1;
-    log.position.set(
-      LOG_PILE.x - 1.2 + (row ? 0.3 : 0) + (i % 3) * 0.58,
-      groundY + 0.28 + row * 0.5,
-      LOG_PILE.z - 2.2,
-    );
-    scene.add(log);
-  }
-  addBox(LOG_PILE.x - 0.6, LOG_PILE.z - 2.2, {
-    hw: 1,
-    hd: 1.1,
-    bottom: groundY - 1,
-    top: groundY + 1.05,
+// the places this code builds at, from the level's `spot:` markers
+function readSpots() {
+  const spot = (name) => level.spots[name];
+  const gullSpot = spot('gull');
+  Object.assign(GULL_POST, { x: gullSpot.x, z: gullSpot.z, top: gullSpot.y });
+  Object.assign(LIGHTHOUSE, { x: spot('lighthouse').x, z: spot('lighthouse').z });
+  Object.assign(CHEST, { x: spot('chest').x, z: spot('chest').z });
+  Object.assign(POND, { x: spot('pond').x, z: spot('pond').z, radius: spot('pond').props.radius });
+  Object.assign(BRIDGE, {
+    z: spot('bridge start').z,
+    y: spot('bridge start').y,
+    from: spot('bridge start').x,
+    gapStart: spot('gap start').x,
+    gapEnd: spot('gap end').x,
+    to: spot('bridge end').x,
   });
+  const dock = level.all('dock')[0];
+  Object.assign(DOCK, { x: dock.x, zFrom: dock.z, zTo: dock.z + (dock.props.length ?? 11) });
 }
 
-function build() {
-  buildGround(0, 0, { size: 100, segments: LOW_POWER ? 120 : 200 });
-  island.spawn = vec3(0, 0, 21);
-  island.spawn.y = terrainHeight(island.spawn.x, island.spawn.z);
-  const palmSpots = [
-    [16, 17],
-    [21, 12],
-    [-6, 21],
-    [11, 23],
-    [-24, 8],
-    [-21, -12],
-    [-2, -24],
-    [12, -23],
-    [25, -6],
-    [25, 3],
-    [-14, 20],
-    [-26, -1],
-    [7.2, -7.3],
-    [-15, -9],
-    [3, 12],
-    [-3, -4],
-    [18, -16],
-    [-9, 4],
-  ];
-  for (const [x, z] of palmSpots) palm(x, z);
-  // no bushes/flowers in the pond, by the lighthouse, on the hilltop, or on the path to the dock
-  scatter(0, 0, {
-    radius: 20,
-    allowed: (x, z) =>
-      Math.hypot(x - POND.x, z - POND.z) > 15 &&
-      Math.hypot(x + 19, z + 3) > 5 &&
-      Math.hypot(x - HILL.x, z - HILL.z) > 3 &&
-      !(Math.abs(x) < 3 && z > 17),
-    bushes: 26,
-    flowers: 140,
-  });
-  dock(0, { zFrom: 25, zTo: 36 });
-  addGullPost();
-  perchGull(GULL_POST);
-  crate(3.1, 20.2);
-  const crateTop = crate(4.35, 19.8);
+// markers only island 1 has: the key under its red X, and the joke boot
+const MARKERS = {
+  key: {
+    phase: 'late',
+    run: (marker) =>
+      addDig(marker.x, marker.z, { reward: digUpKey, marked: true, y: marker.ground }),
+  },
+  boot: {
+    phase: 'late',
+    run: (marker) => addDig(marker.x, marker.z, { reward: digUpBoot, y: marker.ground }),
+  },
+};
 
+function build() {
+  level.build(island, { markers: MARKERS });
+  readSpots();
+  perchGull(GULL_POST);
   buildLighthouse();
   addLighthouseRock();
-  FRUIT_ROCK.top = rock(FRUIT_ROCK.x, FRUIT_ROCK.z, { radius: 1.1, height: 1.15 });
-  rock(-23, 18, { radius: 1.3, height: 0.8 });
-  rock(14, 20, { radius: 0.9, height: 0.6 });
-  rock(-6, -26, { radius: 1.4, height: 1.2 });
-
   buildBridge();
   buildLilyPads();
   buildChest();
   buildMapScroll();
-  buildLogPile();
-
+  const plankSpot = level.spots.plank;
   addItem('plank', {
     model: makePlank(BRIDGE.gapEnd - BRIDGE.gapStart),
-    pos: vec3(LOG_PILE.x + 1.8, terrainHeight(LOG_PILE.x + 1.8, LOG_PILE.z) + 0.1, LOG_PILE.z),
+    pos: vec3(plankSpot.x, plankSpot.ground + 0.1, plankSpot.z),
     heavy: true,
     name: 'plank',
     yaw: 0.3,
@@ -446,17 +379,23 @@ function build() {
     carryPos: vec3(0, -0.02, 0.18),
     onCarry: () => hintOnce('plank', 'A long plank! It’s heavy, so Spartacus is slower.', 3000),
   });
-  // bones: on the crate, in the grass, on the lighthouse rock, on the last lily pad
-  addPickup(4.35, 19.8, { y: crateTop, island: 1 });
-  addPickup(-12, 13, { island: 1 });
+  // two bones on things this code builds: the lighthouse rock and the last lily pad (the level
+  // counted the rest)
   addPickup(LIGHTHOUSE.rockX, LIGHTHOUSE.rockZ, { y: LIGHTHOUSE.rockTop, island: 1 });
   const lastLily = lilies.at(-1).g.position;
   addPickup(lastLily.x, lastLily.z, { y: 0.22, island: 1 });
-}
-
-function digUpBone(dig) {
-  addPickup(dig.x, dig.z, { y: dig.y, island: 1, pop: 0.6 });
-  toast('A buried bone!', 1800);
+  island.collect.total += 2;
+  // bushes and flowers on open grass: not in the pond or creek, on rocks, or on the dock path
+  scatter(0, 0, {
+    radius: 56,
+    allowed: (x, z) =>
+      supportHeight(x, z, Infinity) - terrainHeight(x, z) < 0.05 &&
+      Math.hypot(x - POND.x, z - POND.z) > POND.radius + 1 &&
+      !(Math.abs(x - DOCK.x) < 3 && z > DOCK.zFrom - 8),
+    bushes: 28,
+    flowers: 140,
+  });
+  placeShipAt(0, sailPath);
 }
 
 function digUpKey(dig) {
@@ -480,16 +419,6 @@ function digUpBoot(dig) {
   });
   carryItem(boot);
   toast('Just an old boot. Silly Spartacus!', 2800);
-}
-
-// fruit and dig spots are added after every island is built (they don't affect scenery)
-function buildLate() {
-  addFruit(FRUIT_ROCK.x, FRUIT_ROCK.z, { type: 'boing', y: FRUIT_ROCK.top, bush: false });
-  addDig(18, 15, { reward: digUpBone });
-  addDig(-22, 15, { reward: digUpBone });
-  addDig(POND.x + 0.6, POND.z - 0.6, { reward: digUpKey, marked: true });
-  addDig(-4, 6, { reward: digUpBoot });
-  addDig(9, -22, { reward: digUpBone });
 }
 
 function ringBell() {
@@ -540,12 +469,32 @@ function openChest() {
   completeTask('chest');
 }
 
+const onBrokenBridge = (p) =>
+  !island.done.bridge &&
+  Math.abs(p.z - BRIDGE.z) < 1.3 &&
+  p.x > BRIDGE.from - 0.5 &&
+  p.x < BRIDGE.to + 0.5 &&
+  p.y > BRIDGE.y - 0.3;
+
+// The old bridge is too wobbly to Boing-Boing from: a super jump would clear the gap, and Zoë
+// wants the bridge (with the plank) to be the only way to the key. Off the bridge it comes back.
+function updateWobblyBridge(p) {
+  if (player.power !== 'boing') return;
+  const wobbly = onBrokenBridge(p);
+  player.superJump = !wobbly;
+  if (wobbly) hintOnce('wobbly', 'This old bridge is too wobbly for Boing-Boing!', 3000);
+}
+
 const island = {
   id: 1,
   center: CENTER_1,
   name: 'Spartacus’s Island',
   zMax: Infinity,
-  height,
+  level,
+  height: level.height,
+  // where the shared random sequence stood after the hand-built island 1, so islands 2–7 keep
+  // exactly the scenery they had (main.js)
+  sharedSeedAfter: 988508491,
   tasks: {
     title: 'Spartacus’s to-do list',
     list: [
@@ -558,31 +507,14 @@ const island = {
       { id: 'chest', ic: '🧰', t: () => 'Open the treasure chest' },
     ],
   },
+  // total: counted from the level's markers, plus the two bones build() adds
   collect: {
-    total: 6,
+    total: 0,
     count: 0,
     taskId: 'bones',
     name: 'Bone',
     all: 'All the bones! Good boy, Spartacus!',
     model: makeBone,
-  },
-  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
-  balls: [
-    [4, 15],
-    [-5, 15],
-  ],
-  critters: {
-    birds: [
-      [-12, 24],
-      [20, -18],
-      [26, 12],
-    ],
-    butterflies: [
-      [-8, 10],
-      [12, 10],
-      [-16, -4],
-      [-22, 14],
-    ],
   },
   // a sunny, bouncy tune (core/music.js)
   music: {
@@ -606,11 +538,11 @@ const island = {
   sailPath,
   exit: {
     label: 'Sail',
-    at: (p) => p.z > 29 && Math.abs(p.x) < 1.6 && p.y > 0.5,
+    at: (p) => p.z > DOCK.zTo - 7 && Math.abs(p.x - DOCK.x) < 1.6 && p.y > 0.5,
     run: () => startSail(sailPath, () => enterIsland(2, true)),
   },
   build,
-  buildLate,
+  buildLate: () => level.buildLate(island),
   update(dt) {
     const time = game.time;
     CHEST.flag.rotation.y = Math.sin(time * 3) * 0.3;
@@ -646,6 +578,7 @@ const island = {
       distXZ(p, LIGHTHOUSE.rockX, LIGHTHOUSE.rockZ) < 3.2,
       'Too high to jump… find the swirly fruit!',
     );
+    updateWobblyBridge(p);
     if (
       !island.done.bridge &&
       !player.carrying &&

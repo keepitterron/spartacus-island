@@ -2,7 +2,9 @@
 
 An island can be laid out in [Blender](https://www.blender.org/) (free) instead of in code. You sculpt the ground, place scenery and drop markers (empties) where things go, then export a `.glb` that the game loads. The island's code then only holds what's special about it: its story, tasks and puzzles.
 
-Island 8 (Big Test Island, reached from its chip on the start screen) is the example. It is about ten times the area of Hook Rock Bay.
+Island 8 (Big Test Island, reached from its chip on the start screen) is the example. It is about ten times the area of Hook Rock Bay. Island 1 is laid out this way too ([island1.md](island1.md)): a story island moved from code to Blender, with `tools/levels/make_island1.py` building its grey-box and `tools/levels/helpers.py` holding the shared Blender helpers for new level scripts.
+
+**Moving an existing island to Blender:** its old code used the shared random sequence, so the islands after it would get different trees and flowers. Measure `rand.seed()` after the old island's `build()` and set it as the island's `sharedSeedAfter`; `main.js` carries on from there, and nothing else moves.
 
 | File                                | What                                                           |
 | ----------------------------------- | -------------------------------------------------------------- |

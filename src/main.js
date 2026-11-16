@@ -63,12 +63,14 @@ for (const island of ISLANDS) {
 // game.building tells systems which island the digs, seeds and items they add belong to
 // A Blender island uses a random sequence of its own and then puts the shared one back where it
 // was, so editing its level never moves any other island's scenery (or the clouds, built next).
+// An island that used to be built in code says where the shared sequence stood after it
+// (`sharedSeedAfter`), so the islands after it keep the scenery they always had.
 for (const island of ISLANDS) {
   const shared = rand.seed();
   if (island.level) rand.reseed(island.id);
   game.building = island.id;
   island.build();
-  if (island.level) rand.reseed(shared);
+  if (island.level) rand.reseed(island.sharedSeedAfter ?? shared);
 }
 buildSky();
 buildStars();
