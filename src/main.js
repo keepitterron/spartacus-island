@@ -27,6 +27,7 @@ import { updateFloaters, updatePlacing } from './systems/items.js';
 import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
 import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
 import { updateHat } from './systems/hat.js';
+import { showSavedTreasures } from './systems/treasures.js';
 import { updateReactions } from './systems/reactions.js';
 import { buildBalls, updateBalls } from './systems/balls.js';
 import { buildCritters, updateCritters } from './systems/critters.js';
@@ -82,6 +83,7 @@ game.building = 0;
 // last, so balls and critters can sit on top of everything built above
 buildBalls();
 buildCritters();
+showSavedTreasures();
 player.pos.copy(island1.spawn);
 
 /* ---------- HUD + menus ---------- */

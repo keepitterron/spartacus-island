@@ -27,7 +27,7 @@ SPAWN = (0, 50)
 DOCK = (0, 57)  # the dock runs 11 m towards +z from here
 BOAT = (-41.6, 45.9)  # the beached rowing boat; the gull sleeps on its mast
 CRABS = (-34, 50)
-AMETHYST = (-26, 57)
+AMETHYST = (-25, 50)  # on the sand, where the crabs drop it
 CAVE = (-3, 17.5)  # the middle of the cave floor; the mouth faces the beach (+z)
 CAMP = (-41, -1)  # Chris's lost and found
 FRUIT_ROCK = (34, 24)
@@ -187,7 +187,9 @@ def build_markers(coll, gull_top):
     m("spot:gull", *BOAT, coll, y=gull_top)
     m("spot:crabs", *CRABS, coll)
     m("spot:amethyst", *AMETHYST, coll)
-    m("spot:cave", *CAVE, coll, y=1.3)
+    m("spot:cave", *CAVE, coll, y=1.3)  # Juf Anne and her class (src/islands/island1/juf-anne.js)
+    m("spot:cave mouth", CAVE[0], CAVE[1] + 4.2, coll, y=1.3)
+    m("spot:chris", CAMP[0] + 1, CAMP[1] + 3, coll)  # beside the plank, clear of the sign
     m("spot:lost and found", CAMP[0], CAMP[1] - 3, coll)
     m("spot:plank", CAMP[0] + 2.5, CAMP[1] + 0.2, coll)
     m("spot:pond", *POND, coll, radius=POND_RADIUS)
@@ -200,12 +202,11 @@ def build_markers(coll, gull_top):
     # the Boing-Boing fruit on a low rock at the grove's entrance
     m("rock", *FRUIT_ROCK, coll, scale=(1.1, 1.1, 1.15))
     m("fruit:boing", *FRUIT_ROCK, coll, y=height(*FRUIT_ROCK) + 1.3)
-    # bones: on the trail, on the top ledge, in the cave, dug up by the spring (the lily pad
-    # and lighthouse-rock bones are placed by the code, which builds those)
+    # bones: on the trail, on the top ledge, dug up by the spring (the lily pad and
+    # lighthouse-rock bones, and Juf Anne's thank-you, come from the code)
     m("pickup", 15.8, 36.2, coll)
     lx, lz, _, tall = LEDGES[-1]
     m("pickup", lx, lz, coll, y=height(lx, lz) + tall + 0.2)
-    m("pickup", CAVE[0], CAVE[1] - 1, coll, y=1.5)
     m("dig", SPRING[0] + 1, SPRING[1] + 4, coll)
     m("key", POND[0] + 0.5, POND[1] - 0.5, coll, y=ISLET_TOP)
     m("boot", -18, 30, coll)

@@ -22,6 +22,14 @@ import { startSail } from '../../cutscenes/sail.js';
 import { completeTask } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
 import { hintTooHigh } from '../../game/interact.js';
+import { addJufAnne, interactJufAnne, barkAtCave, updateJufAnne } from './juf-anne.js';
+import { addChris, interactChris, barkAtChris, updateChris } from './chris.js';
+import {
+  addAmethystCrabs,
+  interactAmethyst,
+  barkAtCrabs,
+  updateAmethystCrabs,
+} from './amethyst.js';
 import levelUrl from './level.glb?url';
 
 // Island 1, the starter island: bones, the Boing-Boing fruit, a sleepy seagull, the lighthouse
@@ -44,6 +52,7 @@ const CHEST = {};
 const DOCK = {}; // {x, zFrom, zTo}
 const lilies = []; // {g, phase}: bobbing lily pads
 let plankGhost, mapScroll; // see-through plank showing where it goes; the map that pops out of the chest
+let plankItem; // the plank (systems/items.js), which Chris points at while it's in the pile
 
 // from the ship at the dock, round the east of the island and north to Hook Rock Bay
 const sailPath = new THREE.CatmullRomCurve3([
@@ -368,7 +377,7 @@ function build() {
   buildChest();
   buildMapScroll();
   const plankSpot = level.spots.plank;
-  addItem('plank', {
+  plankItem = addItem('plank', {
     model: makePlank(BRIDGE.gapEnd - BRIDGE.gapStart),
     pos: vec3(plankSpot.x, plankSpot.ground + 0.1, plankSpot.z),
     heavy: true,
@@ -379,12 +388,20 @@ function build() {
     carryPos: vec3(0, -0.02, 0.18),
     onCarry: () => hintOnce('plank', 'A long plank! It’s heavy, so Spartacus is slower.', 3000),
   });
-  // two bones on things this code builds: the lighthouse rock and the last lily pad (the level
-  // counted the rest)
+  // two bones on things this code builds: the lighthouse rock and the last lily pad; a third is
+  // Juf Anne's thank-you (the level counted the rest)
   addPickup(LIGHTHOUSE.rockX, LIGHTHOUSE.rockZ, { y: LIGHTHOUSE.rockTop, island: 1 });
   const lastLily = lilies.at(-1).g.position;
   addPickup(lastLily.x, lastLily.z, { y: 0.22, island: 1 });
-  island.collect.total += 2;
+  island.collect.total += 3;
+  // Zoë's characters: Juf Anne in the cave, Chris at the lost and found, the amethyst crabs
+  const ground = (name) => {
+    const spot = level.spots[name];
+    return { x: spot.x, z: spot.z, y: spot.ground };
+  };
+  addJufAnne(ground('cave mouth'), { inside: ground('cave') });
+  addChris(ground('chris'), { plank: plankSpot });
+  addAmethystCrabs(ground('crabs'), { to: ground('amethyst') });
   // bushes and flowers on open grass: not in the pond or creek, on rocks, or on the dock path
   scatter(0, 0, {
     radius: 56,
@@ -545,6 +562,9 @@ const island = {
   buildLate: () => level.buildLate(island),
   update(dt) {
     const time = game.time;
+    updateJufAnne(dt, player.pos);
+    updateChris(dt, { p: player.pos, plank: plankItem });
+    updateAmethystCrabs(dt);
     CHEST.flag.rotation.y = Math.sin(time * 3) * 0.3;
     for (const lily of lilies) {
       lily.g.position.y = 0.16 + Math.sin(time * 1.6 + lily.phase) * 0.04;
@@ -579,6 +599,9 @@ const island = {
       'Too high to jump… find the swirly fruit!',
     );
     updateWobblyBridge(p);
+    interactJufAnne(p);
+    interactChris(p, { plank: plankItem, bridgeFixed: island.done.bridge });
+    interactAmethyst(p);
     if (
       !island.done.bridge &&
       !player.carrying &&
@@ -612,6 +635,9 @@ const island = {
     return null;
   },
   bark(p) {
+    barkAtCave(p);
+    barkAtChris(p);
+    barkAtCrabs(p);
     if (gull.state !== 'sleep' || distXZ(p, GULL_POST.x, GULL_POST.z) >= 6.5) return;
     wakeGull();
     setTimeout(() => toast('Squawk! The seagull flew away. Oops!'), 300);

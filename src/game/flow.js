@@ -85,7 +85,7 @@ export function nextIsland() {
 }
 
 export function restartFromBeginning() {
-  writeSave({ island: 1, progress: null });
+  writeSave({ island: 1, progress: null, treasures: [] });
   // drop any #hash so the reload really starts fresh
   try {
     history.replaceState(null, '', location.pathname + location.search);

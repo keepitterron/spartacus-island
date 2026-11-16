@@ -197,6 +197,17 @@ export const sfx = {
     noise(0.12, { freq: 4000, volume: 0.25 });
     tone(900, { to: 500, duration: 0.12, type: 'triangle', volume: 0.08 });
   },
+  // a big, rumbly growl from a cave (it's only Juf Anne, island 1)
+  growl() {
+    tone(95, { to: 70, duration: 0.9, type: 'sawtooth', volume: 0.1 });
+    tone(120, { to: 85, duration: 0.7, type: 'sawtooth', volume: 0.07, delay: 0.15 });
+    noise(0.9, { freq: 180, volume: 0.35 });
+  },
+  // a treasure found: three bright rising notes
+  chime() {
+    for (const [i, hz] of [988, 1319, 1976].entries())
+      tone(hz, { to: hz, duration: 0.35, type: 'triangle', volume: 0.09, delay: i * 0.1 });
+  },
   grumble() {
     tone(110, { to: 80, duration: 0.6, type: 'sawtooth', volume: 0.08 });
     tone(130, { to: 90, duration: 0.5, type: 'sawtooth', volume: 0.06, delay: 0.25 });
