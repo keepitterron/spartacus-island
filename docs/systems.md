@@ -61,6 +61,10 @@ A ride carries Spartacus along: island 7's cannon shot, gondola seat and coaster
 - `jumpPressed()` reads a Jump press as "hop out"; `tooBigToRide()` tells a Mega-Me dog he doesn't fit (and returns true); `cameraBehind(heading, dt)` eases the camera round behind the way he's travelling unless the player is turning it.
 - Pickups and the island's `interact(p)` still run during a ride, so tickets on a flight path or along the track are collected on the way.
 
+## Treasures (`systems/treasures.js`)
+
+Bonus finds that aren't tasks, kept on the ship: island 1's amethyst so far. `keepTreasure(id)` saves the id (the save's `treasures` list) and puts its model on the ship's deck; `hasTreasure(id)` says whether it was already found; `showSavedTreasures()` (main.js, at boot) puts back everything found on earlier visits. Starting over clears them. To add one: a model in `models/items.js`, an entry in `TREASURES`, and a deck spot in `SLOTS` if there are more than three.
+
 ## Bark and pound reactions (`systems/reactions.js`)
 
 `barkReactions(pos)` runs on every bark (and `poundReactions(pos)` on every ground-pound landing), on every island, before the island's own `bark(p)` (or `pound(p)`). Palms within 7 shake and usually drop a coconut that bounces and pops back into its tree after 12 s (`palms` is filled by `palm()` in `world/props.js`). Add new reactions here: anything that just reacts to a bark, without being part of a puzzle.

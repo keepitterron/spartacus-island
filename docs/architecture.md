@@ -1,6 +1,6 @@
 # Architecture
 
-Plain JavaScript ES modules, bundled by Vite. `three` is pinned to **0.160.0** (the version the game was built against). No framework. Islands 1–7 are built entirely in code from three.js primitives; island 8 is laid out in Blender and loaded from a `.glb` ([levels.md](levels.md)). Every sound is synthesised.
+Plain JavaScript ES modules, bundled by Vite. `three` is pinned to **0.160.0** (the version the game was built against). No framework. Islands 2–7 are built entirely in code from three.js primitives; islands 1 and 8 are laid out in Blender and loaded from a `.glb` ([levels.md](levels.md)). Every sound is synthesised.
 
 ## Folders
 

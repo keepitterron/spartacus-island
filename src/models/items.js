@@ -311,3 +311,29 @@ export function makeRocket(color) {
   }
   return g;
 }
+
+// Zoë's amethyst (island 1's crabs hide it): three purple crystals on a grey stone
+export function makeAmethyst() {
+  const g = new THREE.Group();
+  const stone = mesh(new THREE.DodecahedronGeometry(0.22, 0), material(0x9aa3b0));
+  stone.scale.set(1.3, 0.55, 1.1);
+  stone.position.y = 0.1;
+  g.add(stone);
+  const crystal = material(0xa66bff, {
+    emissive: 0x7a3df0,
+    emissiveIntensity: 0.45,
+    roughness: 0.25,
+  });
+  for (const [x, z, tall, lean] of [
+    [0, 0, 0.5, 0],
+    [0.12, 0.06, 0.34, -0.45],
+    [-0.11, -0.04, 0.3, 0.5],
+  ]) {
+    const gem = mesh(new THREE.OctahedronGeometry(0.1, 0), crystal);
+    gem.scale.set(1, tall / 0.2, 1);
+    gem.position.set(x, 0.16 + tall / 2, z);
+    gem.rotation.z = lean;
+    g.add(gem);
+  }
+  return g;
+}

@@ -20,7 +20,8 @@ export function snapCamera() {
 // the title screen: slowly circle island 1
 export function orbitCamera() {
   const angle = game.time * 0.1;
-  camera.position.set(Math.sin(angle) * 50, 22, Math.cos(angle) * 50);
+  // wide and high enough to show all of island 1 (about 130 m across)
+  camera.position.set(Math.sin(angle) * 95, 40, Math.cos(angle) * 95);
   camera.lookAt(0, 2, 0);
 }
 export function updateCamera(dt) {

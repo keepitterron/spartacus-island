@@ -27,6 +27,7 @@ import { updateFloaters, updatePlacing } from './systems/items.js';
 import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
 import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
 import { updateHat } from './systems/hat.js';
+import { showSavedTreasures } from './systems/treasures.js';
 import { updateReactions } from './systems/reactions.js';
 import { buildBalls, updateBalls } from './systems/balls.js';
 import { buildCritters, updateCritters } from './systems/critters.js';
@@ -63,12 +64,14 @@ for (const island of ISLANDS) {
 // game.building tells systems which island the digs, seeds and items they add belong to
 // A Blender island uses a random sequence of its own and then puts the shared one back where it
 // was, so editing its level never moves any other island's scenery (or the clouds, built next).
+// An island that used to be built in code says where the shared sequence stood after it
+// (`sharedSeedAfter`), so the islands after it keep the scenery they always had.
 for (const island of ISLANDS) {
   const shared = rand.seed();
   if (island.level) rand.reseed(island.id);
   game.building = island.id;
   island.build();
-  if (island.level) rand.reseed(shared);
+  if (island.level) rand.reseed(island.sharedSeedAfter ?? shared);
 }
 buildSky();
 buildStars();
@@ -80,6 +83,7 @@ game.building = 0;
 // last, so balls and critters can sit on top of everything built above
 buildBalls();
 buildCritters();
+showSavedTreasures();
 player.pos.copy(island1.spawn);
 
 /* ---------- HUD + menus ---------- */

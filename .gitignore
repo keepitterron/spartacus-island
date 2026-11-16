@@ -6,3 +6,4 @@ dev-dist
 .claude/settings.local.json
 # Blender backups
 *.blend1
+__pycache__/
