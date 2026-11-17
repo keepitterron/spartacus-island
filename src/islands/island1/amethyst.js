@@ -19,12 +19,15 @@ const CARRY_SPEED = 2.6; // m a second while they scuttle off with it
 const TAKE_REACH = 1.4; // m: Spartacus picks it up
 
 // state: huddle | carry | dig (dropped it, burrowing) | gone
-// gem: the amethyst model (null once it's on the ship, or if it already was); lying: it's on the sand
+// gem: the amethyst model (null once it's on the ship); lying: it's on the sand
+// checked: whether we've looked if it's already on the ship (on the first frame of play, not at
+// build: starting over from the start screen empties the ship after the island is built)
 const group = {
   state: 'huddle',
   t: 0,
   crabs: [],
   gem: null,
+  checked: false,
   lying: false,
   from: null,
   to: null,
@@ -42,10 +45,8 @@ export function addAmethystCrabs(from, { to }) {
     scene.add(crab.g);
     group.crabs.push({ g: crab.g, angle: (i / 3) * Math.PI * 2, phase: i * 2.1 });
   }
-  if (!hasTreasure('amethyst')) {
-    group.gem = makeAmethyst();
-    scene.add(group.gem);
-  }
+  group.gem = makeAmethyst();
+  scene.add(group.gem);
   placeCrabs(0);
 }
 
@@ -53,19 +54,27 @@ function startCarry() {
   group.state = 'carry';
   group.t = 0;
   sfx.squeak();
-  toast(
-    group.gem
-      ? 'The crabs grab something shiny and scuttle off with it!'
-      : 'The crabs scuttle off!',
-    3000,
-  );
+  toast('The crabs grab something shiny and scuttle off with it!', 3000);
+}
+
+// the amethyst is already on the ship (found in this game, then back on island 1 from the island
+// picker): the crabs have dug in with nothing left to guard
+function goneAlready() {
+  scene.remove(group.gem);
+  group.gem = null;
+  for (const crab of group.crabs) scene.remove(crab.g);
+  group.state = 'gone';
 }
 
 // walking up, or a woof, startles them
 export function interactAmethyst(p) {
+  if (!group.checked) {
+    group.checked = true;
+    if (hasTreasure('amethyst') && group.state === 'huddle') goneAlready();
+  }
   if (group.state === 'huddle') {
     const dist = distXZ(p, group.pos.x, group.pos.z);
-    if (dist < NOTICE_REACH && group.gem)
+    if (dist < NOTICE_REACH)
       hintOnce('crabs', 'Three crabs are hiding something shiny… woof!', 3200);
     if (dist < TOUCH_REACH) startCarry();
   }
@@ -73,7 +82,8 @@ export function interactAmethyst(p) {
     takeAmethyst();
 }
 export function barkAtCrabs(p) {
-  if (group.state === 'huddle' && distXZ(p, group.pos.x, group.pos.z) < BARK_REACH) startCarry();
+  if (group.checked && group.state === 'huddle' && distXZ(p, group.pos.x, group.pos.z) < BARK_REACH)
+    startCarry();
 }
 
 function takeAmethyst() {
@@ -178,11 +188,15 @@ function updateDig() {
 export const amethystCrabsState = () => (group.state === 'huddle' ? 'huddle' : 'gone');
 export function restoreAmethystCrabs(state) {
   if (state !== 'gone') return;
+  group.checked = true;
+  if (hasTreasure('amethyst')) {
+    goneAlready();
+    return;
+  }
   for (const crab of group.crabs) scene.remove(crab.g);
   group.state = 'gone';
   const { to } = group;
   group.pos.set(to.x, terrainHeight(to.x, to.z), to.z);
-  if (!group.gem) return;
   group.lying = true;
   group.restY = group.pos.y;
   group.gem.position.set(group.pos.x, group.pos.y + 0.1, group.pos.z);

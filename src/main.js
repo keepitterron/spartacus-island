@@ -27,7 +27,7 @@ import { updateFloaters, updatePlacing } from './systems/items.js';
 import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
 import { updateGrowers, updateClimb, updateZip } from './systems/vines.js';
 import { updateHat } from './systems/hat.js';
-import { showSavedTreasures } from './systems/treasures.js';
+import { showSavedTreasures, forgetTreasures } from './systems/treasures.js';
 import { updateReactions } from './systems/reactions.js';
 import { buildBalls, updateBalls } from './systems/balls.js';
 import { updateToys } from './systems/toys.js';
@@ -148,10 +148,15 @@ if (canContinue) {
   $('#cont').textContent = `Continue: Island ${continueTo}`;
   $('#cont').classList.remove('hidden');
 }
-// with a save to lose, starting over needs a second tap
+// "Start from the beginning": a new game, treasures and all (with a save to lose, it needs a
+// second tap)
+function startOver() {
+  forgetTreasures();
+  startGame(1);
+}
 if ((continueTo >= 2 && loadSave().island >= 2) || savedOnIsland1)
-  armButton($('#play'), 'Tap again to start over', () => startGame(1));
-else $('#play').addEventListener('click', () => startGame(1));
+  armButton($('#play'), 'Tap again to start over', startOver);
+else $('#play').addEventListener('click', startOver);
 $('#cont').addEventListener('click', () => startGame(continueTo, { resume: true }));
 
 // Quick island picker: jump to any island. Leaving a saved island for another needs a second tap,

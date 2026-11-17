@@ -63,7 +63,7 @@ A ride carries Spartacus along: island 7's cannon shot, gondola seat and coaster
 
 ## Treasures (`systems/treasures.js`)
 
-Bonus finds that aren't tasks, kept on the ship: island 1's amethyst so far. `keepTreasure(id)` saves the id (the save's `treasures` list) and puts its model on the ship's deck; `hasTreasure(id)` says whether it was already found; `showSavedTreasures()` (main.js, at boot) puts back everything found on earlier visits. Starting over clears them. To add one: a model in `models/items.js`, an entry in `TREASURES`, and a deck spot in `SLOTS` if there are more than three.
+Bonus finds that aren't tasks, kept on the ship: island 1's amethyst so far. `keepTreasure(id)` saves the id (the save's `treasures` list) and puts its model on the ship's deck; `hasTreasure(id)` says whether it was already found; `showSavedTreasures()` (main.js, at boot) puts back everything found on earlier visits. Starting over ("Start from the beginning" on the start screen, or the to-do list's restart) clears them (`forgetTreasures()`). To add one: a model in `models/items.js`, an entry in `TREASURES`, and a deck spot in `SLOTS` if there are more than three.
 
 ## Places (`systems/places.js`)
 

@@ -33,3 +33,12 @@ export function keepTreasure(id) {
 export function showSavedTreasures() {
   for (const id of keptIds()) showOnDeck(id);
 }
+
+// starting over from the start screen: the ship's deck is empty again
+export function forgetTreasures() {
+  writeSave({ treasures: [] });
+  for (const [id, model] of Object.entries(shown)) {
+    ship.remove(model);
+    delete shown[id];
+  }
+}
