@@ -43,7 +43,7 @@ Other shortcuts: `#island2`, `#island3`, `#island4` in the URL make **Continue**
 
 The full game was play-tested this way after the Vite migration (Oct 2026). Re-run the parts you touch.
 
-**Island 1**: walk; bones on the crate, the lighthouse rock, the far lily pad, (-12,13) and two dig spots; Boing-Boing fruit on the rock; bark at the gull on the dock; jump from the rock onto the lighthouse deck to ring the bell; grab the plank by the logs and Fix the bridge, then walk across; dig the X in the pond for the key; Open the chest; win panel; **Keep exploring**, then Sail from the end of the dock.
+**Island 1**: walk; "Hallo Harbour" comes up, and each place's name the first time you walk in (signposts at each); bones on the trail, the grove's top ledge, the lighthouse rock, the far lily pad, the spring's sand mound and Juf Anne's; Boing-Boing fruit on the rock; growls near the cave, Juf Anne pops out, the class wakes and sits for the lesson (the camera stays inside the cave); come back by: a lesson line, paws up; bark at the gull on the boat's mast; woof at the crabs, take the amethyst; jump from the rock onto the lighthouse deck to ring the bell; Chris points at the plank, grab it and Fix the bridge, then walk across; dig the X on the islet for the key; Open the chest; win panel; **Keep exploring**: Juf Anne and the class wave from the dock once you've been away; Sail from the end of the dock. Reload mid-way: **Continue: Island 1** puts back the ticked tasks, bones, bridge, chest and the class.
 
 **Island 2**: Stretchy fruit; Swing from the shore pad; bones on two pillars, the mesa and a dig spot; Boing-Boing to the mesa and dig the snack; swing to Mango's pillar and Give; walk onto the dock: Mango flies to the crow's nest; win; Sail.
 

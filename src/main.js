@@ -140,22 +140,25 @@ showNightButton();
 $('#btnNight').addEventListener('click', toggleNight);
 
 const continueTo = continueIsland(ISLANDS.length);
-if (continueTo >= 2) {
+// island 1 only has something to continue once a mid-island save says so
+const savedOnIsland1 = continueTo === 1 && loadSave().progress?.island === 1;
+const canContinue = continueTo >= 2 || savedOnIsland1;
+if (canContinue) {
   $('#cont').textContent = `Continue: Island ${continueTo}`;
   $('#cont').classList.remove('hidden');
 }
 // with a save to lose, starting over needs a second tap
-if (continueTo >= 2 && loadSave().island >= 2)
+if ((continueTo >= 2 && loadSave().island >= 2) || savedOnIsland1)
   armButton($('#play'), 'Tap again to start over', () => startGame(1));
 else $('#play').addEventListener('click', () => startGame(1));
-$('#cont').addEventListener('click', () => startGame(continueTo));
+$('#cont').addEventListener('click', () => startGame(continueTo, { resume: true }));
 
 // Quick island picker: jump to any island. Leaving a saved island for another needs a second tap,
 // because it replaces where Continue goes (and any mid-island save). The chip itself never changes
 // size, so the second tap lands where the first one did; the label above says "tap again".
 const PICKER_TEXT = $('#pickerLabel').textContent;
 const ARM_TIME = 3000; // ms the second tap has
-const hasSave = loadSave().island >= 2;
+const hasSave = loadSave().island >= 2 || savedOnIsland1;
 const picker = { armed: null, timer: null };
 function disarmPicker() {
   picker.armed?.removeAttribute('data-armed');
@@ -165,7 +168,7 @@ function disarmPicker() {
 function pickIsland(chip, island) {
   const needsSecondTap = hasSave && island.id !== continueTo;
   if (!needsSecondTap || picker.armed === chip) {
-    startGame(island.id);
+    startGame(island.id, { resume: island.id === continueTo });
     return;
   }
   disarmPicker();
@@ -204,7 +207,7 @@ const JUMP_BUFFER = 0.15; // s a jump press is remembered, so pressing just befo
 bindInput({
   onKey(k) {
     if (game.state === 'start') {
-      if (k === 'enter' || k === ' ') startGame(continueTo);
+      if (k === 'enter' || k === ' ') startGame(continueTo, { resume: true });
       return;
     }
     const cutscene = game.cutscenes[game.state];

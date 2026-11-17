@@ -171,3 +171,19 @@ function updateDig() {
   for (const crab of group.crabs) scene.remove(crab.g);
   group.state = 'gone';
 }
+
+/* mid-island saves (game/progress.js) */
+// huddle (not startled yet) | gone (they ran off); the amethyst itself is saved as a treasure, so
+// if they've run off and it isn't on the ship yet, it's lying where they dropped it
+export const amethystCrabsState = () => (group.state === 'huddle' ? 'huddle' : 'gone');
+export function restoreAmethystCrabs(state) {
+  if (state !== 'gone') return;
+  for (const crab of group.crabs) scene.remove(crab.g);
+  group.state = 'gone';
+  const { to } = group;
+  group.pos.set(to.x, terrainHeight(to.x, to.z), to.z);
+  if (!group.gem) return;
+  group.lying = true;
+  group.restY = group.pos.y;
+  group.gem.position.set(group.pos.x, group.pos.y + 0.1, group.pos.z);
+}

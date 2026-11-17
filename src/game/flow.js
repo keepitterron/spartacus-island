@@ -26,8 +26,9 @@ const showIntro = (messages) => {
   }
 };
 
-// island 1 starts right where the title screen is; later islands (Continue) go via enterIsland
-export function startGame(n) {
+// island 1 starts right where the title screen is; later islands (Continue) go via enterIsland.
+// resume: put back a mid-island save on island 1 (later islands always do, on Continue)
+export function startGame(n, { resume = false } = {}) {
   if (game.state !== 'start') return;
   audioContext();
   startMusic();
@@ -38,6 +39,12 @@ export function startGame(n) {
     return;
   }
   game.state = 'play';
+  if (resume) {
+    restoreProgress(game.islands[1]);
+    renderTasks();
+    updatePowerHud();
+    return;
+  }
   writeSave({ island: 1, progress: null });
   showIntro(game.islands[1].intro || []);
 }
