@@ -293,6 +293,7 @@ def dress_places():
     place("Plant_3", -12.5, 15.5, yaw=20)
     # Lost & Found Camp: a campfire with a bench, bags and a barrel by the pile
     place("Bonfire_Lit", -43.5, 4.8, collider="cyl")
+    spot("campfire", -43.5, 4.8)  # its flames and smoke (src/islands/island1/ambience.js)
     place("Bench_1", -46.5, 7.2, yaw=-30)
     place("Bags", -43.2, -6.5, yaw=-30)
     place("Barrel", -36.4, -4.2, yaw=15, collider="cyl")
@@ -320,6 +321,7 @@ def dress_places():
     for angle, name in [(200, "Rock_Moss_4"), (245, "Rock_Moss_1"), (290, "Rock_Moss_4"), (335, "Rock_Moss_1")]:
         a = math.radians(angle)
         place(name, 24 + math.cos(a) * 5.8, -40 + math.sin(a) * 5.8, yaw=angle, collider="cyl")
+    spot("spring", 24, -40, y=0)  # its bubbles, at the water's surface
     place("Plant_3", 30.5, -44, yaw=30)
     place("Grass", 19.5, -38, yaw=90, wet=True)
     # shade trees and bushes inland, away from the paths
@@ -334,9 +336,17 @@ def dress_places():
         place("Flowers", x, z, yaw=yaw)
 
 
+def spot(name, x, z, *, y=None):
+    """A `spot:name` marker for the island's code, kept with the dressing it belongs to."""
+    empty = bpy.data.objects.new(f"spot:{name}", None)
+    empty.location = (x, -z, ground_height(x, z) if y is None else y)
+    DRESSING.objects.link(empty)
+    return empty
+
+
 def check_markers():
     """Nothing solid too close to a marker (a bone, a dig, a spot the code builds at, a palm)."""
-    markers = [o for o in bpy.data.objects if o.type == "EMPTY"]
+    markers = [o for o in bpy.data.objects if o.type == "EMPTY" and o.name.split(".")[0] not in ("spot:campfire", "spot:spring")]
     for name, x, z in placed_with_colliders:
         for m in markers:
             mx, mz = m.location.x, -m.location.y

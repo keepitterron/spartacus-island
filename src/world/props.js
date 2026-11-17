@@ -70,11 +70,9 @@ export function palm(x, z) {
 // a mossy rock; returns its top height (something to stand on)
 export function rock(x, z, { radius, height, color = 0xa3acb8 }) {
   const ground = terrainHeight(x, z);
-  const m = mesh(
-    new THREE.CylinderGeometry(radius * 0.88, radius * 1.12, height, 7),
-    material(color),
-    { receiveShadow: true },
-  );
+  const body = new THREE.CylinderGeometry(radius * 0.88, radius * 1.12, height, 7, 3);
+  dentSides(body, { seed: x * 7.3 + z * 3.1 });
+  const m = mesh(body, material(color), { receiveShadow: true });
   m.position.set(x, ground + height / 2, z);
   m.rotation.y = rand() * 3;
   scene.add(m);
@@ -90,6 +88,22 @@ export function rock(x, z, { radius, height, color = 0xa3acb8 }) {
   addStatic(moss);
   addCylinder(x, z, { r: radius * 0.95, bottom: ground - 1, top: ground + height + 0.1 });
   return ground + height + 0.1;
+}
+// Push the middle rows of a cylinder's side in and out a little, so a rock looks like a rock and
+// not a can. The top and bottom rings stay put (they meet the caps and the moss). A fixed pattern
+// from `seed`, not rand(): changing rocks must never move anyone's scenery.
+function dentSides(geometry, { seed }) {
+  const { radialSegments, heightSegments } = geometry.parameters;
+  const position = geometry.getAttribute('position');
+  for (let row = 1; row < heightSegments; row++)
+    for (let column = 0; column <= radialSegments; column++) {
+      const i = row * (radialSegments + 1) + column;
+      // the seam's first and last vertex are the same point: dent them the same
+      const hash = Math.sin((column % radialSegments) * 12.99 + row * 78.23 + seed) * 43758.5;
+      const scale = 0.9 + 0.14 * (hash - Math.floor(hash));
+      position.setXYZ(i, position.getX(i) * scale, position.getY(i), position.getZ(i) * scale);
+    }
+  geometry.computeVertexNormals();
 }
 // a rock whose top is at an absolute height
 export const rockTop = (x, z, { radius, top, color }) =>

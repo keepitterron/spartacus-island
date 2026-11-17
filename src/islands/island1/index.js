@@ -49,6 +49,7 @@ import {
   amethystCrabsState,
   restoreAmethystCrabs,
 } from './amethyst.js';
+import { addCampfire, addSpringBubbles, updateAmbience } from './ambience.js';
 import levelUrl from './level.glb?url';
 
 // Island 1, the starter island: bones, the Boing-Boing fruit, a sleepy seagull, the lighthouse
@@ -453,6 +454,9 @@ function build() {
   addJufAnne(ground('cave mouth'), { inside: ground('cave') });
   addChris(ground('chris'), { plank: plankSpot });
   addAmethystCrabs(ground('crabs'), { to: ground('amethyst') });
+  addCampfire(ground('campfire'));
+  const spring = level.spots.spring;
+  addSpringBubbles({ x: spring.x, y: spring.y, z: spring.z });
   // bushes and flowers on open grass: not in the pond or creek, on rocks, or on the dock path
   scatter(0, 0, {
     radius: 56,
@@ -752,6 +756,7 @@ const island = {
     updateJufAnne(dt, player.pos);
     updateChris(dt, { p: player.pos, plank: plankItem });
     updateAmethystCrabs(dt);
+    updateAmbience(dt, player.pos);
     CHEST.flag.rotation.y = Math.sin(time * 3) * 0.3;
     for (const lily of lilies) {
       lily.g.position.y = 0.16 + Math.sin(time * 1.6 + lily.phase) * 0.04;
