@@ -1,6 +1,7 @@
 // Third-person follow camera. Q/E or dragging turns it (followCam.yaw); islands can add
-//   camera:{minY(pos), maxY, assist(dt)}   e.g. stay under the water surface, or turn
-//   down a corridor. assist only runs while the player isn't turning the camera.
+//   camera:{minY(pos), maxY, assist(dt), limit(wanted)}   e.g. stay under the water surface,
+//   turn down a corridor, or stay under a cave roof. assist only runs while the player isn't
+//   turning the camera; limit may move the wanted camera position (a Vector3) before it's eased to.
 import { vec3 } from '../core/util.js';
 import { camera } from '../core/renderer.js';
 import { game, followCam, currentIsland, isPlaying } from '../core/state.js';
@@ -44,6 +45,7 @@ export function updateCamera(dt) {
     lookTarget.y + followCam.height * zoom,
     lookTarget.z + Math.cos(followCam.yaw) * followCam.distance * zoom,
   );
+  islandCam.limit?.(wanted);
   camera.position.lerp(wanted, 1 - Math.exp(-dt * 6));
   const minY = islandCam.minY ? islandCam.minY(camera.position) : 1.2;
   if (camera.position.y < minY) camera.position.y = minY;

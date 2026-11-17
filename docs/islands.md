@@ -28,7 +28,7 @@ const island = {
   savesProgress:false,       // mid-island saves (game/progress.js); see saveState/loadState below
   preview:false,             // still being built: only in dev/?debug (no start-screen chip, the island before doesn't sail on here)
   physics:{…},               // optional overrides: gravity, maxFall, speed, jump, water, bound, flap
-  camera:{minY(pos), maxY, assist(dt)},   // optional camera hooks
+  camera:{minY(pos), maxY, assist(dt), limit(wanted)},   // optional camera hooks (game/camera.js)
   sky:{day, night, ground},  // optional THREE.Colors: own sky/fog colours, hemisphere light from below
 
   tasks:{title, list:[{id, ic, t:()=>text, power?}]},   // ic = emoji icon, t = label text

@@ -11,13 +11,13 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 
 ## Features
 
-- **Mid-island saves for islands 1–4**: the system exists (`savesProgress`, see systems.md) and island 5 uses it. The older islands would each need a `saveState`/`loadState` for their own story state (bridge fixed, chest open, Mango riding, Eduardo's chase…), and restore-safe dig rewards.
+- **Mid-island saves for islands 2–4**: the system exists (`savesProgress`, see systems.md) and islands 1, 5, 6 and 7 use it. The older islands would each need a `saveState`/`loadState` for their own story state (bridge fixed, chest open, Mango riding, Eduardo's chase…), and restore-safe dig rewards.
 - **Multiplayer** (the long-term goal): host-authoritative, one browser runs physics, others send inputs. Options: PeerJS/WebRTC with a share code, or PartyKit/Colyseus. Friends play crew members with built-in abilities (Mango glides/carries, Wasabi swims/bubbles, Eduardo pinches), which makes co-op puzzles natural. `stepPlayer` is already isolated, and `P` would become one of several players.
 - **Ship home base** (Minecraft-style): spend bones/acorns/crabs on ship decorations and sail patterns (not on Spartacus: no dress-up, see design-rules.md); rescued friends live on the ship.
 
 ## Tech
 
-- **Blender levels** ([levels.md](levels.md)), live with island 8 as a test. Next: rebuild an existing island bigger in Blender (island 1 is a good first one), sail into level islands, instanced palms/flowers for big maps. Rapier physics only when a level needs rotated or mesh colliders, overhangs or real stacking props (it would replace `stepPlayer`).
+- **Blender levels** ([levels.md](levels.md)), live with island 8 as a test. Next: rebuild an existing island bigger in Blender (island 1 is a good first one), sail into level islands, instanced palms/flowers for big maps. Rapier is in for loose props (`systems/toys.js`, a test on island 1); moving Spartacus onto it only when a level needs rotated or mesh colliders or overhangs (it would replace `stepPlayer`). A smaller download: the non-compat `@dimforge/rapier3d` loads a separate `.wasm` (~3 MB raw instead of 4.3 MB of base64) but needs a Vite wasm plugin.
 - **Phone performance**: instancing for repeated props (flowers, coral, seaweed strips, rocks) and merging static meshes per island.
 - **Automated smoke tests** (Playwright): blocked on BUG-1 for software-GL runners; see [testing.md](testing.md).
 - Upgrade three.js past 0.160 (check `CapsuleGeometry`, lighting and colour management for visual changes).

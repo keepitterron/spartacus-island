@@ -126,9 +126,10 @@ export function scatter(cx, cz, { radius, allowed, bushes, flowers }) {
     scene.add(flower);
   }
 }
-// a wooden dock running along +z from zFrom to zTo at x=cx, deck height .78
+export const DOCK_TOP = 0.78; // how high a dock's deck is
+// a wooden dock running along +z from zFrom to zTo at x=cx, its deck at DOCK_TOP
 export function dock(cx, { zFrom, zTo }) {
-  const top = 0.78;
+  const top = DOCK_TOP;
   for (let z = zFrom, i = 0; z < zTo; z += 0.9, i++) {
     const plank = mesh(
       new THREE.BoxGeometry(2.4, 0.14, 0.82),

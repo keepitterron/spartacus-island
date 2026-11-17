@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { distXZ, lerp, rand, vec3 } from '../../core/util.js';
+import { clamp, distXZ, lerp, rand, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
@@ -10,25 +10,44 @@ import { addCylinder, addBox, supportHeight } from '../../core/colliders.js';
 import { terrainHeight } from '../../world/terrain.js';
 import { CENTER_1, CENTER_2 } from '../../world/layout.js';
 import { makeLevel } from '../../world/level.js';
-import { rock, scatter } from '../../world/props.js';
+import { rock, scatter, DOCK_TOP } from '../../world/props.js';
 import { placeShipAt } from '../../world/ship.js';
 import { makePlank, makeKey, makeBoot, makeBone } from '../../models/items.js';
 import { player } from '../../player/player.js';
 import { addItem, carryItem, useUpCarried, placeItem } from '../../systems/items.js';
 import { addPickup, pickupText } from '../../systems/collect.js';
 import { addDig, digNear } from '../../systems/digs.js';
-import { gull, perchGull, wakeGull } from '../../npcs/gull.js';
+import { addToyArea, addToy, toysNear } from '../../systems/toys.js';
+import {
+  addPlace,
+  addSignpost,
+  letterBoard,
+  visitPlaces,
+  seenPlaces,
+  restorePlaces,
+} from '../../systems/places.js';
+import { gull, perchGull, wakeGull, gullJoinsShip } from '../../npcs/gull.js';
 import { startSail } from '../../cutscenes/sail.js';
-import { completeTask } from '../../game/tasks.js';
+import { completeTask, allTasksDone } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
 import { hintTooHigh } from '../../game/interact.js';
-import { addJufAnne, interactJufAnne, barkAtCave, updateJufAnne } from './juf-anne.js';
+import {
+  addJufAnne,
+  interactJufAnne,
+  barkAtCave,
+  updateJufAnne,
+  jufAnneState,
+  restoreJufAnne,
+  sayGoodbye,
+} from './juf-anne.js';
 import { addChris, interactChris, barkAtChris, updateChris } from './chris.js';
 import {
   addAmethystCrabs,
   interactAmethyst,
   barkAtCrabs,
   updateAmethystCrabs,
+  amethystCrabsState,
+  restoreAmethystCrabs,
 } from './amethyst.js';
 import levelUrl from './level.glb?url';
 
@@ -50,9 +69,39 @@ const POND = {}; // {x, z, radius}
 // on top of the ruins hill; + y, lid, flag, openAmount (lid 0..1), opening
 const CHEST = {};
 const DOCK = {}; // {x, zFrom, zTo}
+// the cave: {x, z, floor}, its middle; walls, roof and mouth (towards +z) as in build_cave() in
+// tools/levels/make_island1.py: 6 m wide inside, the roof's underside 2.5 m above the floor
+const CAVE = {};
+const CAVE_HALF_WIDTH = 3,
+  CAVE_BACK = -2.9,
+  CAVE_FRONT = 4.1, // the roof's front edge, from the middle
+  CAVE_ROOF = 2.5;
 const lilies = []; // {g, phase}: bobbing lily pads
 let plankGhost, mapScroll; // see-through plank showing where it goes; the map that pops out of the chest
 let plankItem; // the plank (systems/items.js), which Chris points at while it's in the pile
+
+// The places, named for Zoë (she lives in Amsterdam and goes to a Montessori school), island-local
+// like the level's spots: x, z, radius (m) for the title card; sign: where its signpost stands.
+// Hallo Harbour's signpost has arrows to the others; Lost & Found Camp paints the level's own sign.
+const PLACES = [
+  { name: 'Hallo Harbour', x: 0, z: 50, radius: 13, sign: { x: 4.5, z: 45 } },
+  { name: 'Sleepy Gull Beach', x: -37, z: 48, radius: 12, sign: { x: -29, z: 43 } },
+  { name: 'Boing-Boing Grove', x: 39, z: 30, radius: 12, sign: { x: 29, z: 31 } },
+  { name: 'Growly Cave', x: -3, z: 20, radius: 8, sign: { x: 2.6, z: 23.5 } },
+  { name: 'Lost & Found Camp', x: -41, z: -1, radius: 10 },
+  { name: 'Lily Pond', x: 14, z: -4, radius: 19, sign: { x: -4.5, z: 3 } },
+  { name: 'Ding-Dong Point', x: -40, z: -35, radius: 12, sign: { x: -30, z: -27 } },
+  { name: 'Treasure Hill', x: -6, z: -48, radius: 11, sign: { x: -5, z: -36 } },
+  { name: 'Bubbly Spring', x: 24, z: -40, radius: 8, sign: { x: 19, z: -42 } },
+];
+// the harbour signpost's arrows, top to bottom
+const HARBOUR_ARROWS = [
+  'Growly Cave',
+  'Treasure Hill',
+  'Ding-Dong Point',
+  'Sleepy Gull Beach',
+  'Boing-Boing Grove',
+];
 
 // from the ship at the dock, round the east of the island and north to Hook Rock Bay
 const sailPath = new THREE.CatmullRomCurve3([
@@ -349,6 +398,8 @@ function readSpots() {
     gapEnd: spot('gap end').x,
     to: spot('bridge end').x,
   });
+  const cave = spot('cave');
+  Object.assign(CAVE, { x: cave.x, z: cave.z, floor: cave.ground });
   const dock = level.all('dock')[0];
   Object.assign(DOCK, { x: dock.x, zFrom: dock.z, zTo: dock.z + (dock.props.length ?? 11) });
 }
@@ -413,6 +464,78 @@ function build() {
     flowers: 140,
   });
   placeShipAt(0, sailPath);
+  buildPlaces();
+  buildToys();
+}
+
+// Toys to bowl over (systems/toys.js, real physics): a stack of crates and some barrels at the
+// harbour, and odds and ends on top of Chris's lost-and-found pile
+const HARBOUR_TOYS = { x: -7, z: 46 };
+function buildToys() {
+  const { x, z } = HARBOUR_TOYS;
+  addToyArea(x, z, { size: 18 });
+  const ground = terrainHeight(x, z);
+  const crate = 0.8;
+  // a pyramid, three crates along x at the bottom
+  for (const [row, count] of [3, 2, 1].entries())
+    for (let i = 0; i < count; i++)
+      addToy('crate', {
+        x: x + (i - (count - 1) / 2) * (crate + 0.03),
+        z,
+        y: ground + row * (crate + 0.01),
+        size: crate,
+        color: ['#c48a54', '#b57b46', '#d09a5e'][(row + i) % 3],
+      });
+  for (const [dx, dz] of [
+    [-2.6, -1.4],
+    [-3.3, -0.6],
+    [-2.4, -0.2],
+  ])
+    addToy('barrel', { x: x + dx, z: z + dz, size: 0.9, color: 0x9a6a3e });
+  addToy('bucket', { x: x + 1.8, z: z + 1.2, size: 0.4, color: 0x2fa4c7 });
+  buildLostAndFoundToys();
+}
+
+// on the level's pile boxes (their tops are colliders) and round its foot
+function buildLostAndFoundToys() {
+  const pile = level.spots['lost and found'];
+  addToyArea(pile.x, pile.z, { size: 14 });
+  // offsets from the spot (the middle of the biggest box; see build_camp in make_island1.py)
+  const things = [
+    ['crate', -0.5, -0.3, 0.5, '#f2545b'],
+    ['crate', 0.5, -0.4, 0.45, '#ffd84d'],
+    ['bucket', 0, 0.45, 0.4, 0x7fd36a],
+    ['barrel', 1.6, -0.4, 0.6, 0x2fa4c7],
+    ['crate', -1.4, 0.4, 0.45, '#2fa4c7'],
+    ['crate', -2.2, -1.6, 0.5, '#9b7fd9'],
+    ['crate', 2.2, -1.8, 0.55, '#7fd36a'],
+    ['bucket', 1.2, -1.8, 0.4, 0xf2545b],
+  ];
+  for (const [kind, dx, dz, size, color] of things) {
+    const tx = pile.x + dx,
+      tz = pile.z + dz;
+    addToy(kind, { x: tx, z: tz, y: supportHeight(tx, tz, Infinity) + 0.02, size, color, yaw: dx });
+  }
+}
+
+const placeNamed = (name) => PLACES.find((place) => place.name === name);
+
+// the named places, their signposts, and the name on the camp's sign
+function buildPlaces() {
+  const centre = { x: 0, z: 10 }; // signs face the middle of the island
+  for (const place of PLACES) {
+    addPlace(place.name, place);
+    if (!place.sign) continue;
+    const arrows =
+      place.name === 'Hallo Harbour'
+        ? HARBOUR_ARROWS.map((text) => ({ text, to: placeNamed(text) }))
+        : [];
+    addSignpost(place.sign.x, place.sign.z, { name: place.name, faceTo: centre, arrows });
+  }
+  const campSign = level.root.getObjectByName('sign');
+  if (!campSign) return;
+  const board = new THREE.Box3().setFromObject(campSign);
+  letterBoard(board.getCenter(vec3()), { text: 'Lost & Found', width: 1.45, height: 0.8 });
 }
 
 function digUpKey(dig) {
@@ -447,13 +570,6 @@ function ringBell() {
 }
 function placePlank() {
   placeItem(plankGhost.position, () => {
-    // the collider is 0.1 wider each side than the gap so there's no seam to fall through
-    addBox((BRIDGE.gapStart + BRIDGE.gapEnd) / 2, BRIDGE.z, {
-      hw: (BRIDGE.gapEnd - BRIDGE.gapStart) / 2 + 0.1,
-      hd: 0.9,
-      bottom: -3,
-      top: BRIDGE.y,
-    });
     sfx.thunk();
     burst(plankGhost.position.clone().add(vec3(0, 0.3, 0)), {
       count: 20,
@@ -463,13 +579,23 @@ function placePlank() {
       life: 0.7,
       size: 1,
     });
+    fillBridgeGap();
     toast('The bridge is fixed!');
     completeTask('bridge');
   });
 }
+// the walkable plank across the gap; the collider is 0.1 wider each side than the gap so there's
+// no seam to fall through
+function fillBridgeGap() {
+  addBox((BRIDGE.gapStart + BRIDGE.gapEnd) / 2, BRIDGE.z, {
+    hw: (BRIDGE.gapEnd - BRIDGE.gapStart) / 2 + 0.1,
+    hd: 0.9,
+    bottom: -3,
+    top: BRIDGE.y,
+  });
+}
 function openChest() {
   useUpCarried();
-  CHEST.opening = true;
   sfx.creak();
   burst(vec3(CHEST.x, CHEST.y + 1.2, CHEST.z), {
     count: 30,
@@ -479,11 +605,66 @@ function openChest() {
     life: 1,
     size: 1,
   });
+  showMapScroll();
+  setTimeout(() => toast('A map to a new island! Where could it lead?', 3600), 500);
+  completeTask('chest');
+}
+// the lid swings open and the map rises out of the chest (update() animates both)
+function showMapScroll() {
+  CHEST.opening = true;
   mapScroll.visible = true;
   mapScroll.position.set(CHEST.x, CHEST.y + 1, CHEST.z);
   mapScroll.userData.t = 0;
-  setTimeout(() => toast('A map to a new island! Where could it lead?', 3600), 500);
-  completeTask('chest');
+}
+
+// mid-island saves (game/progress.js): ticked tasks, bones, digs and items are saved for us; this
+// is what only island 1 knows (Juf Anne's class, the crabs)
+const saveState = () => ({
+  anne: jufAnneState(),
+  crabs: amethystCrabsState(),
+  places: seenPlaces(1),
+});
+
+// putting a save back: everything the ticked tasks changed, quietly
+function loadState(state) {
+  if (island.done.gull) gullJoinsShip();
+  if (island.done.bridge) {
+    plankItem.state = 'placed';
+    plankItem.mesh.position.copy(plankGhost.position);
+    plankItem.mesh.rotation.set(0, 0, 0);
+    fillBridgeGap();
+  }
+  if (island.done.chest) {
+    showMapScroll();
+    CHEST.openAmount = 1;
+    CHEST.lid.rotation.x = -1.9;
+  }
+  restoreJufAnne(state.anne);
+  restoreAmethystCrabs(state.crabs);
+  restorePlaces(1, state.places);
+  game.flagUp = allTasksDone(island);
+  if (allTasksDone(island)) waveGoodbye();
+}
+
+// Juf Anne and her class come to wave from the dock (Zoë), standing along its west edge
+function waveGoodbye() {
+  sayGoodbye({ x: DOCK.x - 0.75, z: DOCK.zFrom + 4.5, y: DOCK_TOP });
+}
+
+// Under the cave roof the follow camera would end up inside the rock: keep it inside the cave or
+// out in front of the mouth, and below the roof, so Spartacus (and Juf Anne's class) stay in view.
+function limitCaveCamera(wanted) {
+  const p = player.pos;
+  const underRoof =
+    Math.abs(p.x - CAVE.x) < CAVE_HALF_WIDTH + 0.2 &&
+    p.z > CAVE.z + CAVE_BACK - 0.6 &&
+    p.z < CAVE.z + CAVE_FRONT &&
+    p.y < CAVE.floor + CAVE_ROOF;
+  if (!underRoof) return;
+  const margin = 0.6; // keeps the camera's near plane out of the walls
+  wanted.x = clamp(wanted.x, CAVE.x - CAVE_HALF_WIDTH + margin, CAVE.x + CAVE_HALF_WIDTH - margin);
+  wanted.z = clamp(wanted.z, CAVE.z + CAVE_BACK + margin, CAVE.z + CAVE_FRONT + 3);
+  wanted.y = Math.min(wanted.y, CAVE.floor + CAVE_ROOF - 0.35);
 }
 
 const onBrokenBridge = (p) =>
@@ -512,6 +693,10 @@ const island = {
   // where the shared random sequence stood after the hand-built island 1, so islands 2–7 keep
   // exactly the scenery they had (main.js)
   sharedSeedAfter: 988508491,
+  // a big island: closing the tab mid-way keeps what was done (game/progress.js)
+  savesProgress: true,
+  saveState,
+  loadState,
   tasks: {
     title: 'Spartacus’s to-do list',
     list: [
@@ -550,6 +735,7 @@ const island = {
   },
   onAllDone() {
     game.flagUp = true;
+    waveGoodbye();
     toast('Everything’s done! Time to sail!', 3200);
   },
   sailPath,
@@ -558,6 +744,7 @@ const island = {
     at: (p) => p.z > DOCK.zTo - 7 && Math.abs(p.x - DOCK.x) < 1.6 && p.y > 0.5,
     run: () => startSail(sailPath, () => enterIsland(2, true)),
   },
+  camera: { limit: limitCaveCamera },
   build,
   buildLate: () => level.buildLate(island),
   update(dt) {
@@ -587,6 +774,7 @@ const island = {
     LIGHTHOUSE.bell.rotation.x = Math.sin(time * 8) * 0.5 * LIGHTHOUSE.swing;
   },
   interact(p) {
+    visitPlaces(p);
     // standing on the deck rings the bell (again once it has nearly stopped swinging)
     if (
       p.y > LIGHTHOUSE.deckTop - 0.3 &&
@@ -599,7 +787,7 @@ const island = {
       'Too high to jump… find the swirly fruit!',
     );
     updateWobblyBridge(p);
-    interactJufAnne(p);
+    interactJufAnne(p, { bones: island.collect.count });
     interactChris(p, { plank: plankItem, bridgeFixed: island.done.bridge });
     interactAmethyst(p);
     if (
@@ -609,6 +797,7 @@ const island = {
       p.y > 1
     )
       hintOnce('bridge', 'The bridge is broken! Find a long plank.', 3200);
+    if (toysNear(p, 3.5)) hintOnce('toys', 'Boxes and barrels! Bump into them, or woof!', 3000);
     if (digNear(p, 4)) hintOnce('dig', `A sand mound! Dig it with ${actionKeyName()}.`, 3200);
     if (!island.done.chest && distXZ(p, CHEST.x, CHEST.z) < 3 && player.carrying?.id !== 'key')
       hintOnce('chest', 'A locked treasure chest. It needs a key…', 3200);

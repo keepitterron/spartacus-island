@@ -65,6 +65,10 @@ A ride carries Spartacus along: island 7's cannon shot, gondola seat and coaster
 
 Bonus finds that aren't tasks, kept on the ship: island 1's amethyst so far. `keepTreasure(id)` saves the id (the save's `treasures` list) and puts its model on the ship's deck; `hasTreasure(id)` says whether it was already found; `showSavedTreasures()` (main.js, at boot) puts back everything found on earlier visits. Starting over clears them. To add one: a model in `models/items.js`, an entry in `TREASURES`, and a deck spot in `SLOTS` if there are more than three.
 
+## Places (`systems/places.js`)
+
+Named places, so a big island is easy to find your way round. `addPlace(name, {x, z, radius})` in `build()` and `visitPlaces(p)` in the island's `interact(p)`: the first time Spartacus is inside one, its name comes up as a title card (island name small, place name big). `addSignpost(x, z, {name, faceTo, arrows})` puts up a signpost with the name on top, facing `faceTo`, and arrow boards `[{text, to: {x, z}}]` pointing to other places. `letterBoard(pos, {text, width, height})` paints a name on a board the level already has. Text is drawn once the font has loaded. For mid-island saves the island keeps `seenPlaces(id)` in its `saveState()` and gives it back to `restorePlaces(id, names)`. Island 1 uses it.
+
 ## Bark and pound reactions (`systems/reactions.js`)
 
 `barkReactions(pos)` runs on every bark (and `poundReactions(pos)` on every ground-pound landing), on every island, before the island's own `bark(p)` (or `pound(p)`). Palms within 7 shake and usually drop a coconut that bounces and pops back into its tree after 12 s (`palms` is filled by `palm()` in `world/props.js`). Add new reactions here: anything that just reacts to a bark, without being part of a puzzle.
@@ -72,6 +76,18 @@ Bonus finds that aren't tasks, kept on the ship: island 1's amethyst so far. `ke
 ## Beach balls (`systems/balls.js`)
 
 Islands list `balls: [[x, z], …]` (island-local). Home-made physics, no library: gravity, bounces, rolling friction, pushed out of colliders. Running into a ball kicks it, a bark shoves balls within 6, a ground pound launches them. A ball in the water (sea or pond) bobs for 2.5 s, then pops back to the last dry spot it rested on (at least 0.3 above the sea), so a bad kick costs seconds, not the kicking before it. Balls further than 70 from Spartacus sleep. `addBall(x, z)` adds one at runtime (Wasabi brings one up on island 5); `ballsNear(x, z, r)` gives puzzles the balls nearby, whose `pos` and `vel` they may nudge (island 5's plates pull a slow ball in).
+
+## Toys (`systems/toys.js`), real physics with Rapier
+
+Loose crates, barrels and buckets that tumble, stack and roll, moved by [Rapier](https://rapier.rs) (`@dimforge/rapier3d-compat`, WebAssembly). **Only toys use it:** Spartacus keeps his own movement in `stepPlayer`, so nothing else on any island changes.
+
+- `addToyArea(x, z, {size})`: a square (m across) where toys live. Its ground is copied into Rapier as a heightfield (half a metre apart, like the level's baked heights) and every collider in it as a fixed box or cylinder, once, when Rapier has loaded. Colliders switched on or off later aren't seen by the toys.
+- `addToy(kind, {x, z, y, size, color, yaw})`: `crate` | `barrel` | `bucket`, standing with its bottom at `y` (the ground by default; use `supportHeight` to put it on top of something). It starts asleep, so a stack stays neat until something bumps it.
+- Spartacus is a capsule that goes where he goes: it pushes toys, they never push him. A woof, a ground pound and a Mega-Me stomp shove toys nearby (`shoveToys`, from `systems/reactions.js`). `toysNear(p, reach)` for hints.
+- A toy in the sea for 2.5 s (or fallen through the world) pops back where it started, with sparkles. Toys aren't saved: a reload puts them back.
+- Rapier loads in its own chunk (4.3 MB, about 1.65 MB gzipped) the first time an island adds a toy area. Nothing waits for it at boot; the toys just stand still until it's there. The service worker precaches it, so it works offline. The world only steps while Spartacus is within 45 m of an area on the current island.
+
+Island 1 has a crate pyramid and barrels at Hallo Harbour and odds and ends on Chris's lost-and-found pile (a test of whether Zoë enjoys it before using it more).
 
 ## Ambient critters (`systems/critters.js`)
 
@@ -134,4 +150,4 @@ The 🌙 button (or `L`, saved as `night`) fades to night over 2.5 s: sky, fog, 
 
 `{v:5, island, muted, music, night}` in `localStorage['spartacus-save']`. `writeSave(data)` merges, so each system writes only its own fields (the island on arrival, the toggles when they change). When the shape changes, bump `VERSION` and add a step to `migrate()`: v3 and v4 saves keep their island and toggles (v4's dress-up fields are dropped). `#islandN` in the URL overrides it for testing.
 
-**Mid-island saves** (`game/progress.js`), only for islands with `savesProgress: true` (island 5 so far; islands 1–4 still only save which island you're on). The save's `progress` field holds the ticked tasks, the pickup count, taken pickups, dug mounds and grown seeds (by spot, `spotKey(x, z)`), each item's state and position (by id), the power, the last dry spot Spartacus stood on, and the island's own `saveState()`. It's written every 5 s, on every ticked task and when the page is hidden. Continue puts it back (`restoreProgress`, after `enter()`), with toasts silenced (`game.restoring`); arriving by ship or starting over clears it. Systems know whose digs, seeds and items they add from `game.building` (set in `main.js` around each `build()`), or the current island at runtime.
+**Mid-island saves** (`game/progress.js`), only for islands with `savesProgress: true` (islands 1, 5, 6 and 7; islands 2–4 still only save which island you're on). Island 1 is started by `startGame(1, {resume: true})` rather than `enterIsland`, so the start screen shows Continue for an island 1 save too. The save's `progress` field holds the ticked tasks, the pickup count, taken pickups, dug mounds and grown seeds (by spot, `spotKey(x, z)`), each item's state and position (by id), the power, the last dry spot Spartacus stood on, and the island's own `saveState()`. It's written every 5 s, on every ticked task and when the page is hidden. Continue puts it back (`restoreProgress`, after `enter()`), with toasts silenced (`game.restoring`); arriving by ship or starting over clears it. Systems know whose digs, seeds and items they add from `game.building` (set in `main.js` around each `build()`), or the current island at runtime.

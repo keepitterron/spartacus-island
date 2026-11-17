@@ -2,7 +2,7 @@
 
 A cosy 3D browser game Claudio is building for his daughter Zoë (9). Spartacus, the family dog, is a pirate pup who sails from island to island, eats fruits that give him powers, solves gentle puzzles and gathers a crew of animal friends. Zoë invents the story and the levels; we build them.
 
-Vite + plain ES modules + three.js 0.160.0, deployed as a PWA to https://keepitterron.github.io/spartacus-island/ on every push to `main`.
+Vite + plain ES modules + three.js 0.160.0 (+ Rapier, only for physics toys), deployed as a PWA to https://keepitterron.github.io/spartacus-island/ on every push to `main`.
 
 ## Read first
 
