@@ -6,22 +6,27 @@ Island 8 (Big Test Island, reached from its chip on the start screen) is the exa
 
 **Moving an existing island to Blender:** its old code used the shared random sequence, so the islands after it would get different trees and flowers. Measure `rand.seed()` after the old island's `build()` and set it as the island's `sharedSeedAfter`; `main.js` carries on from there, and nothing else moves.
 
-| File                                | What                                                           |
-| ----------------------------------- | -------------------------------------------------------------- |
-| `levels/island8.blend`              | The level source: open this in Blender                         |
-| `src/islands/island8/level.glb`     | The export the game loads (commit it: the site has no Blender) |
-| `src/islands/island8/index.js`      | The island module: tasks, hints, hooks, exit                   |
-| `src/world/level.js`                | The loader: ground → heights, colliders, markers               |
-| `tools/levels/export.py`            | Exports a `.blend` with the right settings                     |
-| `tools/levels/make_test_island.py`  | Made `island8.blend` from scratch (a one-off; it overwrites)   |
-| `tools/levels/dress_test_island.py` | Adds the model Library and places models round island 8        |
-| `levels/assets/quaternius/`         | The CC0 models (originals) and their credits                   |
+| File                                | What                                                               |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `levels/island8.blend`              | The level source: open this in Blender                             |
+| `src/islands/island8/level.glb`     | The export the game loads (commit it: the site has no Blender)     |
+| `src/islands/island8/index.js`      | The island module: tasks, hints, hooks, exit                       |
+| `src/world/level.js`                | The loader: ground → heights, colliders, markers                   |
+| `tools/levels/export.py`            | Exports a `.blend` with the right settings                         |
+| `tools/levels/make_test_island.py`  | Made `island8.blend` from scratch (a one-off; it overwrites)       |
+| `tools/levels/dress_test_island.py` | Adds the model Library and places models round island 8            |
+| `tools/levels/dress_island1.py`     | Island 1's looks over its grey boxes, and its models (re-runnable) |
+| `tools/levels/library.py`           | The model Library both dressing scripts share                      |
+| `tools/levels/run_with_bpy.py`      | Runs any of these without Blender installed (below)                |
+| `levels/assets/quaternius/`         | The CC0 models (originals) and their credits                       |
 
 ## Workflow
 
 1. Open `levels/islandN.blend` in Blender and edit it.
 2. Save, then export: `npm run levels` (needs `blender` on your PATH; on a Mac, `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender npm run levels`). Or in Blender: **Scripting** tab → open `tools/levels/export.py` → **Run Script**.
 3. `npm run dev` and go to the island (`__g.go(8)`, or its chip on the start screen). Vite reloads the page when the `.glb` changes.
+
+**No Blender to hand** (a cloud session, CI): Blender's Python module runs the same scripts headless. `python3.13 -m venv .bpy && .bpy/bin/pip install bpy` once (bpy 5.3 matches the `.blend` files, saved by Blender 5.3), then `.bpy/bin/python tools/levels/run_with_bpy.py levels/island1.blend tools/levels/export.py`. That's how island 1 was dressed.
 
 Don't export from **File → Export → glTF** by hand unless you tick **Include → Custom Properties** and **Data → Mesh → Apply Modifiers**: the script does that for you.
 
@@ -130,6 +135,8 @@ blender -b levels/island8.blend --python tools/levels/dress_test_island.py && np
 
 ## Not done yet
 
+- **Scenery is merged for phones.** Every scenery mesh is static: `world/statics.js` merges it with the rest of the island's static scenery (one mesh per material per 40 m patch), so 70 models cost a handful of draw calls. Don't animate or look up a level mesh after `build()`; make a marker and build the moving thing in code instead (like island 1's campfire flames on `spot:campfire`).
+- **Grey box, then looks.** Island 1 keeps its grey boxes as invisible colliders (`invisible` = 1) and puts a look on top: a model stretched to the box, or a lumpy stone copy (Subdivision + Displace with mid-level 1, so it only dents inwards and never sticks out of its collider). Gameplay can't change when the looks do.
 - **Physics stay home-made for Spartacus.** Terrain is a height grid and colliders are upright boxes and cylinders, exactly like the hand-built islands, so every existing system (vines, hooks, balls, rides) works unchanged. Rapier is in the game for loose props only (`systems/toys.js`): toys tumble on a heightfield copy of the ground. Moving Spartacus onto it (rotated and mesh colliders, overhangs) would replace `stepPlayer` on every island: worth doing only when a level needs it.
 - Instanced palms and flowers (each is still its own set of meshes; see the phone-performance item in [backlog.md](backlog.md)).
 - No ship sailing in: island 8 is reached with the picker or `__g.go(8)`, and island 7's dock still ends the game.

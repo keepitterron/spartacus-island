@@ -12,12 +12,14 @@ import { addStatic } from './statics.js';
 // every palm's {x, z, ground, crown, coconuts, shake}, so barking can shake them (systems/reactions.js)
 export const palms = [];
 
-// a leaning palm: six trunk segments, seven fronds and three coconuts
-// Seven fronds round the crown, alternating two greens, merged into one geometry per green (two
-// meshes per crown, not seven). Every palm's crown is the same, so it's made once and shared.
-const crownGeometries = [];
+// Palm crowns and coconuts are drawn for every palm at once (instancing: a few draw calls in all,
+// not five per palm). Each palm keeps an invisible crown group with three coconut placeholders in
+// the scene, which the sway, shake and coconut-drop code moves as usual; updatePalms() copies where
+// they are into the instanced meshes every frame.
+const palmLook = { fronds: [], coconuts: null };
+
+// Seven fronds round the crown, alternating two greens: one geometry per green, shared by every palm
 function palmCrownGeometries() {
-  if (crownGeometries.length) return crownGeometries;
   const frond = new THREE.ConeGeometry(0.5, 2.6, 4);
   frond.scale(1, 1, 0.25);
   const placed = { 0x4cc05a: [], 0x3fae4f: [] };
@@ -29,11 +31,13 @@ function palmCrownGeometries() {
       .multiply(new THREE.Matrix4().makeRotationZ(-Math.PI / 2 - 0.45));
     placed[k % 2 ? 0x3fae4f : 0x4cc05a].push(frond.clone().applyMatrix4(transform));
   }
-  for (const [color, geometries] of Object.entries(placed))
-    crownGeometries.push([Number(color), mergeGeometries(geometries)]);
-  return crownGeometries;
+  return Object.entries(placed).map(([color, geometries]) => [
+    Number(color),
+    mergeGeometries(geometries),
+  ]);
 }
 
+// a leaning palm: six trunk segments (merged with the static scenery), a crown and three coconuts
 export function palm(x, z) {
   const ground = terrainHeight(x, z);
   const g = new THREE.Group();
@@ -55,10 +59,9 @@ export function palm(x, z) {
   const crown = new THREE.Group();
   crown.position.set(offsetX, 4.7, 0);
   g.add(crown);
-  for (const [color, geometry] of palmCrownGeometries()) crown.add(mesh(geometry, material(color)));
   const coconuts = [];
   for (let k = 0; k < 3; k++) {
-    const coconut = mesh(new THREE.IcosahedronGeometry(0.17, 0), material(0x7a4a2a));
+    const coconut = new THREE.Object3D();
     coconut.position.set(Math.cos(k * 2.1) * 0.25, -0.2, Math.sin(k * 2.1) * 0.25);
     crown.add(coconut);
     coconuts.push(coconut);
@@ -66,6 +69,39 @@ export function palm(x, z) {
   scene.add(g);
   palms.push({ x, z, ground, crown, coconuts, shake: 0 });
   addCylinder(x, z, { r: 0.35, bottom: ground - 1, top: ground + 4.8 });
+}
+
+// after every palm is built (main.js): the instanced meshes that draw them all
+export function buildPalms() {
+  for (const [color, geometry] of palmCrownGeometries()) {
+    const fronds = new THREE.InstancedMesh(geometry, material(color), palms.length);
+    palmLook.fronds.push(fronds);
+  }
+  palmLook.coconuts = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(0.17, 0),
+    material(0x7a4a2a),
+    palms.length * 3,
+  );
+  for (const look of [...palmLook.fronds, palmLook.coconuts]) {
+    look.castShadow = look !== palmLook.coconuts; // coconuts are too small to need a shadow
+    look.receiveShadow = false;
+    look.frustumCulled = false; // spread over every island: there's no one box round them
+    scene.add(look);
+  }
+  updatePalms();
+}
+
+// per frame: copy each crown's and coconut's place in the world into the instanced meshes
+// (their world matrices are from the last render, a frame behind, which nobody can see)
+export function updatePalms() {
+  palms.forEach((tree, i) => {
+    for (const fronds of palmLook.fronds) fronds.setMatrixAt(i, tree.crown.matrixWorld);
+    tree.coconuts.forEach((coconut, k) =>
+      palmLook.coconuts.setMatrixAt(i * 3 + k, coconut.matrixWorld),
+    );
+  });
+  for (const look of [...palmLook.fronds, palmLook.coconuts])
+    look.instanceMatrix.needsUpdate = true;
 }
 // a mossy rock; returns its top height (something to stand on)
 export function rock(x, z, { radius, height, color = 0xa3acb8 }) {

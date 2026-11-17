@@ -7,3 +7,4 @@ dev-dist
 # Blender backups
 *.blend1
 __pycache__/
+.bpy/

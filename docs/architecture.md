@@ -28,6 +28,7 @@ src/
     level.js          Blender levels: makeLevel, ground -> height grid, colliders, markers
     props.js          palm, rock, rockTop, crate, scatter, dock
     ocean.js          sea patches: floor + animated water surface (addSea)
+    statics.js        addStatic / batchStatics: merges scenery that never moves (draw calls)
     ship.js           the ship, its bubble, placeShipAt, onDeck, addBucket
     sky.js            clouds
   player/
@@ -106,6 +107,7 @@ The underwater island sits at z=−720 with its sea bed at y=−20 and no global
 ## Rendering notes
 
 - `LOW_POWER` (touch or small screen) lowers pixel ratio, shadow map size and mesh density.
+- **Draw calls are what phones choke on.** Scenery that never moves (palm trunks, rocks, bushes, flowers, docks, Blender level scenery) is registered with `addStatic(mesh)` and merged after every island is built (`batchStatics()` in main.js): one mesh per material per 40 m patch, so culling still works. Palm crowns and coconuts are drawn for every palm at once with instancing (`buildPalms`/`updatePalms` in `world/props.js`; the crowns and coconuts in the scene are invisible placeholders the sway, shake and drop code moves). Characters made of many little parts can merge their fixed parts with `mergeParts(group)` (`core/materials.js`; island 1's squirrels, Chris and the amethyst crabs). The camera's far plane is just past the fog (nothing beyond it can be seen). Island 1's harbour view went from 1,670 draw calls to 480 (Nov 2026). Anything that moves, hides or is looked up later must not be registered.
 - Ground colours are painted into a canvas texture: vertex colours rendered black on some phone GPUs.
 - Text labels (`textSprite`) must be created inside `onFontsReady()`, or they render in a fallback font. Create them `visible=false` and let an update function show them.
 - Tall walls that would hide the dog are visually short with a taller invisible collider (`colH`), and the island 4 camera turns down the seaweed lane (`camera.assist`).

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { distXZ, lerp, lerpAngle } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
-import { material, mesh } from '../../core/materials.js';
+import { material, mergeParts, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce } from '../../core/ui.js';
@@ -77,6 +77,7 @@ function makeFox() {
     puff.position.set(0.1 + t * 0.3, 0.14 + t * 0.12, -0.32 - t * 0.35);
     g.add(puff);
   }
+  mergeParts(g); // the paw on its pivot stays separate
   return { g, paw };
 }
 

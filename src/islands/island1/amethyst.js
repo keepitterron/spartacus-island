@@ -3,6 +3,7 @@
 // the sand, and Spartacus can take it to the ship as a treasure (systems/treasures.js).
 import { distXZ, lerp, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
+import { mergeParts } from '../../core/materials.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
@@ -41,6 +42,9 @@ export function addAmethystCrabs(from, { to }) {
   group.pos.set(from.x, terrainHeight(from.x, from.z), from.z);
   for (let i = 0; i < 3; i++) {
     const crab = makeCrab(0xff6b5a, { shellColor: 0xf3e6c8 });
+    // these crabs never wiggle a leg on their own, so their parts can be merged
+    mergeParts(crab.inner);
+    mergeParts(crab.g);
     crab.g.scale.setScalar(1.3);
     scene.add(crab.g);
     group.crabs.push({ g: crab.g, angle: (i / 3) * Math.PI * 2, phase: i * 2.1 });

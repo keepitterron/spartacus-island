@@ -29,6 +29,7 @@ Vite + plain ES modules + three.js 0.160.0 (+ Rapier, only for physics toys), de
 - Mutable shared state goes on objects (`game`, `followCam`, `player`), not exported `let`s.
 - Don't call imported functions at module top level (there are harmless import cycles); do the work in `build()`.
 - Text sprites: create inside `onFontsReady()`, start hidden.
+- Scenery that never moves: `addStatic(mesh)` after adding it, so it's merged for phones (`world/statics.js`). Never for anything that moves or is looked up later.
 - Every action check tests distance **and** height.
 - Readable over dense: descriptive names, one subject + an options object, short "why" comments (see docs/code-style.md).
 - Keep assets local (no CDNs): the game must work offline.
