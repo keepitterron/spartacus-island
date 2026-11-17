@@ -259,6 +259,68 @@ body * {
 body.touch #toast {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 206px);
 }
+/* a character talking (game/talk.js): a bigger box with the speaker's name, waits for a tap */
+#talk {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 78px);
+  z-index: 7;
+  width: min(560px, calc(100vw - 24px));
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  pointer-events: none;
+  background: var(--card);
+  color: var(--ink);
+  border: 3px solid var(--edge);
+  box-shadow: 4px 4px 0 var(--edge);
+  border-radius: 22px;
+  padding: 18px 20px 12px;
+  cursor: pointer;
+  transition:
+    opacity 0.2s,
+    transform 0.25s;
+}
+#talk.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+#talkWho {
+  position: absolute;
+  top: -15px;
+  left: 18px;
+  background: var(--leaf);
+  color: #2b3a55; /* dark on the light green, in day and night themes */
+  border: 3px solid var(--edge);
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 0.95rem;
+}
+#talkWho:empty {
+  display: none;
+}
+#talkLine {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+#talkMore {
+  display: block;
+  text-align: right;
+  margin-top: 6px;
+  font-weight: 700;
+  color: var(--muted);
+  animation: talk-nudge 1s ease-in-out infinite;
+}
+@keyframes talk-nudge {
+  50% {
+    transform: translateX(4px);
+  }
+}
+body.touch #talk {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 196px);
+}
 #prompt {
   position: fixed;
   left: 50%;

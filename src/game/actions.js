@@ -11,8 +11,10 @@ import { swingAction } from '../systems/hooks.js';
 import { barkReactions } from '../systems/reactions.js';
 import { poundAction } from '../player/pound.js';
 import { allTasksDone } from './tasks.js';
+import { talkAction } from './talk.js';
 
 // Returns {label, fn} or null. Whatever is first in this list wins:
+//   0. "Next" while someone is talking (game/talk.js)
 //   1. the island's exit (Sail / Dive / Ride), once its to-do list is done
 //   2. the island's own actions(p)  (give an item, open a gate, grow, chop…)
 //   3. swing, drop, grab, dig, and in the air the ground pound
@@ -24,7 +26,10 @@ export function currentAction() {
     player.swing ||
     player.climb ||
     player.zip;
-  if (!isPlaying() || busy) return null;
+  if (!isPlaying()) return null;
+  const talking = talkAction();
+  if (talking) return talking;
+  if (busy) return null;
   const island = currentIsland(),
     pos = player.pos;
   if (island.exit && allTasksDone(island) && island.exit.at(pos))

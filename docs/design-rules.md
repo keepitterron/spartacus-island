@@ -20,6 +20,7 @@ These came from Zoë and are the whole point of the game. Check every new featur
 Things she tried and said no to, so we don't build them again. Newest first.
 
 - **Nov 2026:**
+  - **Dialogue went by too fast** to read, and Juf Anne kept talking after Spartacus had walked off. Messages now queue, conversations wait for a tap and stop when you leave, and Juf Anne's scene is two visits (Claudio's idea).
   - **No gifts or dress-up.** Hidden presents with accessories and a wardrobe were built and removed: she doesn't want Spartacus customised, and the presents weren't fun without that.
   - **No ocean sound.** A swelling waves ambience (and an underwater hum) was unsettling. The island tunes and footsteps are fine.
   - **No bubble rescue.** Being carried back after falling in the water was frustrating. Wading and paddling replaced it.
@@ -29,7 +30,8 @@ Things she tried and said no to, so we don't build them again. Newest first.
 
 - Plays on phones (touch: stick + Act / Woof / Jump buttons) and desktop (keyboard).
 - Long term: playable **together with her friends** in the browser (see [backlog.md](backlog.md)).
-- Kids read slowly: keep toasts short, one idea per toast. `toast()` shows each one for at least 3.5 s, longer for long messages, and island intros wait for the previous message.
+- Kids read slowly: keep toasts short, one idea per toast. `toast()` shows each one for at least 3.5 s, longer for long messages, and messages queue instead of replacing each other.
+- **Characters talk at the reader's pace.** More than one line from a character is a conversation (`startTalk`, see systems.md): each line waits for a tap, and walking away ends it. Never a chain of timed toasts.
 
 ## Spartacus
 

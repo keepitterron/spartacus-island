@@ -1,8 +1,11 @@
-// Juf Anne, the squirrel teacher in the cave (Zoë's surprise, not on the to-do list). Coming near,
-// Spartacus hears big growls and thinks there's a bear; close up (or with a woof) out she pops:
-// she growls to keep her napping class safe. Her thank-you for being quiet is one of the bones.
-// Once they're awake her class sits down for a lesson (Zoë), and when the to-do list is done she
-// and the little ones wave Spartacus goodbye from the dock (Zoë).
+// Juf Anne, the squirrel teacher in the cave (Zoë's surprise, not on the to-do list). Two visits:
+//   1. Coming near, Spartacus hears big growls and thinks there's a bear; close up (or with a
+//      woof) out she pops: she growls to keep her napping class safe, "come back later!", and
+//      goes back in.
+//   2. Once he's been away a while the class wakes up (giggles from the cave). Next time he comes
+//      by she thanks him with a bone (one of the six) and the class sits down for a lesson (Zoë).
+// When the to-do list is done she and the little ones wave him goodbye from the dock (Zoë).
+// What she says is a conversation (game/talk.js): one line at a time, at the reader's pace.
 import * as THREE from 'three';
 import { distXZ, lerp, lerpAngle, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
@@ -10,8 +13,9 @@ import { canvasTexture, material, mergeParts, mesh } from '../../core/materials.
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst, onFontsReady } from '../../core/fx.js';
-import { toast, toastTime, hintOnce } from '../../core/ui.js';
+import { toast, hintOnce } from '../../core/ui.js';
 import { addPickup } from '../../systems/collect.js';
+import { startTalk } from '../../game/talk.js';
 
 // Zoë's name for her ("juf" is Dutch for a primary-school teacher): change it here
 export const TEACHER = 'Juf Anne';
@@ -21,6 +25,9 @@ const BARK_REACH = 10; // m: a woof this close brings her out too
 const GROWL_EVERY = 4.5; // s between growls
 const LESSON_REACH = 7; // m from the mouth: she says something about the lesson
 const LESSON_EVERY = 14; // s at least between two lesson lines
+const TALK_REACH = 9; // m from the mouth: walk further and the conversation ends
+const WAKE_AWAY = 25; // m from the mouth: Spartacus has gone off somewhere else…
+const WAKE_AFTER = 30; // s: …for this long (in all) after the first visit: the class wakes up
 const GOODBYE_AWAY = 25; // m: she only leaves for the dock once Spartacus is this far from both
 const GOODBYE_REACH = 8; // m from the dock spot: "Goodbye, Spartacus!"
 
@@ -32,8 +39,12 @@ const LESSON = [
   () => `${TEACHER}: “Look, class, Spartacus came to visit. Wave hello!”`,
 ];
 
-// state: hidden (inside, growling when he's near) | popping (hopping out) | talking | teaching |
-// goodbye (on the dock, once the list is done)
+// state, in order:
+//   hidden (inside, growling when he's near) | popping (hopping out) | shushing (first talk) |
+//   resting (back inside, the class asleep; awayTime counts up while he's far, and cameBack says
+//   he left and is back, for one "not yet!") | awake (the class
+//   at their lesson, she waits for him) | greeting (second talk) | teaching | goodbye (on the
+//   dock, once the list is done)
 // mouth / inside / teach: {x, z, y} spots; growlTimer counts down to the next growl;
 // dock: where she waves from, set by sayGoodbye() (she moves there while nobody's looking)
 const anne = {
@@ -42,6 +53,8 @@ const anne = {
   state: 'hidden',
   t: 0,
   growlTimer: 0,
+  awayTime: 0,
+  cameBack: false,
   lessonTimer: 0,
   lessonLine: 0,
   mouth: null,
@@ -226,16 +239,7 @@ export function addJufAnne(mouth, { inside }) {
 }
 
 const distToMouth = (p) => distXZ(p, anne.mouth.x, anne.mouth.z);
-
-// toasts one after another, each given its full reading time; `then` runs after the last
-function say(lines, then) {
-  let at = 0;
-  for (const [text, ms] of lines) {
-    setTimeout(() => toast(text, ms), at);
-    at += toastTime(text, ms) + 300;
-  }
-  setTimeout(then, at);
-}
+const asleep = () => ['hidden', 'popping', 'shushing', 'resting'].includes(anne.state);
 
 function reveal() {
   anne.state = 'popping';
@@ -244,16 +248,51 @@ function reveal() {
   sfx.squeak();
 }
 
-function startTalking() {
-  anne.state = 'talking';
-  say(
+// the first visit: shh, they're sleeping, come back later
+function shush() {
+  anne.state = 'shushing';
+  startTalk(
     [
-      [`It’s not a bear! It’s ${TEACHER}, the squirrel teacher.`, 3200],
-      [`${TEACHER}: “Shh! My class is having a nap.”`, 3000],
-      [`${TEACHER}: “I growl so nobody wakes them up.”`, 3200],
+      'Grrr… oh! I’m not a bear. I’m Juf Anne, the squirrel teacher.',
+      'Shh! My class is having a nap.',
+      'I growl so nobody wakes them up.',
+      'Come back later, when they’re awake!',
     ],
-    wakeTheClass,
+    { speaker: TEACHER, at: anne.mouth, reach: TALK_REACH, onEnd: goBackIn },
   );
+}
+function goBackIn() {
+  anne.state = 'resting';
+  anne.awayTime = 0;
+  anne.cameBack = false;
+}
+
+// he's been away long enough: the little ones wake up and the lesson starts without him
+function wakeTheClass() {
+  anne.state = 'awake';
+  toast('Little giggles from Growly Cave… the class is awake!', 3400);
+}
+
+// the second visit: thank you, here's a bone, now the lesson
+function greet() {
+  anne.state = 'greeting';
+  startTalk(
+    [
+      'Welcome back, Spartacus! My class is awake now.',
+      {
+        text: 'Thank you for letting them sleep. Here’s a bone!',
+        run: () => giveBone({ pop: 0.6 }),
+      },
+      'Now it’s time for our lesson. You can watch!',
+    ],
+    { speaker: TEACHER, at: anne.mouth, reach: TALK_REACH, onEnd: startLesson },
+  );
+}
+// (if he walks off before the bone line, he still gets it: leaving never loses progress)
+function startLesson() {
+  giveBone({ pop: 0.6 });
+  anne.state = 'teaching';
+  anne.lessonTimer = LESSON_EVERY;
 }
 
 // just outside the mouth, where her thank-you bone pops up
@@ -264,12 +303,13 @@ const frontOfCave = () =>
     anne.mouth.z + Math.cos(anne.facing) * 1.6,
   );
 
-// the little ones wake up anyway; she gives Spartacus a bone for being kind, then starts the lesson
-function wakeTheClass() {
-  anne.state = 'teaching';
-  anne.lessonTimer = LESSON_EVERY;
-  sfx.squeak();
+function giveBone({ pop = 0 } = {}) {
+  if (anne.bone) return;
+  anne.bone = true;
   const front = frontOfCave();
+  addPickup(front.x, front.z, { y: anne.mouth.y, island: 1, pop });
+  if (!pop) return;
+  sfx.squeak();
   burst(front.clone().add(vec3(0, 0.9, 0)), {
     count: 18,
     color: [0xffd84d, 0xff9fb2, 0xffffff],
@@ -278,14 +318,6 @@ function wakeTheClass() {
     life: 0.8,
     size: 0.9,
   });
-  giveBone({ pop: 0.6 });
-  toast(`${TEACHER}: “Oh! They’re awake. Here’s a bone, Spartacus. Time for our lesson!”`, 3800);
-}
-function giveBone({ pop = 0 } = {}) {
-  if (anne.bone) return;
-  anne.bone = true;
-  const front = frontOfCave();
-  addPickup(front.x, front.z, { y: anne.mouth.y, island: 1, pop });
 }
 
 // the to-do list is done: she and the class go to the dock to wave (once he's far from both)
@@ -307,6 +339,14 @@ function moveToDock() {
 // per frame (island interact): growls while he's near, out she comes when he's close; later the
 // lesson and the goodbye. bones: how many Spartacus has found (she counts them with the class)
 export function interactJufAnne(p, { bones }) {
+  if (anne.state === 'resting') {
+    remindNotYet(p);
+    return;
+  }
+  if (anne.state === 'awake') {
+    if (distToMouth(p) < REVEAL_REACH) greet();
+    return;
+  }
   if (anne.state === 'teaching') {
     if (distToMouth(p) < LESSON_REACH && anne.lessonTimer <= 0) sayLessonLine(bones);
     return;
@@ -325,6 +365,12 @@ export function interactJufAnne(p, { bones }) {
   if (dist > GROWL_REACH) return;
   hintOnce('growl', 'Grrrrr! Something BIG is growling in the cave… a bear?!', 3400);
 }
+// back too soon: they're still asleep (once each time he comes back)
+function remindNotYet(p) {
+  if (distToMouth(p) > REVEAL_REACH || !anne.cameBack) return;
+  anne.cameBack = false;
+  toast(`${TEACHER}: “Shh! Not yet, they’re still sleeping.”`, 3000);
+}
 function sayLessonLine(bones) {
   anne.lessonTimer = LESSON_EVERY;
   let line = null;
@@ -340,7 +386,10 @@ function sayLessonLine(bones) {
 export function barkAtCave(p) {
   const dist = distToMouth(p);
   if (anne.state === 'hidden' && dist < BARK_REACH) reveal();
-  else if (anne.state === 'teaching' && dist < BARK_REACH) {
+  else if (anne.state === 'resting' && dist < BARK_REACH) {
+    anne.cameBack = true;
+    remindNotYet(anne.mouth);
+  } else if (anne.state === 'teaching' && dist < BARK_REACH) {
     sfx.squeak();
     for (const baby of anne.babies) baby.hop = 0.5;
     toast(`${TEACHER}: “Shh! …oh, go on then. One more woof!”`, 2600);
@@ -348,15 +397,32 @@ export function barkAtCave(p) {
 }
 
 /* mid-island saves (game/progress.js) */
-export const jufAnneState = () => ({ met: anne.state !== 'hidden' && anne.state !== 'popping' });
-// met: the class is awake and in their lesson (the bone she gave is restored with the pickups)
-export function restoreJufAnne({ met } = {}) {
-  if (!met) return;
-  anne.state = 'teaching';
+// visit: hidden (not met) | resting (first visit done) | awake (the class is up, not thanked yet)
+// | teaching (thanked, the bone given; its pickup is restored with the others)
+const SAVED_AS = {
+  hidden: 'hidden',
+  popping: 'hidden',
+  shushing: 'resting',
+  resting: 'resting',
+  awake: 'awake',
+  greeting: 'awake',
+  teaching: 'teaching',
+  goodbye: 'teaching',
+};
+export const jufAnneState = () => ({ visit: SAVED_AS[anne.state] });
+// (saves from before the two visits say {met: true}: that's teaching)
+export function restoreJufAnne({ visit, met } = {}) {
+  const state = met ? 'teaching' : visit;
+  if (!state || state === 'hidden') return;
+  if (state === 'resting') {
+    goBackIn();
+    return;
+  }
+  anne.state = state;
   anne.lessonTimer = 0;
   anne.g.position.copy(anne.teach);
   for (const baby of anne.babies) baby.g.position.copy(baby.seat);
-  giveBone();
+  if (state === 'teaching') giveBone();
 }
 
 // growl timing, her hop out of the cave, the lesson, the goodbye
@@ -372,8 +438,13 @@ export function updateJufAnne(dt, p) {
     }
   }
   if (anne.state === 'popping') updatePopping();
-  if (anne.state === 'talking') lookAt(p, { dt, y: anne.mouth.y });
-  if (anne.state === 'teaching') updateTeaching(dt, p);
+  if (anne.state === 'shushing') lookAt(p, { dt, y: anne.mouth.y });
+  if (anne.state === 'resting') updateResting(dt, p);
+  if (anne.state === 'awake' || anne.state === 'teaching') updateTeaching(dt, p);
+  if (anne.state === 'greeting') {
+    walkTo(anne.teach, dt);
+    lookAt(p, { dt, y: anne.teach.y });
+  }
   if (anne.state === 'goodbye') {
     lookAt(p, { dt, y: anne.dock.y });
     waveAt(anne.paw, { time, phase: 0 });
@@ -390,7 +461,24 @@ function updatePopping() {
   );
   anne.g.position.lerpVectors(anne.from, out, t);
   anne.g.position.y += Math.sin(t * Math.PI) * 0.8; // a hop
-  if (t === 1) startTalking();
+  if (t === 1) shush();
+}
+
+// a hop back to her spot at the back of the cave; then, once he's been away long enough, the
+// class wakes up
+function updateResting(dt, p) {
+  walkTo(anne.inside, dt);
+  anne.g.rotation.y = lerpAngle(anne.g.rotation.y, anne.facing, Math.min(1, dt * 3));
+  if (distToMouth(p) > TALK_REACH) anne.cameBack = true;
+  if (distToMouth(p) > WAKE_AWAY) anne.awayTime += dt;
+  if (anne.awayTime > WAKE_AFTER) wakeTheClass();
+}
+
+function walkTo(spot, dt) {
+  const pos = anne.g.position;
+  pos.x = lerp(pos.x, spot.x, Math.min(1, dt * 1.5));
+  pos.z = lerp(pos.z, spot.z, Math.min(1, dt * 1.5));
+  pos.y = spot.y + Math.abs(Math.sin(game.time * 2)) * 0.03;
 }
 
 // turn towards Spartacus with a little bob
@@ -402,14 +490,11 @@ function lookAt(p, { dt, y }) {
 
 function updateTeaching(dt, p) {
   // she walks back to the chalkboard and faces her class, pointing now and then
-  const pos = anne.g.position;
-  pos.x = lerp(pos.x, anne.teach.x, Math.min(1, dt * 1.5));
-  pos.z = lerp(pos.z, anne.teach.z, Math.min(1, dt * 1.5));
-  pos.y = anne.teach.y + Math.abs(Math.sin(game.time * 2)) * 0.03;
+  walkTo(anne.teach, dt);
   anne.g.rotation.y = lerpAngle(anne.g.rotation.y, anne.facing, Math.min(1, dt * 3));
   const pointing = Math.sin(game.time * 0.8) > 0.4;
   anne.paw.rotation.x = lerp(anne.paw.rotation.x, pointing ? -1.4 : 0, Math.min(1, dt * 5));
-  if (!anne.dock) return;
+  if (!anne.dock || anne.state !== 'teaching') return;
   const farFromBoth =
     distToMouth(p) > GOODBYE_AWAY && distXZ(p, anne.dock.x, anne.dock.z) > GOODBYE_AWAY;
   if (farFromBoth) moveToDock();
@@ -422,7 +507,7 @@ function waveAt(paw, { time, phase }) {
 }
 
 function updateBaby(baby, { dt, time, p }) {
-  if (anne.state === 'hidden' || anne.state === 'popping' || anne.state === 'talking') {
+  if (asleep()) {
     // asleep: breathing
     baby.g.scale.y = 0.55 * (1 + Math.sin(time * 2 + baby.phase) * 0.04);
     return;

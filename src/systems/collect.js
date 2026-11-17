@@ -59,7 +59,7 @@ function countPickup(collect) {
     toast(collect.all);
     completeTask(collect.taskId);
   } else {
-    toast(`${collect.name}! ${count} of ${collect.total}`, 1600);
+    toast(`${collect.name}! ${count} of ${collect.total}`, 1600, { id: 'pickups' });
     renderTasks();
   }
 }
