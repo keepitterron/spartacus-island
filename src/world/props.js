@@ -1,16 +1,39 @@
 // Reusable scenery. Each one sits on the terrain and adds its own collider.
 // Several use the shared seeded rand(), so call them in a fixed order inside build().
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { rand } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { material, mesh } from '../core/materials.js';
 import { addCylinder, addBox } from '../core/colliders.js';
 import { terrainHeight } from './terrain.js';
+import { addStatic } from './statics.js';
 
 // every palm's {x, z, ground, crown, coconuts, shake}, so barking can shake them (systems/reactions.js)
 export const palms = [];
 
 // a leaning palm: six trunk segments, seven fronds and three coconuts
+// Seven fronds round the crown, alternating two greens, merged into one geometry per green (two
+// meshes per crown, not seven). Every palm's crown is the same, so it's made once and shared.
+const crownGeometries = [];
+function palmCrownGeometries() {
+  if (crownGeometries.length) return crownGeometries;
+  const frond = new THREE.ConeGeometry(0.5, 2.6, 4);
+  frond.scale(1, 1, 0.25);
+  const placed = { 0x4cc05a: [], 0x3fae4f: [] };
+  for (let k = 0; k < 7; k++) {
+    // lying out and drooping, turned k sevenths of the way round
+    const transform = new THREE.Matrix4()
+      .makeRotationY((k * Math.PI * 2) / 7)
+      .multiply(new THREE.Matrix4().makeTranslation(1.15, -0.35, 0))
+      .multiply(new THREE.Matrix4().makeRotationZ(-Math.PI / 2 - 0.45));
+    placed[k % 2 ? 0x3fae4f : 0x4cc05a].push(frond.clone().applyMatrix4(transform));
+  }
+  for (const [color, geometries] of Object.entries(placed))
+    crownGeometries.push([Number(color), mergeGeometries(geometries)]);
+  return crownGeometries;
+}
+
 export function palm(x, z) {
   const ground = terrainHeight(x, z);
   const g = new THREE.Group();
@@ -27,21 +50,12 @@ export function palm(x, z) {
     segment.position.set(offsetX, 0.41 + i * 0.78, 0);
     segment.rotation.z = -lean * 0.25;
     g.add(segment);
+    addStatic(segment); // the trunk never moves (only the crown shakes)
   }
   const crown = new THREE.Group();
   crown.position.set(offsetX, 4.7, 0);
   g.add(crown);
-  const frondGeo = new THREE.ConeGeometry(0.5, 2.6, 4);
-  frondGeo.scale(1, 1, 0.25);
-  for (let k = 0; k < 7; k++) {
-    const pivot = new THREE.Group();
-    pivot.rotation.y = (k * Math.PI * 2) / 7;
-    const frond = mesh(frondGeo, material(k % 2 ? 0x3fae4f : 0x4cc05a));
-    frond.rotation.z = -Math.PI / 2 - 0.45;
-    frond.position.set(1.15, -0.35, 0);
-    pivot.add(frond);
-    crown.add(pivot);
-  }
+  for (const [color, geometry] of palmCrownGeometries()) crown.add(mesh(geometry, material(color)));
   const coconuts = [];
   for (let k = 0; k < 3; k++) {
     const coconut = mesh(new THREE.IcosahedronGeometry(0.17, 0), material(0x7a4a2a));
@@ -64,6 +78,7 @@ export function rock(x, z, { radius, height, color = 0xa3acb8 }) {
   m.position.set(x, ground + height / 2, z);
   m.rotation.y = rand() * 3;
   scene.add(m);
+  addStatic(m);
   const moss = mesh(
     new THREE.CylinderGeometry(radius * 0.9, radius * 0.9, 0.14, 7),
     material(0x7cc86a),
@@ -72,6 +87,7 @@ export function rock(x, z, { radius, height, color = 0xa3acb8 }) {
   moss.position.set(x, ground + height + 0.03, z);
   moss.rotation.y = m.rotation.y;
   scene.add(moss);
+  addStatic(moss);
   addCylinder(x, z, { r: radius * 0.95, bottom: ground - 1, top: ground + height + 0.1 });
   return ground + height + 0.1;
 }
@@ -109,6 +125,7 @@ export function scatter(cx, cz, { radius, allowed, bushes, flowers }) {
     bush.position.set(x, terrainHeight(x, z) + 0.3, z);
     bush.scale.y = 0.75;
     scene.add(bush);
+    addStatic(bush);
   }
   for (let tries = 0, placed = 0; tries < flowers * 3 && placed < flowers; tries++) {
     const angle = rand() * 6.28;
@@ -124,6 +141,7 @@ export function scatter(cx, cz, { radius, allowed, bushes, flowers }) {
     );
     flower.position.set(x, terrainHeight(x, z) + 0.12, z);
     scene.add(flower);
+    addStatic(flower);
   }
 }
 export const DOCK_TOP = 0.78; // how high a dock's deck is
@@ -138,12 +156,14 @@ export function dock(cx, { zFrom, zTo }) {
     );
     plank.position.set(cx, top - 0.07, z + 0.45);
     scene.add(plank);
+    addStatic(plank);
   }
   for (let z = zFrom + 1; z <= zTo; z += 2.5)
     for (const x of [-1.15, 1.15]) {
       const post = mesh(new THREE.CylinderGeometry(0.13, 0.13, 3.2, 6), material(0x7a4a2a));
       post.position.set(cx + x, -0.75, z);
       scene.add(post);
+      addStatic(post);
     }
   addBox(cx, (zFrom + zTo) / 2, { hw: 1.2, hd: (zTo - zFrom) / 2, bottom: -3, top });
 }
