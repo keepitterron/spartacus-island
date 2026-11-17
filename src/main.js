@@ -30,6 +30,7 @@ import { updateHat } from './systems/hat.js';
 import { showSavedTreasures } from './systems/treasures.js';
 import { updateReactions } from './systems/reactions.js';
 import { buildBalls, updateBalls } from './systems/balls.js';
+import { updateToys } from './systems/toys.js';
 import { buildCritters, updateCritters } from './systems/critters.js';
 import { updateGull } from './npcs/gull.js';
 import { updateMango } from './npcs/mango.js';
@@ -286,6 +287,7 @@ function updateWorld(dt) {
   updateHat(dt);
   updateReactions(dt);
   updateBalls(dt);
+  updateToys(dt);
   updateCritters(dt);
   updateGull(dt);
   updateMango(dt);

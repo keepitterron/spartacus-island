@@ -130,6 +130,6 @@ blender -b levels/island8.blend --python tools/levels/dress_test_island.py && np
 
 ## Not done yet
 
-- **Physics stay home-made.** Terrain is a height grid and colliders are upright boxes and cylinders, exactly like the hand-built islands, so every existing system (vines, hooks, balls, rides) works unchanged. A physics library (e.g. Rapier) would add rotated and mesh colliders, overhangs and real rolling/stacking props, but replaces the player's movement: worth doing only when a level needs it.
+- **Physics stay home-made for Spartacus.** Terrain is a height grid and colliders are upright boxes and cylinders, exactly like the hand-built islands, so every existing system (vines, hooks, balls, rides) works unchanged. Rapier is in the game for loose props only (`systems/toys.js`): toys tumble on a heightfield copy of the ground. Moving Spartacus onto it (rotated and mesh colliders, overhangs) would replace `stepPlayer` on every island: worth doing only when a level needs it.
 - Instanced palms and flowers (each is still its own set of meshes; see the phone-performance item in [backlog.md](backlog.md)).
 - No ship sailing in: island 8 is reached with the picker or `__g.go(8)`, and island 7's dock still ends the game.

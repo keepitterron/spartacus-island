@@ -53,7 +53,7 @@ Comments are for humans who know JavaScript but not this game.
 - Use object spread (`{ ...defaults, ...opts }`), optional chaining (`I.buildLate?.()`), nullish coalescing (`y ?? terrainHeight(x, z)`), destructuring and template strings over their older equivalents.
 - Use `===` (lint allows `== null` for null-or-undefined).
 - Use `for…of` over index loops unless you need the index or are removing while iterating (then loop backwards).
-- Use the platform: `document.querySelector`, `classList`, `addEventListener`, `matchMedia`, `localStorage`, WebAudio. No libraries beyond three.js unless there's a strong reason, and keep everything local so the game works offline.
+- Use the platform: `document.querySelector`, `classList`, `addEventListener`, `matchMedia`, `localStorage`, WebAudio. No libraries beyond three.js unless there's a strong reason (Rapier, for the physics toys, is the one so far), and keep everything local so the game works offline.
 - Avoid clever tricks such as comma expressions, `!!x &&` side effects, nested ternaries and bit tricks outside the RNG. If you need to stop and think about a line, rewrite it.
 
 ## Game-specific rules

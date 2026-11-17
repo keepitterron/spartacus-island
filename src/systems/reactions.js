@@ -1,6 +1,7 @@
 // Little things the world does when Spartacus barks or ground-pounds nearby, on every island:
 // palms shake their fronds and drop a coconut, which bounces and later pops back up into the
-// tree; beach balls get shoved (systems/balls.js); birds and fish scatter (systems/critters.js).
+// tree; beach balls and toys get shoved (systems/balls.js, systems/toys.js); birds and fish
+// scatter (systems/critters.js).
 // A ground pound also digs up a sand mound right underneath.
 import { distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
@@ -10,6 +11,7 @@ import { terrainHeight } from '../world/terrain.js';
 import { palms } from '../world/props.js';
 import { poundDig } from './digs.js';
 import { shoveBalls } from './balls.js';
+import { shoveToys } from './toys.js';
 import { barkAtCritters } from './critters.js';
 
 const BARK_REACH = 7;
@@ -21,6 +23,7 @@ const fallen = [];
 export function barkReactions(pos) {
   shakePalms(pos, BARK_REACH);
   shoveBalls(pos, { reach: 6, push: 6, up: 3 });
+  shoveToys(pos, { reach: 6, push: 5, up: 3 });
   barkAtCritters(pos);
 }
 
@@ -28,12 +31,14 @@ export function poundReactions(pos) {
   shakePalms(pos, 5);
   poundDig(pos);
   shoveBalls(pos, { reach: 5, push: 3, up: 10 });
+  shoveToys(pos, { reach: 5, push: 3, up: 7 });
 }
 
 // a Mega-Me footstep: palms shake and balls hop, a little less than for a ground pound
 export function stompReactions(pos) {
   shakePalms(pos, 6);
   shoveBalls(pos, { reach: 6, push: 2, up: 5 });
+  shoveToys(pos, { reach: 6, push: 2, up: 4 });
 }
 
 function shakePalms(pos, reach) {

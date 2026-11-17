@@ -1,6 +1,6 @@
 # Architecture
 
-Plain JavaScript ES modules, bundled by Vite. `three` is pinned to **0.160.0** (the version the game was built against). No framework. Islands 2–7 are built entirely in code from three.js primitives; islands 1 and 8 are laid out in Blender and loaded from a `.glb` ([levels.md](levels.md)). Every sound is synthesised.
+Plain JavaScript ES modules, bundled by Vite. `three` is pinned to **0.160.0** (the version the game was built against). No framework. The one other runtime library is Rapier (`@dimforge/rapier3d-compat`, pinned), only for the physics toys (`systems/toys.js`), loaded on demand in its own chunk. Islands 2–7 are built entirely in code from three.js primitives; islands 1 and 8 are laid out in Blender and loaded from a `.glb` ([levels.md](levels.md)). Every sound is synthesised.
 
 ## Folders
 
@@ -38,6 +38,7 @@ src/
   models/items.js     small reusable models (plank, key, bone, acorn, flower, pillow, seed…)
   systems/            reusable gameplay building blocks (see systems.md)
     items.js  collect.js  digs.js  powers.js  vines.js  hooks.js  hat.js  rides.js
+    places.js (named places, signposts)  toys.js (Rapier physics props)
   npcs/               crew members that travel between islands: gull, mango, wasabi
   cutscenes/          sail.js, bubble.js (island-agnostic)
   game/

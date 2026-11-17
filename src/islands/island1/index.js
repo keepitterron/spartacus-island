@@ -17,6 +17,7 @@ import { player } from '../../player/player.js';
 import { addItem, carryItem, useUpCarried, placeItem } from '../../systems/items.js';
 import { addPickup, pickupText } from '../../systems/collect.js';
 import { addDig, digNear } from '../../systems/digs.js';
+import { addToyArea, addToy, toysNear } from '../../systems/toys.js';
 import {
   addPlace,
   addSignpost,
@@ -464,6 +465,57 @@ function build() {
   });
   placeShipAt(0, sailPath);
   buildPlaces();
+  buildToys();
+}
+
+// Toys to bowl over (systems/toys.js, real physics): a stack of crates and some barrels at the
+// harbour, and odds and ends on top of Chris's lost-and-found pile
+const HARBOUR_TOYS = { x: -7, z: 46 };
+function buildToys() {
+  const { x, z } = HARBOUR_TOYS;
+  addToyArea(x, z, { size: 18 });
+  const ground = terrainHeight(x, z);
+  const crate = 0.8;
+  // a pyramid, three crates along x at the bottom
+  for (const [row, count] of [3, 2, 1].entries())
+    for (let i = 0; i < count; i++)
+      addToy('crate', {
+        x: x + (i - (count - 1) / 2) * (crate + 0.03),
+        z,
+        y: ground + row * (crate + 0.01),
+        size: crate,
+        color: ['#c48a54', '#b57b46', '#d09a5e'][(row + i) % 3],
+      });
+  for (const [dx, dz] of [
+    [-2.6, -1.4],
+    [-3.3, -0.6],
+    [-2.4, -0.2],
+  ])
+    addToy('barrel', { x: x + dx, z: z + dz, size: 0.9, color: 0x9a6a3e });
+  addToy('bucket', { x: x + 1.8, z: z + 1.2, size: 0.4, color: 0x2fa4c7 });
+  buildLostAndFoundToys();
+}
+
+// on the level's pile boxes (their tops are colliders) and round its foot
+function buildLostAndFoundToys() {
+  const pile = level.spots['lost and found'];
+  addToyArea(pile.x, pile.z, { size: 14 });
+  // offsets from the spot (the middle of the biggest box; see build_camp in make_island1.py)
+  const things = [
+    ['crate', -0.5, -0.3, 0.5, '#f2545b'],
+    ['crate', 0.5, -0.4, 0.45, '#ffd84d'],
+    ['bucket', 0, 0.45, 0.4, 0x7fd36a],
+    ['barrel', 1.6, -0.4, 0.6, 0x2fa4c7],
+    ['crate', -1.4, 0.4, 0.45, '#2fa4c7'],
+    ['crate', -2.2, -1.6, 0.5, '#9b7fd9'],
+    ['crate', 2.2, -1.8, 0.55, '#7fd36a'],
+    ['bucket', 1.2, -1.8, 0.4, 0xf2545b],
+  ];
+  for (const [kind, dx, dz, size, color] of things) {
+    const tx = pile.x + dx,
+      tz = pile.z + dz;
+    addToy(kind, { x: tx, z: tz, y: supportHeight(tx, tz, Infinity) + 0.02, size, color, yaw: dx });
+  }
 }
 
 const placeNamed = (name) => PLACES.find((place) => place.name === name);
@@ -745,6 +797,7 @@ const island = {
       p.y > 1
     )
       hintOnce('bridge', 'The bridge is broken! Find a long plank.', 3200);
+    if (toysNear(p, 3.5)) hintOnce('toys', 'Boxes and barrels! Bump into them, or woof!', 3000);
     if (digNear(p, 4)) hintOnce('dig', `A sand mound! Dig it with ${actionKeyName()}.`, 3200);
     if (!island.done.chest && distXZ(p, CHEST.x, CHEST.z) < 3 && player.carrying?.id !== 'key')
       hintOnce('chest', 'A locked treasure chest. It needs a key…', 3200);

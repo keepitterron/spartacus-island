@@ -17,7 +17,7 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 
 ## Tech
 
-- **Blender levels** ([levels.md](levels.md)), live with island 8 as a test. Next: rebuild an existing island bigger in Blender (island 1 is a good first one), sail into level islands, instanced palms/flowers for big maps. Rapier physics only when a level needs rotated or mesh colliders, overhangs or real stacking props (it would replace `stepPlayer`).
+- **Blender levels** ([levels.md](levels.md)), live with island 8 as a test. Next: rebuild an existing island bigger in Blender (island 1 is a good first one), sail into level islands, instanced palms/flowers for big maps. Rapier is in for loose props (`systems/toys.js`, a test on island 1); moving Spartacus onto it only when a level needs rotated or mesh colliders or overhangs (it would replace `stepPlayer`). A smaller download: the non-compat `@dimforge/rapier3d` loads a separate `.wasm` (~3 MB raw instead of 4.3 MB of base64) but needs a Vite wasm plugin.
 - **Phone performance**: instancing for repeated props (flowers, coral, seaweed strips, rocks) and merging static meshes per island.
 - **Automated smoke tests** (Playwright): blocked on BUG-1 for software-GL runners; see [testing.md](testing.md).
 - Upgrade three.js past 0.160 (check `CapsuleGeometry`, lighting and colour management for visual changes).

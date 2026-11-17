@@ -79,4 +79,4 @@ The plan to finish it (Nov 2026), in passes:
 2. **Dressing:** the Quaternius models in the `.blend` (as on island 8), a winding cliff path up the headland, instanced flowers/grass/rocks for phones.
 3. **Lively:** wind (palms, grass, flags), grass parting round Spartacus, ripples and frogs at the pond, fish in the creek, Chris's campfire smoke, crabs peeking out later, a small sound for each place.
 4. **Juice:** bones drifting to Spartacus, a squash on landing, a wag when a task ticks, a short camera look the first time a place comes into view.
-5. **Physics props (Rapier spike):** see [systems.md](systems.md).
+5. **Physics props (Rapier test):** ~~a crate pyramid and barrels at Hallo Harbour, odds and ends on the lost-and-found pile~~ (`buildToys`, see Toys in [systems.md](systems.md)). If Zoë loves knocking things over, the puzzles built on it are hers to invent.

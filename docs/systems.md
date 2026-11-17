@@ -77,6 +77,18 @@ Named places, so a big island is easy to find your way round. `addPlace(name, {x
 
 Islands list `balls: [[x, z], …]` (island-local). Home-made physics, no library: gravity, bounces, rolling friction, pushed out of colliders. Running into a ball kicks it, a bark shoves balls within 6, a ground pound launches them. A ball in the water (sea or pond) bobs for 2.5 s, then pops back to the last dry spot it rested on (at least 0.3 above the sea), so a bad kick costs seconds, not the kicking before it. Balls further than 70 from Spartacus sleep. `addBall(x, z)` adds one at runtime (Wasabi brings one up on island 5); `ballsNear(x, z, r)` gives puzzles the balls nearby, whose `pos` and `vel` they may nudge (island 5's plates pull a slow ball in).
 
+## Toys (`systems/toys.js`), real physics with Rapier
+
+Loose crates, barrels and buckets that tumble, stack and roll, moved by [Rapier](https://rapier.rs) (`@dimforge/rapier3d-compat`, WebAssembly). **Only toys use it:** Spartacus keeps his own movement in `stepPlayer`, so nothing else on any island changes.
+
+- `addToyArea(x, z, {size})`: a square (m across) where toys live. Its ground is copied into Rapier as a heightfield (half a metre apart, like the level's baked heights) and every collider in it as a fixed box or cylinder, once, when Rapier has loaded. Colliders switched on or off later aren't seen by the toys.
+- `addToy(kind, {x, z, y, size, color, yaw})`: `crate` | `barrel` | `bucket`, standing with its bottom at `y` (the ground by default; use `supportHeight` to put it on top of something). It starts asleep, so a stack stays neat until something bumps it.
+- Spartacus is a capsule that goes where he goes: it pushes toys, they never push him. A woof, a ground pound and a Mega-Me stomp shove toys nearby (`shoveToys`, from `systems/reactions.js`). `toysNear(p, reach)` for hints.
+- A toy in the sea for 2.5 s (or fallen through the world) pops back where it started, with sparkles. Toys aren't saved: a reload puts them back.
+- Rapier loads in its own chunk (4.3 MB, about 1.65 MB gzipped) the first time an island adds a toy area. Nothing waits for it at boot; the toys just stand still until it's there. The service worker precaches it, so it works offline. The world only steps while Spartacus is within 45 m of an area on the current island.
+
+Island 1 has a crate pyramid and barrels at Hallo Harbour and odds and ends on Chris's lost-and-found pile (a test of whether Zoë enjoys it before using it more).
+
 ## Ambient critters (`systems/critters.js`)
 
 Islands list spots: `critters: { birds: [[x, z]], butterflies: [[x, z]], fish: [[x, z, height]] }`. Each spot gets a flock of 6 birds, 3 butterflies or a school of 8 fish. Birds scatter when Spartacus runs or ground-pounds within 4.5, or barks within 10, swirl around and land again ~9 s later. Butterflies loop over their spot and drift away if he comes close. Fish circle and dart round wide after a bark. Every kind is a few `InstancedMesh`es (6 draw calls in total); spots further than 80 aren't animated.
