@@ -87,7 +87,7 @@ const PLACES = [
   { name: 'Hallo Harbour', x: 0, z: 50, radius: 13, sign: { x: 4.5, z: 45 } },
   { name: 'Sleepy Gull Beach', x: -37, z: 48, radius: 12, sign: { x: -29, z: 43 } },
   { name: 'Boing-Boing Grove', x: 39, z: 30, radius: 12, sign: { x: 29, z: 31 } },
-  { name: 'Growly Cave', x: -3, z: 20, radius: 8, sign: { x: 2.6, z: 23.5 } },
+  { name: 'Growly Cave', x: -3, z: 20, radius: 8, sign: { x: 4, z: 25.5 } },
   { name: 'Lost & Found Camp', x: -41, z: -1, radius: 10 },
   { name: 'Lily Pond', x: 14, z: -4, radius: 19, sign: { x: -4.5, z: 3 } },
   { name: 'Ding-Dong Point', x: -40, z: -35, radius: 12, sign: { x: -30, z: -27 } },
