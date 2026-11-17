@@ -43,6 +43,7 @@ import { bark, doAction, updatePrompt, updateWoof } from './game/actions.js';
 import { checkTriggers } from './game/interact.js';
 import { startGame, restartFromBeginning } from './game/flow.js';
 import { bindProgressSaving, updateProgress } from './game/progress.js';
+import { bindTalk, updateTalk } from './game/talk.js';
 import { orbitCamera, updateCamera } from './game/camera.js';
 import island1 from './islands/island1/index.js';
 import island2 from './islands/island2/index.js';
@@ -321,6 +322,7 @@ function stepPlayerForState(dt) {
   else if (player.zip) updateZip(dt);
   else stepPlayer(dt);
   checkTriggers(dt);
+  updateTalk();
   if (onRopeOrVine) return;
   updateDigging(dt);
   updatePlacing(dt);
@@ -378,6 +380,7 @@ function updateCelebration(dt) {
   }
 }
 bindProgressSaving();
+bindTalk();
 frame();
 
 /* ---------- debug: ?debug (always on in dev) ---------- */

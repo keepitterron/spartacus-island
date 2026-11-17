@@ -132,7 +132,11 @@ Register `game.cutscenes.name = {update(dt), skip?()}` and set `game.state = 'na
 
 - `completeTask(id)`: ticks a task on whichever island owns it; when a list completes: `onAllDone`, spin + confetti, then the win panel.
 - `hintOnce(id, msg, ms)`: once per session. `hintTooHigh(near, msg)`: repeating (10 s) "you need Boing-Boing".
-- `toast(msg,ms)` for everything else. Keep messages short and kind.
+- `toast(msg, ms, {id})` for everything else. Keep messages short and kind. Messages **queue**: a new one never cuts the one being read short (Zoë couldn't keep up when they replaced each other). At most 4 wait, the same text is never queued twice, and a message with an `id` replaces a waiting one with the same id (pickup counters use `id: 'pickups'`, so only the latest count waits).
+
+## Conversations (`game/talk.js`)
+
+A character saying more than one thing is a conversation, not a chain of timed toasts. `startTalk(lines, {speaker, at, reach, onEnd})` shows one line at a time in a speech box with the speaker's name; the next line comes when the player taps the box or presses the action button (it reads **Next**, then **OK**), so slow readers set the pace. Walking further than `reach` from `at` ends it (`onEnd({finished: false})`): nobody keeps talking to someone who has left. A line can be `{text, run}` to do something as it appears (a gift); anything a conversation gives should also be given in `onEnd` if it was cut short, so leaving never loses progress. Toasts wait while a conversation is open. Juf Anne (island 1) uses it; single lines (hints, Chris's remarks) stay toasts.
 
 ## Sounds (`core/audio.js`)
 

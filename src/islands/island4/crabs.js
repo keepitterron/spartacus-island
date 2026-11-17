@@ -125,7 +125,7 @@ function popCrab(c) {
     toast('All the red hermit crabs found! Look at that parade!', 3200);
     completeTask('crabs');
   } else {
-    toast(`A red hermit crab! ${found} of ${CRABS_TOTAL}`, 1800);
+    toast(`A red hermit crab! ${found} of ${CRABS_TOTAL}`, 1800, { id: 'crabs' });
     renderTasks();
   }
 }
