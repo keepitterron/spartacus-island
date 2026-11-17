@@ -1,5 +1,6 @@
 // Shared building blocks for models: cached flat-shaded materials, meshes and canvas textures.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // materials are cached by colour + options, so material(0xff0000) everywhere shares one material
 const materialCache = {};
@@ -47,4 +48,32 @@ export function drawPaw(ctx, { x: cx, y: cy, size: s, color }) {
     ctx.ellipse(cx + dx * s, cy + dy * s, s * 0.2, s * 0.26, dx * 0.5, 0, 7);
     ctx.fill();
   });
+}
+
+// Merge a model's fixed parts: the group's own mesh children that share a material (and shadow
+// settings) become one mesh, so a character made of twenty little spheres is a few draw calls.
+// Child groups (a paw on a pivot, a wing) and anything not a plain mesh are left as they are.
+// Only for models whose loose parts never move, hide or get looked up on their own.
+export function mergeParts(group) {
+  const parts = new Map(); // material + shadows -> meshes
+  for (const child of group.children) {
+    if (!child.isMesh || child.material.map) continue;
+    const key = `${child.material.uuid} ${child.castShadow} ${child.receiveShadow}`;
+    parts.set(key, [...(parts.get(key) ?? []), child]);
+  }
+  for (const meshes of parts.values()) {
+    if (meshes.length < 2) continue;
+    const geometries = meshes.map((part) => {
+      part.updateMatrix();
+      const flat = part.geometry.index ? part.geometry.toNonIndexed() : part.geometry.clone();
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', flat.getAttribute('position'));
+      geometry.setAttribute('normal', flat.getAttribute('normal'));
+      return geometry.applyMatrix4(part.matrix);
+    });
+    const [first] = meshes;
+    group.add(mesh(mergeGeometries(geometries), first.material, first));
+    for (const part of meshes) group.remove(part);
+  }
+  return group;
 }

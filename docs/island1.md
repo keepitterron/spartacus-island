@@ -2,25 +2,25 @@
 
 Spartacus's Island, rebuilt about twice as wide (130 m across, was 60 m) with the same story, the same seven tasks and six bones, so saves and the to-do list don't change. Each moment grows into a small place of its own. The layout came from a map Claudio and Zoë marked up together (moved pins and notes, Nov 2026).
 
-**Status:** grey-box with Zoë's characters, being finished. The whole story plays on the new map with plain shapes; her beats (Juf Anne, Chris, the amethyst crabs) are in, the places have names and signposts, and the island saves mid-way. Next: dressing, liveliness and juice (see To do).
+**Status:** dressed and being polished. The whole story plays; Zoë's beats (Juf Anne, Chris, the amethyst crabs) are in, the places have names and signposts, the island saves mid-way, and it's dressed with models instead of grey boxes. Next: play-testing with Zoë and the juice pass (see To do).
 
-- Level: `levels/island1.blend`, made by `tools/levels/make_island1.py` (all positions are in that script). Don't re-run it once the `.blend` has been edited by hand.
+- Level: `levels/island1.blend`. Its grey-box was made by `tools/levels/make_island1.py` (don't re-run it: it overwrites the file). `tools/levels/dress_island1.py` dresses it (re-runnable, see Dressing below).
 - Code: `src/islands/island1/index.js` builds the lighthouse, bridge, chest and lily pads at the level's `spot:` markers.
 - Islands 2–7 keep their scenery: island 1 says where the shared random sequence stood after the old hand-built island (`sharedSeedAfter`, see main.js). Checked: the sequence after every island is identical to before.
 
 ## The places
 
-| Place                                | What happens                                                                                                                                                                                                                                         | Task  |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| **Landing Beach** (south)            | The ship docks; two balls and a bone on the trail inland.                                                                                                                                                                                            |       |
-| **West beach**                       | The gull sleeps on the mast of a beached rowing boat: woof to wake him. Three crabs huddle over an amethyst: a woof (or walking up) and they scuttle off with it, drop it further along the sand and burrow away. It goes on the ship as a treasure. | 🐦    |
-| **Boing Grove** (south-east)         | The Boing-Boing fruit on a low rock; three ledges to bounce up, a bone on the top one.                                                                                                                                                               | 🌀    |
-| **The cave** (middle)                | Growls from inside: a bear?! No, it's Juf Anne, the squirrel teacher, keeping her napping class safe. A surprise, not a task. She gives Spartacus a bone.                                                                                            |       |
-| **Chris's camp** (west)              | The lost and found: a tent, a pile of other people's things, and the plank. Chris the fox points a paw at it.                                                                                                                                        |       |
-| **Creek & Pond** (middle-east)       | A creek from the spring to the pond and out to sea. The broken bridge to the islet, lily pads (a bone on the last).                                                                                                                                  | 🪵 🗝️ |
-| **Lighthouse Headland** (north-west) | The lighthouse on a hill; Boing-Boing up the rock to the deck and the bell (a bone on the rock).                                                                                                                                                     | 🔔    |
-| **Hilltop Ruins** (north)            | Walls and an arch on the hilltop; the chest, with the map to Hook Rock Bay.                                                                                                                                                                          | 🧰    |
-| **The spring** (north-east)          | Where the creek starts: a bone in a sand mound.                                                                                                                                                                                                      |       |
+| Place                              | What happens                                                                                                                                                                                                                                         | Task  |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| **Hallo Harbour** (south)          | The ship docks; two balls and a bone on the trail inland.                                                                                                                                                                                            |       |
+| **Sleepy Gull Beach** (west)       | The gull sleeps on the mast of a beached rowing boat: woof to wake him. Three crabs huddle over an amethyst: a woof (or walking up) and they scuttle off with it, drop it further along the sand and burrow away. It goes on the ship as a treasure. | 🐦    |
+| **Boing-Boing Grove** (south-east) | The Boing-Boing fruit on a low rock; three ledges to bounce up, a bone on the top one.                                                                                                                                                               | 🌀    |
+| **Growly Cave** (middle)           | Growls from inside: a bear?! No, it's Juf Anne, the squirrel teacher, keeping her napping class safe. A surprise, not a task. She gives Spartacus a bone.                                                                                            |       |
+| **Lost & Found Camp** (west)       | The lost and found: a tent, a pile of other people's things, and the plank. Chris the fox points a paw at it.                                                                                                                                        |       |
+| **Lily Pond** (middle-east)        | A creek from the spring to the pond and out to sea. The broken bridge to the islet, lily pads (a bone on the last).                                                                                                                                  | 🪵 🗝️ |
+| **Ding-Dong Point** (north-west)   | The lighthouse on a hill; Boing-Boing up the rock to the deck and the bell (a bone on the rock).                                                                                                                                                     | 🔔    |
+| **Treasure Hill** (north)          | Walls and an arch on the hilltop; the chest, with the map to Hook Rock Bay.                                                                                                                                                                          | 🧰    |
+| **Bubbly Spring** (north-east)     | Where the creek starts: a bone in a sand mound.                                                                                                                                                                                                      |       |
 
 ## Place names
 
@@ -71,12 +71,20 @@ How the key note is kept: the islet is raised higher than Spartacus can jump fro
 - **Cave camera:** under the cave roof the camera stays inside the cave (or out in front of the mouth) and below the roof (`limitCaveCamera`, through the island's `camera.limit` hook).
 - **Mid-island saves** (`savesProgress`): ticked tasks, bones, digs and items as on island 5, plus the island's own `saveState()`: whether the class is awake, whether the crabs have run off, the places seen. The bridge, the chest and the gull follow from the ticked tasks. Continue appears on the start screen for an island 1 save too.
 
+## Dressing
+
+`tools/levels/dress_island1.py` (run it, then `export.py`; no Blender needed, see [levels.md](levels.md)):
+
+- **Looks over the grey boxes.** Every grey box stays as an invisible collider, unchanged, so nothing about playing changes; a look goes on top. The cave: lumpy stone walls and roof under seven boulders (each kept clear of the hollow and the mouth), so it reads as a rocky hill. The ruins: lumpy stone with mossy tops. The grove's ledges: lumpy sandstone with a grassy cap exactly at the collider's top (that's what Spartacus stands on). The islet's reed wall: clumps of reeds with cattails, as tall as the old wall. The lost-and-found pile: crates and a barrel stretched to the boxes (the toys sit on them). The rowing boat and tent: real ones (the tent's collider is now round the model).
+- **Models round the places** (Quaternius, `tools/levels/library.py`): supplies and a lifeboat at the harbour, a log and rocks on Sleepy Gull Beach, trees and berry bushes at the grove, plants by the cave, a campfire and bench at the camp, willows, water lilies and grass at the pond, the lighthouse keeper's barrels and a bench, fallen stones and a stump on Treasure Hill, a ring of stones round the spring, shade trees inland. `check_markers()` warns if anything solid lands within 2 m of a marker.
+- **Alive** (`src/islands/island1/ambience.js`): the campfire flickers, glows (more at night), smokes, sparks and crackles softly within 6 m; the spring bubbles and rings ripples. Palms sway on every island. Each effect reuses a small pool of meshes and only runs within 60 m.
+
 ## To do
 
 The plan to finish it (Nov 2026), in passes:
 
 1. **Play well:** ~~cave camera~~, ~~place names and signposts~~, ~~mid-island saves~~, ~~Zoë's answers~~. Play-test with Zoë on the phone (walk times, the wobbly-bridge hint, the reeds, the lily pads). Maybe worn paths between the places.
-2. **Dressing:** the Quaternius models in the `.blend` (as on island 8), a winding cliff path up the headland, instanced flowers/grass/rocks for phones.
-3. **Lively:** wind (palms, grass, flags), grass parting round Spartacus, ripples and frogs at the pond, fish in the creek, Chris's campfire smoke, crabs peeking out later, a small sound for each place.
+2. **Dressing:** ~~models over the grey boxes and round each place~~, ~~merged static scenery for phones~~. Still: a winding cliff path up the headland; worn paths between places.
+3. **Lively:** ~~swaying palms~~, ~~the campfire~~, ~~spring bubbles~~. Still: grass parting round Spartacus, frogs at the pond, fish in the creek, crabs peeking out later, a small sound for each place. Ask Zoë whether the campfire's crackle is cosy or too much (she found the ocean sound unsettling).
 4. **Juice:** bones drifting to Spartacus, a squash on landing, a wag when a task ticks, a short camera look the first time a place comes into view.
 5. **Physics props (Rapier test):** ~~a crate pyramid and barrels at Hallo Harbour, odds and ends on the lost-and-found pile~~ (`buildToys`, see Toys in [systems.md](systems.md)). If Zoë loves knocking things over, the puzzles built on it are hers to invent.

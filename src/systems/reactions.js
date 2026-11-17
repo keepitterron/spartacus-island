@@ -1,20 +1,23 @@
-// Little things the world does when Spartacus barks or ground-pounds nearby, on every island:
-// palms shake their fronds and drop a coconut, which bounces and later pops back up into the
-// tree; beach balls and toys get shoved (systems/balls.js, systems/toys.js); birds and fish
-// scatter (systems/critters.js).
+// Little things the world does on every island. Palms sway in the wind near Spartacus. When he
+// barks or ground-pounds nearby, palms shake their fronds and drop a coconut, which bounces and
+// later pops back up into the tree; beach balls and toys get shoved (systems/balls.js,
+// systems/toys.js); birds and fish scatter (systems/critters.js).
 // A ground pound also digs up a sand mound right underneath.
 import { distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { sfx } from '../core/audio.js';
+import { game } from '../core/state.js';
 import { burst } from '../core/fx.js';
 import { terrainHeight } from '../world/terrain.js';
 import { palms } from '../world/props.js';
+import { player } from '../player/player.js';
 import { poundDig } from './digs.js';
 import { shoveBalls } from './balls.js';
 import { shoveToys } from './toys.js';
 import { barkAtCritters } from './critters.js';
 
 const BARK_REACH = 7;
+const SWAY_REACH = 70; // m: palms further away than this don't sway (nobody sees them)
 const COCONUT_RADIUS = 0.17;
 const REGROW_TIME = 12; // seconds a coconut lies on the ground before it's back in its tree
 // coconuts out of their tree: {coconut, palm, home (its spot in the crown), vel, ground, restTime}
@@ -75,9 +78,12 @@ function dropCoconut(palm, coconut) {
 
 export function updateReactions(dt) {
   for (const palm of palms) {
-    if (palm.shake < 0.01) continue;
+    if (distXZ(player.pos, palm.x, palm.z) > SWAY_REACH) continue;
     palm.shake *= Math.exp(-dt * 2.5);
-    palm.crown.rotation.z = Math.sin(palm.shake * 40) * 0.12 * palm.shake;
+    // a gentle sway in the wind (each palm out of step with the next), plus any shaking
+    const sway = Math.sin(game.time * 1.1 + palm.x * 0.3 + palm.z * 0.2);
+    palm.crown.rotation.x = sway * 0.035;
+    palm.crown.rotation.z = sway * 0.025 + Math.sin(palm.shake * 40) * 0.12 * palm.shake;
   }
   for (let i = fallen.length - 1; i >= 0; i--) {
     const drop = fallen[i];

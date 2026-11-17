@@ -29,7 +29,9 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa8e6f7);
 scene.fog = new THREE.Fog(0xa8e6f7, 60, 170);
-export const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
+// nothing past the fog can be seen, so nothing past it is drawn (see setUnderwater)
+const BEYOND_FOG = 10;
+export const camera = new THREE.PerspectiveCamera(55, 1, 0.1, scene.fog.far + BEYOND_FOG);
 function resize() {
   const w = innerWidth;
   const h = innerHeight;
@@ -64,4 +66,6 @@ export function setUnderwater(underwater) {
   scene.fog.color.set(underwater ? 0x1a6f9e : 0xa8e6f7);
   scene.fog.near = underwater ? 16 : 60;
   scene.fog.far = underwater ? 85 : 170;
+  camera.far = scene.fog.far + BEYOND_FOG;
+  camera.updateProjectionMatrix();
 }

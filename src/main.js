@@ -16,6 +16,8 @@ import { isMusicOn, setMusicOn } from './core/music.js';
 import { addTerrain } from './world/terrain.js';
 import { updateOcean } from './world/ocean.js';
 import { buildSky, updateSky } from './world/sky.js';
+import { batchStatics } from './world/statics.js';
+import { buildPalms, updatePalms } from './world/props.js';
 import { buildStars, setNight, updateDaylight, daylight } from './world/daylight.js';
 import { updateShip } from './world/ship.js';
 import { player, stepPlayer } from './player/player.js';
@@ -84,6 +86,9 @@ game.building = 0;
 // last, so balls and critters can sit on top of everything built above
 buildBalls();
 buildCritters();
+// everything that never moves, merged into a few meshes per patch of the map (phones)
+batchStatics();
+buildPalms();
 showSavedTreasures();
 player.pos.copy(island1.spawn);
 
@@ -291,6 +296,7 @@ function updateWorld(dt) {
   updateGrowers(dt);
   updateHat(dt);
   updateReactions(dt);
+  updatePalms();
   updateBalls(dt);
   updateToys(dt);
   updateCritters(dt);

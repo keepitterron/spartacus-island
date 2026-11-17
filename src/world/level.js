@@ -15,6 +15,7 @@ import { material } from '../core/materials.js';
 import { toast } from '../core/ui.js';
 import { addBox, addCylinder, supportHeight } from '../core/colliders.js';
 import { buildGround } from './terrain.js';
+import { addStatic } from './statics.js';
 import { palm, rock, dock } from './props.js';
 import { addPickup } from '../systems/collect.js';
 import { addFruit } from '../systems/powers.js';
@@ -158,6 +159,7 @@ function prepareGround(object, level) {
 
 // Scenery keeps its shape; a plain coloured material becomes the game's cached flat-shaded one,
 // so Blender models look like the rest of the game. Textured models (asset packs) keep theirs.
+// Scenery never moves, so it's merged with the rest of the static scenery (world/statics.js).
 function prepareScenery(object) {
   object.castShadow = true;
   object.receiveShadow = true;
@@ -167,6 +169,7 @@ function prepareScenery(object) {
     object.material = material(original.color.getHex(), {
       ...(original.transparent && { transparent: true, opacity: original.opacity }),
     });
+  addStatic(object);
 }
 
 // custom property collider = "box" or "cyl": an axis-aligned box, or an upright cylinder,

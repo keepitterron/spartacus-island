@@ -248,6 +248,10 @@ export const sfx = {
     tone(1300, { to: 1900, duration: 0.08, type: 'sine', volume: 0.06 });
     tone(1700, { to: 2400, duration: 0.08, type: 'sine', volume: 0.05, delay: 0.09 });
   },
+  // one soft pop of a campfire's crackle (played every so often while you're close)
+  crackle() {
+    noise(0.025, { freq: 2200 + Math.random() * 1800, volume: 0.035 });
+  },
   // a giant paw coming down
   stomp() {
     tone(95, { to: 40, duration: 0.22, type: 'sine', volume: 0.3 });

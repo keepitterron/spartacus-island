@@ -18,7 +18,7 @@ From Zoë and from play-testing. Story beats come from Zoë; ask her via Claudio
 ## Tech
 
 - **Blender levels** ([levels.md](levels.md)), live with island 8 as a test. Next: rebuild an existing island bigger in Blender (island 1 is a good first one), sail into level islands, instanced palms/flowers for big maps. Rapier is in for loose props (`systems/toys.js`, a test on island 1); moving Spartacus onto it only when a level needs rotated or mesh colliders or overhangs (it would replace `stepPlayer`). A smaller download: the non-compat `@dimforge/rapier3d` loads a separate `.wasm` (~3 MB raw instead of 4.3 MB of base64) but needs a Vite wasm plugin.
-- **Phone performance**: instancing for repeated props (flowers, coral, seaweed strips, rocks) and merging static meshes per island.
+- **Phone performance**: static scenery is merged (`world/statics.js`) for the shared props and Blender levels. Next: register islands 2–7's own static props (coral, seaweed strips, fences, stalls) with `addStatic`; more characters could use `mergeParts` (the crab model can't in general: Eduardo wiggles its legs one by one); the island 1 level file is 2.9 MB (half of it the ground mesh).
 - **Automated smoke tests** (Playwright): blocked on BUG-1 for software-GL runners; see [testing.md](testing.md).
 - Upgrade three.js past 0.160 (check `CapsuleGeometry`, lighting and colour management for visual changes).
 - Optional formatter/linter. The code is intentionally dense (it came from a single-file chat build); a formatter would expand it a lot.

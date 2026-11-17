@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { distXZ, lerp, lerpAngle, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
-import { canvasTexture, material, mesh } from '../../core/materials.js';
+import { canvasTexture, material, mergeParts, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst, onFontsReady } from '../../core/fx.js';
@@ -118,6 +118,7 @@ function makeSquirrel({ size = 1, glasses = false } = {}) {
     g.add(puff);
   }
   g.scale.setScalar(size);
+  mergeParts(g); // fur, cream and ink: three draw calls, not twenty (the paw stays separate)
   return { g, paw };
 }
 
