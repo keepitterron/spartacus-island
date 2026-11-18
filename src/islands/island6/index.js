@@ -332,13 +332,13 @@ function putJewelInFountain() {
 }
 
 // leaving the sky island: back at the ship, a rainbow slide down to the funfair (island 7).
-// Where to stand: on the cloud, 3 m from the ship's middle (spot:ship) towards the cloud's
+// Where to stand: on the cloud, 3 m from the ship's middle (spot:ship) towards the cloud's centre
 const atShip = (p) => {
-  const ship = level.spots.ship,
+  const shipSpot = level.spots.ship,
     cloud = spots.spawnCloud,
-    toCloud = Math.atan2(cloud.z - ship.z, cloud.x - ship.x);
-  const x = ship.x + Math.cos(toCloud) * 3,
-    z = ship.z + Math.sin(toCloud) * 3;
+    toCloud = Math.atan2(cloud.z - shipSpot.z, cloud.x - shipSpot.x);
+  const x = shipSpot.x + Math.cos(toCloud) * 3,
+    z = shipSpot.z + Math.sin(toCloud) * 3;
   return distXZ(p, x, z) < 2.5 && Math.abs(p.y - cloud.top) < 1;
 };
 const sailOn = () => {
