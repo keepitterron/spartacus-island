@@ -280,7 +280,9 @@ function climbOntoTop(tree, angle) {
   player.grounded = true;
   player.squashVel = -4;
   sfx.pop();
-  hintOnce('treetop', `Treetop! Another magic seed is up here…`, 3000);
+  // only where there is one (island 4's kelp pillar has no zipline seed on top)
+  const seedOnTop = growers.some((g) => g.kind === 'zip' && g.a === tree && !g.grown);
+  if (seedOnTop) hintOnce('treetop', `Treetop! Another magic seed is up here…`, 3000);
 }
 
 /* zipline: ride the curve to the end, no input */

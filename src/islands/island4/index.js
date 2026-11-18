@@ -13,6 +13,7 @@ import { terrainHeight } from '../../world/terrain.js';
 import { makeLevel } from '../../world/level.js';
 import { CENTER_4, CENTER_5 } from '../../world/layout.js';
 import { rock } from '../../world/props.js';
+import { addToyArea, addToy } from '../../systems/toys.js';
 import { ship, shipBubble, shipState } from '../../world/ship.js';
 import { makePillow } from '../../models/items.js';
 import { player } from '../../player/player.js';
@@ -527,6 +528,21 @@ function buildBreathBubble() {
   scene.add(breathBubble);
 }
 
+// Toys at Starfish Flats (systems/toys.js): shells and sea urchins that drift up when bumped or
+// woofed at and settle slowly (an underwater toy area: low gravity, thick water)
+function buildToys() {
+  const x = CENTER_4.x + 6,
+    z = CENTER_4.z + 32;
+  addToyArea(x, z, { size: 16, underwater: true });
+  const shells = [0xffb3c7, 0xfff1d6, 0xffc46b, 0xf7a1c4];
+  for (const [i, color] of shells.entries())
+    addToy('shell', { x: x - 2 + i * 1.3, z: z + 1.5, size: 0.7, color, yaw: i * 1.3 });
+  const urchins = [0x8a5ad6, 0x5a6ad6, 0xd65aa0];
+  for (const [i, color] of urchins.entries())
+    addToy('urchin', { x: x - 1 + i * 1.2, z: z - 1, size: 0.6, color });
+  addToy('crate', { x: x + 2.5, z: z - 0.5, size: 0.8, color: '#9a7a5a', yaw: 0.4 });
+}
+
 function build() {
   level.build(island);
   island.spawn = vec3(CENTER_4.x, 0, CENTER_4.z + 10);
@@ -544,6 +560,7 @@ function build() {
   buildStarfish();
   buildLooseKelp();
   buildBreathBubble();
+  buildToys();
 }
 function buildLate() {
   for (const [type, w] of Object.entries(FRUIT_BUSHES))

@@ -27,7 +27,8 @@ const showIntro = (messages) => {
       setTimeout(() => toast(message, duration), start);
       previousEnd = start + toastTime(message, duration);
     } else {
-      setTimeout(() => say(message.speaker, message.line), start);
+      // tied to where Spartacus stands when it starts, so walking off ends it like any talk
+      setTimeout(() => say(message.speaker, message.line, { at: player.pos.clone() }), start);
       previousEnd = start;
     }
   }

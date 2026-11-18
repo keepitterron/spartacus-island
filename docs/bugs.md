@@ -22,6 +22,18 @@
 
 **Repro:** `npm run build && npm run preview`, then open http://localhost:4173/spartacus-island/ in headless Chrome with `--use-gl=swiftshader --enable-unsafe-swiftshader` and watch the console for `CONTEXT_LOST_WEBGL`.
 
+## Found in the scripted play-throughs (Nov 2026)
+
+Islands 3, 4, 6 and 7 were played start to finish in headless Chrome at 844×390 with touch on (reload and Continue included). Fixed on the spot: island 3's Give at the hive (the zipline lands outside its reach), island 4's vent canyon (no way through, the pillow unreachable), island 6's Sail spot and a Mini-Me hint, island 7's gondola camera, the kelp pillar's "another magic seed" hint, and intro lines that never closed. Still open:
+
+- **The to-do list covers a third to half of the screen on an iPhone held sideways**, including the top of the stick, and hid island 7's red rocket from Bullseye Rock. Every play-through flagged it. Probably: start collapsed on small screens.
+- **The win panel is too tall** at 844×390: the top of "What a Jamboree!" is cut off.
+- **Island 6: a full-size dog can flap round either end of the tunnel walls** and skip the Mini-Me holes (walls 7 m longer didn't stop it). Nobody gets stuck (the cubby still needs Mini-Me). A roof or curved ends, or accept it.
+- **An open speech box's Next outranks Swap and Place** (island 6), and Lina's palace lines never close on their own because she flies along with him.
+- Hints that fire at odd moments: "Up high? SLAM down!" while floating on island 6; island 4's crab hint 0.3 s after arriving, before the story; island 3's "gate is open" toast waits behind a slam tip.
+- **Worth watching with Zoë:** island 6's Swap window at Leo's nest (about 1.4 s each time he lands); island 4's canyon timing (0.7 s of every 3 s; widen the 0.6 s vent step to 0.5 if it's too hard); island 7's Leo often flies behind the camera after a woof; the 9 o'clock wheel ticket means riding past the top while the hint says jump out at the top; pressing the green button too far from the octopus drops the pillow.
+- Not played: island 7's Skittles Alley and the rides while giant.
+
 ## Fixed since v1
 
 | Bug                                                                                                                                                                                                                                                                                                                                                               | Fix                                                                                                                                                                                                                                        |
