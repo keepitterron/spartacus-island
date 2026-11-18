@@ -216,7 +216,9 @@ function countPickups(level, island) {
   const digsWithBones = level
     .all('dig')
     .filter((marker) => marker.handler?.run === BUILT_IN.dig.run);
-  island.collect.total = level.all('pickup').length + digsWithBones.length;
+  const count = level.all('pickup').length + digsWithBones.length;
+  // an island that places its collectibles in code (island 5's shells) keeps its own total
+  if (count) island.collect.total = count;
 }
 
 function warnUnknown(level) {

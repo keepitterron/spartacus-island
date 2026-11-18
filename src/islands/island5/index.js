@@ -1,13 +1,14 @@
 import * as THREE from 'three';
-import { distXZ, distToSegmentXZ, lerp, smoothstep, vec3 } from '../../core/util.js';
-import { scene, LOW_POWER } from '../../core/renderer.js';
+import { distXZ, lerp, vec3 } from '../../core/util.js';
+import { scene } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce } from '../../core/ui.js';
 import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
-import { terrainHeight, buildGround } from '../../world/terrain.js';
+import { terrainHeight } from '../../world/terrain.js';
+import { makeLevel } from '../../world/level.js';
 import { CENTER_5 } from '../../world/layout.js';
 import { palm, rock, scatter, dock } from '../../world/props.js';
 import { addSea } from '../../world/ocean.js';
@@ -40,6 +41,10 @@ import { buildWhaleSpout } from './spout.js';
 import { buildRainbow, showRainbow, updateRainbow, startRainbowRide } from './finale.js';
 import { completeTask } from '../../game/tasks.js';
 import { hintTooHigh } from '../../game/interact.js';
+import { addToyArea, addToy } from '../../systems/toys.js';
+import { visitPlaces, seenPlaces, restorePlaces } from '../../systems/places.js';
+import levelUrl from './level.glb?url';
+import heightsUrl from './heights.bin?url';
 
 // Island 5, Rainbow Reef: a hub island and four islets in a shallow lagoon. The unicorn by the
 // stone arch slid down her rainbow and it broke into four colour stars, one on each islet;
@@ -67,48 +72,14 @@ const STARS = {
   yellow: { color: 0xffd84d, islet: 'tide', index: 2, task: 'reefYellow' },
   blue: { color: 0x5aa8ff, islet: 'kelp', index: 3, task: 'reefBlue' },
 };
-const REEF_RADIUS = 78; // inside: a shallow lagoon to paddle across; outside: the open sea
-const LAGOON_DEPTH = -1.8; // deeper than wading depth, so Spartacus paddles
-const SANDBAR_DEPTH = -0.35; // shallow enough to wade along
-// dips carved into the land: rock pools, the kelp garden's pond, Crab Cove's bay
-const HOLLOWS = [
-  { x: -44, z: -30, radius: 2.2, depth: -0.7 },
-  { x: -37, z: -36, radius: 2.4, depth: -0.7 },
-  { x: -38, z: -26, radius: 2, depth: -0.7 },
-  { x: 40, z: 32, radius: 5, depth: -1.6 },
-  { x: -50, z: 34, radius: 5.5, depth: LAGOON_DEPTH },
-];
-
-// one islet: a hill sloping to a beach ring, then down into the water; wobbly so it isn't a circle
-function isletHeight(islet, x, z) {
-  const dx = x - islet.x,
-    dz = z - islet.z,
-    r = Math.hypot(dx, dz),
-    angle = Math.atan2(dz, dx);
-  const shore = islet.radius + Math.sin(angle * 3 + islet.x) * 1.2 + Math.sin(angle * 5 + islet.z);
-  let h = islet.height * (1 - 0.6 * smoothstep(0, shore - 3, r));
-  h += 0.25 * Math.sin(x * 0.5) * Math.cos(z * 0.45);
-  h = lerp(h, 0.35, smoothstep(shore - 4, shore - 1.5, r));
-  return lerp(h, -4, smoothstep(shore, shore + 2.5, r));
-}
-
-// lagoon floor, deepening past the reef; a sandbar from the hub to the kelp garden; the islets
-// on top; then the hollows dug back out
-function height(x, z) {
-  const local = { x: x - CENTER_5.x, z: z - CENTER_5.z },
-    r = Math.hypot(local.x, local.z);
-  let h = lerp(LAGOON_DEPTH, -4.5, smoothstep(REEF_RADIUS, REEF_RADIUS + 12, r));
-  h += 0.3 * Math.sin(local.x * 0.13) * Math.cos(local.z * 0.11);
-  const sandbar = distToSegmentXZ(local, ISLETS.hub, ISLETS.kelp);
-  if (sandbar < 3) h = Math.max(h, lerp(SANDBAR_DEPTH, h, smoothstep(1.6, 3, sandbar)));
-  for (const islet of Object.values(ISLETS)) h = Math.max(h, isletHeight(islet, local.x, local.z));
-  for (const hollow of HOLLOWS) {
-    const d = Math.hypot(local.x - hollow.x, local.z - hollow.z);
-    if (d < hollow.radius + 1.5)
-      h = Math.min(h, lerp(hollow.depth, h, smoothstep(hollow.radius, hollow.radius + 1.5, d)));
-  }
-  return h;
-}
+// The terrain (the lagoon, the sandbar, the islets, the rock pools, the pond and Crab Cove's bay)
+// is levels/island5.blend, moved there as it was (tools/levels/make_island5.py), with the places
+// and the hub's signpost; dressed by dress_island5.py.
+const level = makeLevel(levelUrl, {
+  center: CENTER_5,
+  heightsUrl,
+  groundPalette: { g: 0x7fd36a, g2: 0xa6e27a },
+});
 
 // Filled in by build(): beacons {islet, task, beam, fade}, the spots puzzles hang off,
 // and the islet modules
@@ -118,11 +89,7 @@ const islets = {};
 const BEACON_HEIGHT = 70;
 
 function build() {
-  buildGround(CENTER_5.x, CENTER_5.z, {
-    size: 230,
-    segments: LOW_POWER ? 110 : 190,
-    palette: { g: 0x7fd36a, g2: 0xa6e27a },
-  });
+  level.build(island);
   // water all the way from the end of the big patch (z=-460) past the reef
   addSea(CENTER_5.x, -880, { width: 660, depth: 840 });
   const dockEnd = CENTER_5.z + 24;
@@ -147,6 +114,27 @@ function build() {
   islets.tide = buildTidePools(at('tide'), { from: CENTER_5, addStar: addHiddenStar });
   islets.whale = buildWhaleSpout(toWorld(23.5, -31), { toward: at('stack') }); // ~5 from the first ledge
   buildRainbow(spots.arch);
+  buildToys();
+}
+
+// Toys to bowl over (systems/toys.js): barrels, crates and buckets on the hub's beach, west of
+// the dock
+function buildToys() {
+  const at = toWorld(-7, 12);
+  addToyArea(at.x, at.z, { size: 14 });
+  const ground = terrainHeight(at.x, at.z);
+  for (const [i, dx] of [-0.5, 0.5].entries())
+    addToy('crate', {
+      x: at.x + dx,
+      z: at.z,
+      y: ground,
+      size: 0.8,
+      color: ['#ff9a3d', '#5aa8ff'][i],
+    });
+  addToy('crate', { x: at.x, z: at.z, y: ground + 0.82, size: 0.7, color: '#ffd84d' });
+  addToy('barrel', { x: at.x - 2, z: at.z - 1, size: 0.85, color: 0x9a6a3e });
+  addToy('barrel', { x: at.x + 2.2, z: at.z - 0.6, size: 0.85, color: 0xff5a5a });
+  addToy('bucket', { x: at.x - 1, z: at.z + 1.6, size: 0.4, color: 0x2fa4c7 });
 }
 
 // a star that flies home to its socket in the arch (hidden ones wait for their islet's puzzle)
@@ -368,6 +356,7 @@ function interactFinale(p) {
 }
 
 function interact(p) {
+  visitPlaces(p);
   grabStars(p);
   for (const islet of Object.values(islets)) islet.interact?.(p);
   interactFinale(p);
@@ -395,16 +384,19 @@ function bark(p) {
 }
 
 // the islets' own state (bridge down, crate broken, hedge chopped…); tasks are saved anyway
-const saveState = () =>
-  Object.fromEntries(
+const saveState = () => ({
+  ...Object.fromEntries(
     Object.entries(islets)
       .filter(([, islet]) => islet.save)
       .map(([name, islet]) => [name, islet.save()]),
-  );
+  ),
+  places: seenPlaces(5),
+});
 
 // putting a save back: the islets first (they reveal their stars), then stars already home go
 // to their sockets, then the finale
 function loadState(state) {
+  restorePlaces(5, state.places);
   for (const [name, islet] of Object.entries(islets)) islet.load?.(state[name] ?? {});
   for (const { task } of Object.values(STARS)) {
     const star = starForTask(task);
@@ -424,7 +416,10 @@ const island = {
   center: CENTER_5,
   name: 'Rainbow Reef',
   zMax: -950,
-  height,
+  level, // main.js loads it before anything is built
+  height: level.height,
+  // the old hand-built island left the shared random sequence here (see main.js)
+  sharedSeedAfter: -1827648295,
   savesProgress: true,
   // keeps Spartacus over the ground mesh; the sea current brings him back long before this
   physics: { bound: { x: CENTER_5.x, z: CENTER_5.z, r: 105 } },

@@ -101,3 +101,7 @@ Where the build differs from the draft above, and the numbers that keep each puz
 ## Open for us (not for Zoë)
 
 - The unicorn's name: ask Zoë at the moment it matters (she meets her), so it's still a surprise.
+
+## In Blender (Nov 2026)
+
+The terrain moved to `levels/island5.blend` as it was (`tools/levels/make_island5.py`, the same height function; the baked heights match the old ones to 0.1 mm), so nothing about playing changed and saves carry on. It adds the named places (Unicorn's Arch, Crab Cove, The Sea Stack, Moon Rock Pools, Kelp Garden) and a signpost on the hub pointing at every islet. `tools/levels/dress_island5.py` puts a lifeboat, supplies, a bench and plants on the hub; the islets are left to their puzzles. Toys: crates, barrels and a bucket on the hub's beach, west of the dock. The islets' puzzles and the shells are still built in code at the same places.
