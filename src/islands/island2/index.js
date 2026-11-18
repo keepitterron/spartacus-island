@@ -5,6 +5,7 @@ import { material, mesh, canvasTexture, drawPaw } from '../../core/materials.js'
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
 import { terrainHeight, buildGround } from '../../world/terrain.js';
 import { CENTER_2, CENTER_3 } from '../../world/layout.js';
@@ -312,7 +313,7 @@ const island = {
     if (mango.state !== 'hungry' || distXZ(p, spots.mangoPillar.x, spots.mangoPillar.z) >= 8)
       return;
     sfx.parrot();
-    toast('Mango: “Snack? Snack?”', 2000);
+    say('Mango', 'Snack? Snack?', { auto: true });
   },
 };
 export default island;

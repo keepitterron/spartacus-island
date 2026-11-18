@@ -7,6 +7,7 @@ import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst, textSprite, onFontsReady } from '../../core/fx.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { addCylinder, addBox } from '../../core/colliders.js';
 import { terrainHeight, buildGround } from '../../world/terrain.js';
 import { CENTER_3 } from '../../world/layout.js';
@@ -773,7 +774,11 @@ const island = {
       Math.abs(p.y - HIVE.y) < 2 &&
       carryingId !== 'flower'
     )
-      hintOnce('bees', 'Bees: “Bzz! Bring us a flower and the shiny key is yours!”', 4000);
+      say('Bees', 'Bzz! Bring us a flower and the shiny key is yours!', {
+        at: HIVE,
+        reach: 8,
+        once: 'bees',
+      });
     if (!flowerCalled && distXZ(p, FLOWER.x, FLOWER.z) < 5.5)
       hintOnce('flower', 'That flower is too high… Bark to call Mango!', 3600);
     hintTooHigh(

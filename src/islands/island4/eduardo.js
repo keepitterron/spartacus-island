@@ -4,6 +4,7 @@ import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst, textSprite, onFontsReady } from '../../core/fx.js';
 import { toast } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { terrainHeight } from '../../world/terrain.js';
 import { ship } from '../../world/ship.js';
 import { player } from '../../player/player.js';
@@ -45,7 +46,7 @@ export function eek() {
   eduardo.state = 'eek';
   eduardo.t = 0;
   sfx.parrot();
-  toast('Eduardo: “EEK! A SHARK!!”', 2200);
+  say('Eduardo', 'EEK! A SHARK!!', { auto: true });
 }
 
 // hop off Spartacus's hat (back into world space) and onto the ship
@@ -152,7 +153,7 @@ function updateBehind(e) {
   eg.rotation.z = 0;
   sfx.parrot();
   eg.rotation.y = Math.atan2(player.pos.x - eg.position.x, player.pos.z - eg.position.z);
-  toast('Eduardo: “Oh! It’s just Spartacus! Not a shark at all!”', 3400);
+  say('Eduardo', 'Oh! It’s just Spartacus! Not a shark at all!');
 }
 
 function updateRecognize(e) {

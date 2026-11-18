@@ -8,7 +8,8 @@ import { scene } from '../../core/renderer.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
-import { toast, hintOnce } from '../../core/ui.js';
+import { toast } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { remainingPickups } from '../../systems/collect.js';
 import { leo } from '../../npcs/leo.js';
 
@@ -57,7 +58,11 @@ export function sendLeo(pos) {
   scout.ticket = nearest;
   flyTo(vec3(nearest.x, nearest.y + HOVER_HEIGHT, nearest.z), 'hover');
   sfx.parrot();
-  hintOnce('leoScout', 'Leo: “Chack-chack! I can see something shiny!” Follow him!', 3800);
+  if (!scout.saidFollow) {
+    scout.saidFollow = true;
+    say('Leo', 'Chack-chack! I can see something shiny!', { auto: true });
+    toast('Follow him!', 2400);
+  }
   return true;
 }
 
@@ -88,7 +93,7 @@ function updateFlight(dt) {
   scout.state = flight.next;
   if (flight.next === 'hover') {
     scout.timeLeft = HOVER_TIME;
-    toast('Leo: “Chack! Here! Shiny!”', 2400);
+    say('Leo', 'Chack! Here! Shiny!', { auto: true });
   }
 }
 

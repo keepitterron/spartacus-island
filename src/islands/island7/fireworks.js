@@ -12,6 +12,7 @@ import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { toast } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { player } from '../../player/player.js';
 import { updatePowerHud } from '../../systems/powers.js';
 import { hideWin } from '../../game/tasks.js';
@@ -235,7 +236,7 @@ export function startShow(origin, { onDone }) {
   const half = pictureHalfWidth(),
     rockets = allRockets();
   show.events = [
-    [0, () => toast('Pip: “Ladies and gentle-fuzzles… the JAMBOREE fireworks!”', 3600)],
+    [0, () => say('Pip', 'Ladies and gentle-fuzzles… the JAMBOREE fireworks!', { auto: true })],
     [1.4, pushFuse],
     ...rockets.map((rocket, i) => [2.2 + i * 0.9, () => launch(rocket, i)]),
     [
@@ -257,7 +258,7 @@ export function startShow(origin, { onDone }) {
     [15.4, () => toast(`The fireworks spell a name… ${NAME}!`, 3800)],
     // little ones either side while the name hangs there (kept in time order, like the rest)
     ...[17, 18.1, 19.2].map((at, i) => [at, () => sideBurst(i, half)]),
-    [19.6, () => toast(`Fuzzles: “${NAME}! ${NAME}! ${NAME}!”`, 3600)],
+    [19.6, () => say('Fuzzles', `${NAME}! ${NAME}! ${NAME}!`, { auto: true })],
     [20.3, () => sideBurst(3, half)],
     ...Array.from({ length: 9 }, (unused, i) => [
       22.6 + i * 0.42,

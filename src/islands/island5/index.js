@@ -5,6 +5,7 @@ import { material, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
 import { terrainHeight, buildGround } from '../../world/terrain.js';
 import { CENTER_5 } from '../../world/layout.js';
@@ -328,12 +329,11 @@ function update(dt) {
 function meetUnicorn() {
   completeTask('reefUnicorn');
   sfx.fruit();
-  const lines = [
-    [0, 'Unicorn: “Oh! I slid down my rainbow… and it broke into four stars!”', 3800],
-    [4000, 'Unicorn: “My colours went with them. Can you find the stars?”', 3600],
-    [7800, 'Follow the coloured lights ✨', 3000],
-  ];
-  for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
+  say('Unicorn', [
+    'Oh! I slid down my rainbow… and it broke into four stars!',
+    'My colours went with them. Can you find the stars?',
+  ]);
+  toast('Follow the coloured lights ✨', 3000); // waits until she's done talking
 }
 
 // at night, with every star home: her horn lights the arch and the rainbow comes back
@@ -343,7 +343,7 @@ function fixRainbow() {
   unicorn.state = 'happy';
   setHornGlow(1);
   toast('The unicorn’s horn lights up the arch… The rainbow is back! 🌈', 3800);
-  setTimeout(() => toast('Unicorn: “Thank you! Can I come with you on your ship?”', 3600), 4000);
+  setTimeout(() => say('Unicorn', 'Thank you! Can I come with you on your ship?'), 4000);
   setTimeout(followSpartacus, 4000);
 }
 function followSpartacus() {
@@ -390,7 +390,7 @@ function bark(p) {
   for (const islet of Object.values(islets)) islet.bark?.(p);
   const nearUnicorn = distXZ(p, unicorn.g.position.x, unicorn.g.position.z) < 7;
   if (!island.done.reefUnicorn || island.done.reefRainbow || !nearUnicorn) return;
-  toast(`Unicorn: “${starsHome()} of 4 stars are home!”`, 2400);
+  say('Unicorn', `${starsHome()} of 4 stars are home!`, { at: unicorn.g.position, reach: 10 });
 }
 
 // the islets' own state (bridge down, crate broken, hedge chopped…); tasks are saved anyway

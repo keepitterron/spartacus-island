@@ -4,6 +4,7 @@ import { scene } from '../../core/renderer.js';
 import { material, mesh, canvasTexture } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { burst } from '../../core/fx.js';
 import { addCylinder } from '../../core/colliders.js';
 import { makeFork, makeFeather } from '../../models/items.js';
@@ -318,12 +319,11 @@ function foundFork() {
 function meetAtPalace() {
   completeTask('skyFly');
   sfx.fruit();
-  const lines = [
-    [0, 'Lina: “Home! Look, my wings work up here!”', 3400],
-    [3800, 'Lina: “But my Sky Jewel is gone. It made the fountain sparkle.”', 3800],
-    [8000, 'Lina: “Leo the magpie took it to his nest, right at the top.”', 3600],
-  ];
-  for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
+  say('Lina', [
+    'Home! Look, my wings work up here!',
+    'But my Sky Jewel is gone. It made the fountain sparkle.',
+    'Leo the magpie took it to his nest, right at the top.',
+  ]);
 }
 
 // one-time hints for the tunnels, the cracked crystal and the cubby
@@ -358,12 +358,13 @@ function lightFountain() {
   spots.fountain.light();
   unicorn.hop = 0.6;
   completeTask('skyFountain');
-  toast('Lina: “My Sky Jewel! The fountain sparkles again!”', 3400);
-  // Leo asks to come along, and flies off to the ship
-  setTimeout(() => {
-    toast('Leo: “Chack-chack! Can I come on your ship too?”', 3400);
-    leoToShip(() => toast('Leo joins the crew! He rides on the ship’s figurehead.', 3400));
-  }, 3600);
+  say('Lina', 'My Sky Jewel! The fountain sparkles again!');
+  // then Leo asks to come along, and flies off to the ship as he says it
+  say('Leo', {
+    text: 'Chack-chack! Can I come on your ship too?',
+    run: () =>
+      leoToShip(() => toast('Leo joins the crew! He rides on the ship’s figurehead.', 3400)),
+  });
   if (island.collect.count < island.collect.total)
     setTimeout(() => toast('There are still feathers to find… 🪶', 3000), 11000);
 }
@@ -505,7 +506,7 @@ const island = {
     if (spots.nest.bark(p)) return;
     if (unicorn.g.position.distanceTo(p) > 8) return;
     sfx.flutter();
-    toast('Lina: “Whee! Up we go!”', 2200);
+    say('Lina', 'Whee! Up we go!', { auto: true });
   },
 };
 export default island;

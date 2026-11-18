@@ -37,7 +37,7 @@ const island = {
   balls:[[x, z], …],                                     // beach balls (island-local)
   critters:{birds, butterflies, fish},                   // ambient life spots (island-local)
   music:{tempo, root, wave, melody, bass},               // the island's tune (core/music.js)
-  intro:[[delayMs, text, durationMs], …],                // toasts after arriving
+  intro:[[delayMs, text, durationMs], …],                // toasts after arriving ([delayMs, {speaker, line}] for a character)
   win:{title, text, tip, go},                            // win panel; "go" button runs exit.run
   exit:{label, at(p), run()},                            // dock action once every task is done
   sailPath,                                              // optional: the next island's ship spot is the end of this path

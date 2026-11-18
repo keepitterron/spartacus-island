@@ -15,7 +15,7 @@ import { sfx } from '../../core/audio.js';
 import { burst, onFontsReady } from '../../core/fx.js';
 import { toast, hintOnce } from '../../core/ui.js';
 import { addPickup } from '../../systems/collect.js';
-import { startTalk } from '../../game/talk.js';
+import { say } from '../../game/talk.js';
 
 // Zoë's name for her ("juf" is Dutch for a primary-school teacher): change it here
 export const TEACHER = 'Juf Anne';
@@ -33,10 +33,10 @@ const GOODBYE_REACH = 8; // m from the dock spot: "Goodbye, Spartacus!"
 
 // a Montessori classroom: the pink tower, counting, paws (Zoë goes to a Montessori school)
 const LESSON = [
-  () => `${TEACHER}: “Today we build the pink tower. Biggest at the bottom!”`,
-  (bones) => (bones > 0 ? `${TEACHER}: “Spartacus found ${bones} bones. Let’s count them!”` : null),
-  () => `${TEACHER}: “A dog has four paws. How many does a squirrel have?”`,
-  () => `${TEACHER}: “Look, class, Spartacus came to visit. Wave hello!”`,
+  () => 'Today we build the pink tower. Biggest at the bottom!',
+  (bones) => (bones > 0 ? `Spartacus found ${bones} bones. Let’s count them!` : null),
+  () => 'A dog has four paws. How many does a squirrel have?',
+  () => 'Look, class, Spartacus came to visit. Wave hello!',
 ];
 
 // state, in order:
@@ -251,14 +251,15 @@ function reveal() {
 // the first visit: shh, they're sleeping, come back later
 function shush() {
   anne.state = 'shushing';
-  startTalk(
+  say(
+    TEACHER,
     [
       'Grrr… oh! I’m not a bear. I’m Juf Anne, the squirrel teacher.',
       'Shh! My class is having a nap.',
       'I growl so nobody wakes them up.',
       'Come back later, when they’re awake!',
     ],
-    { speaker: TEACHER, at: anne.mouth, reach: TALK_REACH, onEnd: goBackIn },
+    { at: anne.mouth, reach: TALK_REACH, onEnd: goBackIn },
   );
 }
 function goBackIn() {
@@ -276,7 +277,8 @@ function wakeTheClass() {
 // the second visit: thank you, here's a bone, now the lesson
 function greet() {
   anne.state = 'greeting';
-  startTalk(
+  say(
+    TEACHER,
     [
       'Welcome back, Spartacus! My class is awake now.',
       {
@@ -285,7 +287,7 @@ function greet() {
       },
       'Now it’s time for our lesson. You can watch!',
     ],
-    { speaker: TEACHER, at: anne.mouth, reach: TALK_REACH, onEnd: startLesson },
+    { at: anne.mouth, reach: TALK_REACH, onEnd: startLesson },
   );
 }
 // (if he walks off before the bone line, he still gets it: leaving never loses progress)
@@ -353,7 +355,11 @@ export function interactJufAnne(p, { bones }) {
   }
   if (anne.state === 'goodbye') {
     if (distXZ(p, anne.dock.x, anne.dock.z) < GOODBYE_REACH)
-      hintOnce('anneGoodbye', `${TEACHER}: “Goodbye, Spartacus! Come back and visit!”`, 3400);
+      say(TEACHER, 'Goodbye, Spartacus! Come back and visit!', {
+        at: anne.dock,
+        reach: GOODBYE_REACH + 2,
+        once: 'anneGoodbye',
+      });
     return;
   }
   if (anne.state !== 'hidden') return;
@@ -369,7 +375,7 @@ export function interactJufAnne(p, { bones }) {
 function remindNotYet(p) {
   if (distToMouth(p) > REVEAL_REACH || !anne.cameBack) return;
   anne.cameBack = false;
-  toast(`${TEACHER}: “Shh! Not yet, they’re still sleeping.”`, 3000);
+  say(TEACHER, 'Shh! Not yet, they’re still sleeping.', { at: anne.mouth, reach: TALK_REACH });
 }
 function sayLessonLine(bones) {
   anne.lessonTimer = LESSON_EVERY;
@@ -378,7 +384,7 @@ function sayLessonLine(bones) {
     line = LESSON[anne.lessonLine % LESSON.length](bones);
     anne.lessonLine += 1;
   }
-  toast(line, 3400);
+  say(TEACHER, line, { at: anne.mouth, reach: TALK_REACH });
   for (const baby of anne.babies) baby.handUp = 2.5 + baby.phase * 0.3;
 }
 
@@ -392,7 +398,11 @@ export function barkAtCave(p) {
   } else if (anne.state === 'teaching' && dist < BARK_REACH) {
     sfx.squeak();
     for (const baby of anne.babies) baby.hop = 0.5;
-    toast(`${TEACHER}: “Shh! …oh, go on then. One more woof!”`, 2600);
+    say(TEACHER, 'Shh! …oh, go on then. One more woof!', {
+      at: anne.mouth,
+      reach: TALK_REACH,
+      auto: true,
+    });
   }
 }
 

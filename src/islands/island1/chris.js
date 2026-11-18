@@ -7,12 +7,12 @@ import { scene } from '../../core/renderer.js';
 import { material, mergeParts, mesh } from '../../core/materials.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
-import { toast, hintOnce } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
 
 const NOTICE_REACH = 10; // m: Chris turns to look at Spartacus
 const TALK_REACH = 6; // m: and talks to him
-const BARK_LINES = ['Chris: “Hello, Spartacus!”', 'Chris: “Lost something? I might have it!”'];
+const BARK_LINES = ['Hello, Spartacus!', 'Lost something? I might have it!'];
 
 // paw: the pointing arm's pivot; plank: {x, z} where the plank lies; hop: seconds of hop left
 const chris = { g: null, paw: null, plank: null, hop: 0, barks: 0, barkCooldown: 0 };
@@ -103,16 +103,19 @@ const plankInPile = (plank) =>
 export function interactChris(p, { plank, bridgeFixed }) {
   const dist = distXZ(p, chris.home.x, chris.home.z);
   if (dist > TALK_REACH) return;
+  const talking = { at: chris.home, reach: TALK_REACH + 2 };
   if (bridgeFixed)
-    hintOnce(
-      'chrisThanks',
-      'Chris: “The plank fixed the bridge? One less thing in my lost and found!”',
-      3600,
-    );
+    say('Chris', 'The plank fixed the bridge? One less thing in my lost and found!', {
+      ...talking,
+      once: 'chrisThanks',
+    });
   else if (plank?.state === 'carried')
-    hintOnce('chrisCarry', 'Chris: “That’s the one! The broken bridge is by the pond.”', 3400);
+    say('Chris', 'That’s the one! The broken bridge is by the pond.', {
+      ...talking,
+      once: 'chrisCarry',
+    });
   else if (plankInPile(plank))
-    hintOnce('chris', 'Chris: “Looking for a plank? It’s in the lost and found!”', 3400);
+    say('Chris', 'Looking for a plank? It’s in the lost and found!', { ...talking, once: 'chris' });
 }
 
 // a woof: Chris hops and says hello
@@ -121,7 +124,11 @@ export function barkAtChris(p) {
   chris.hop = 0.5;
   chris.barkCooldown = 4;
   sfx.squeak();
-  toast(BARK_LINES[chris.barks % BARK_LINES.length], 2400);
+  say('Chris', BARK_LINES[chris.barks % BARK_LINES.length], {
+    at: chris.home,
+    reach: NOTICE_REACH + 2,
+    auto: true,
+  });
   chris.barks += 1;
 }
 

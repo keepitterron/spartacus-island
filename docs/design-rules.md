@@ -31,7 +31,7 @@ Things she tried and said no to, so we don't build them again. Newest first.
 - Plays on phones (touch: stick + Act / Woof / Jump buttons) and desktop (keyboard).
 - Long term: playable **together with her friends** in the browser (see [backlog.md](backlog.md)).
 - Kids read slowly: keep toasts short, one idea per toast. `toast()` shows each one for at least 3.5 s, longer for long messages, and messages queue instead of replacing each other.
-- **Characters talk at the reader's pace.** More than one line from a character is a conversation (`startTalk`, see systems.md): each line waits for a tap, and walking away ends it. Never a chain of timed toasts.
+- **Characters talk at the reader's pace.** Everything a character says goes in the speech box with their name (`say`, see systems.md): each line waits for a tap, and walking away ends it. Never a toast with a character's words in it, never a chain of timed toasts. Only quick reactions to a woof, and lines during cutscenes, close by themselves.
 
 ## Spartacus
 

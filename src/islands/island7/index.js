@@ -4,6 +4,7 @@ import { scene, LOW_POWER } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { addBox, addCylinder } from '../../core/colliders.js';
 import { terrainHeight, buildGround } from '../../world/terrain.js';
 import { CENTER_7 } from '../../world/layout.js';
@@ -484,24 +485,24 @@ function meetPip() {
   completeTask('fairPip');
   sfx.fruit();
   spots.pip.hop();
-  const lines = [
-    [0, 'Pip: “Welcome to the Jamboree! Tonight is our BIG fireworks show!”', 3800],
-    [4200, 'Pip: “But our cannon went KABOOM… and blew the five rockets all over the fair!”', 4200],
-    [8800, 'Pip: “Follow the coloured lights. Every ride is free for you!”', 3600],
-  ];
-  for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
+  say('Pip', [
+    'Welcome to the Jamboree! Tonight is our BIG fireworks show!',
+    'But our cannon went KABOOM… and blew the five rockets all over the fair!',
+    'Follow the coloured lights. Every ride is free for you!',
+  ]);
 }
 
 // a woof at Pip: how it's going, and a tip about the next thing
 function askPip() {
   spots.pip.hop();
+  const near = { at: spots.pip.pos, reach: 10 };
   if (island.done.fairShow)
-    toast('Pip: “The best Jamboree EVER! Woof by the stand at night for more!”', 3600);
+    say('Pip', 'The best Jamboree EVER! Woof by the stand at night for more!', near);
   else if (rocketsHome() === 5)
-    toast('Pip: “All five rockets are ready! The show starts when it’s dark.”', 3600);
+    say('Pip', 'All five rockets are ready! The show starts when it’s dark.', near);
   else if (!spots.wheel.on())
-    toast(`Pip: “${rocketsHome()} of 5 rockets! Psst: Mega-Me mushrooms make you HUGE.”`, 3800);
-  else toast(`Pip: “${rocketsHome()} of 5 rockets are on the stand!”`, 3000);
+    say('Pip', `${rocketsHome()} of 5 rockets! Psst: Mega-Me mushrooms make you HUGE.`, near);
+  else say('Pip', `${rocketsHome()} of 5 rockets are on the stand!`, near);
 }
 
 // a rocket landed in its tube on the stand
@@ -513,7 +514,7 @@ function rocketHome(rocket, { quiet }) {
   if (home < 5) return;
   setTimeout(() => {
     spots.pip.hop();
-    toast('Pip: “All five rockets! The show starts when it’s dark… 🌙”', 4000);
+    say('Pip', 'All five rockets! The show starts when it’s dark… 🌙');
   }, 3600);
 }
 
@@ -526,7 +527,7 @@ function showAction(p) {
 
 function showOver() {
   completeTask('fairShow');
-  toast('Pip: “The best Jamboree EVER! Thank you, Spartacus!”', 3600);
+  say('Pip', 'The best Jamboree EVER! Thank you, Spartacus!');
   if (island.collect.count < TICKETS)
     setTimeout(
       () => toast('There are still golden tickets to find… Woof, and Leo will help! 🎟️', 3600),
@@ -593,7 +594,7 @@ function interact(p) {
 function bark(p) {
   if (player.giant) {
     const blown = exciteFuzzles(p, { reach: 18, up: 9, away: 10 });
-    if (blown) hintOnce('fuzzWoof', 'Fuzzles: “WHEEEE! Do it again!”', 2800);
+    if (blown) say('Fuzzles', 'WHEEEE! Do it again!', { once: 'fuzzWoof', auto: true });
   } else exciteFuzzles(p, { reach: 9, up: 4.5 });
   if (spots.wheel.bark(p)) return;
   if (nearPip(p, 8)) {
@@ -610,7 +611,7 @@ function bark(p) {
 // a giant footstep nearby: up they go (they think it's the best ride at the fair)
 function stomp(p) {
   const hopped = exciteFuzzles(p, { reach: 7, up: 6, away: 3 });
-  if (hopped) hintOnce('fuzzStomp', 'Fuzzles: “He’s HUGE! Again, again!”', 2800);
+  if (hopped) say('Fuzzles', 'He’s HUGE! Again, again!', { once: 'fuzzStomp', auto: true });
 }
 
 // a ground pound: a Slam on a jelly is a MEGA bounce; anywhere else the Fuzzles nearby hop

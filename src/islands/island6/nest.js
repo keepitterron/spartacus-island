@@ -7,6 +7,7 @@ import { distXZ, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { toast, hintOnce } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
 import { makeFork, makeJewel } from '../../models/items.js';
 import { player } from '../../player/player.js';
@@ -84,12 +85,10 @@ export function buildNest(toWorld, { island }) {
     if (quiet) return; // a save: the items system puts the jewel where it was
     carryItem(jewel);
     completeTask('skyJewel');
-    const lines = [
-      [0, 'Leo: “Ooh! A shiny fork! For me? Swap!”', 3200],
-      [3600, 'Leo: “Chack-chack! Friends now?” Leo is your friend!', 3600],
-      [7600, 'Take the Sky Jewel back to Lina’s fountain!', 3200],
-    ];
-    for (const [delay, text, ms] of lines) setTimeout(() => toast(text, ms), delay);
+    say('Leo', ['Ooh! A shiny fork! For me? Swap!', 'Chack-chack! Friends now?']);
+    // these wait until he's done talking
+    toast('Leo is your friend!', 3000);
+    toast('Take the Sky Jewel back to Lina’s fountain!', 3200);
   }
 
   function onSpotted() {
@@ -114,7 +113,11 @@ export function buildNest(toWorld, { island }) {
       if (onLeoCloud && !island.done.skyJewel)
         hintOnce('leo', 'Shh! Leo guards the Sky Jewel. Hide behind the pink bushes!', 3600);
       if (nearNest(p) && player.carrying?.id !== 'fork' && !island.done.skyJewel)
-        hintOnce('leoShiny', 'Leo: “Shiny? Shiny?” He only swaps for something shiny.', 3600);
+        if (!state.saidShiny) {
+          state.saidShiny = true;
+          say('Leo', 'Shiny? Shiny?', { at: nest, reach: 8 });
+          toast('He only swaps for something shiny.', 3400);
+        }
     },
     action(p) {
       if (island.done.skyJewel || player.carrying?.id !== 'fork' || !nearNest(p) || !leoHome())
@@ -123,7 +126,7 @@ export function buildNest(toWorld, { island }) {
     },
     bark(p) {
       if (leo.g.getWorldPosition(vec3()).distanceTo(p) > 20) return false;
-      if (island.done.skyJewel) toast('Leo: “Chack-chack! Best friends!”', 2400);
+      if (island.done.skyJewel) say('Leo', 'Chack-chack! Best friends!', { auto: true });
       else if (distractLeo()) toast('Leo looks all around for the woof… Sneak now!', 2800);
       return true;
     },

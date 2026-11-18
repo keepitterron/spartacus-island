@@ -11,18 +11,25 @@ import { player } from '../player/player.js';
 import { updatePowerHud } from '../systems/powers.js';
 import { gull, gullJoinsShip } from '../npcs/gull.js';
 import { renderTasks } from './tasks.js';
+import { say, stopTalk } from './talk.js';
 import { snapCamera } from './camera.js';
 import { clearProgress, restoreProgress } from './progress.js';
 
-// schedule an island's intro messages: [[delayMs, text, durationMs], …]. A message never starts
-// before the previous one has had its full reading time, so none gets cut short.
+// schedule an island's intro messages: [[delayMs, text, durationMs], …]; a character speaking is
+// [delayMs, {speaker, line}] (game/talk.js; the messages after it wait until they're done). A
+// message never starts before the previous one has had its full reading time, so none gets cut short.
 const INTRO_GAP = 400; // ms between two intro messages
 const showIntro = (messages) => {
   let previousEnd = 0;
-  for (const [delay, text, duration] of messages) {
+  for (const [delay, message, duration] of messages) {
     const start = Math.max(delay, previousEnd + INTRO_GAP);
-    setTimeout(() => toast(text, duration), start);
-    previousEnd = start + toastTime(text, duration);
+    if (typeof message === 'string') {
+      setTimeout(() => toast(message, duration), start);
+      previousEnd = start + toastTime(message, duration);
+    } else {
+      setTimeout(() => say(message.speaker, message.line), start);
+      previousEnd = start;
+    }
   }
 };
 
@@ -52,6 +59,7 @@ export function startGame(n, { resume = false } = {}) {
 // arrived = came by ship (false when jumping in from Continue)
 export function enterIsland(n, arrived) {
   game.island = n;
+  stopTalk();
   const island = currentIsland(),
     prev = game.islands[n - 1];
   // by default the ship is wherever the previous island's sailing path ends

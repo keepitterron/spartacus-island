@@ -14,6 +14,7 @@ import { game, followCam, isPlaying } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { toast, hintOnce } from '../../core/ui.js';
+import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
 import { terrainHeight, buildGround } from '../../world/terrain.js';
 import { CENTER_4, CENTER_5 } from '../../world/layout.js';
@@ -728,7 +729,11 @@ function interact(p) {
     distXZ(p, OCTOPUS_SPOT.x, OCTOPUS_SPOT.z) < 5 &&
     player.carrying?.id !== 'pillow'
   )
-    hintOnce('octo', 'Octopus: “Grumble… I can’t sleep without my pillow!”', 4000);
+    say('Octopus', 'Grumble… I can’t sleep without my pillow!', {
+      at: OCTOPUS_SPOT,
+      reach: 9,
+      once: 'octo',
+    });
   hintTooHigh(distXZ(p, SHELF.x, SHELF.z) < 3.5, 'Too high! A Boing-Boing jump could reach it.');
   const kelpGrower = growers.find((g) => g.t === KELP_PILLAR);
   if (
@@ -822,7 +827,8 @@ const island = {
   },
   intro: [
     [3400, 'The red hermit crabs lost their friend Eduardo!', 3400],
-    [7200, 'Mango: “I’ll guard the ship!” Wasabi’s bubble lets Spartacus breathe.', 3800],
+    [7200, { speaker: 'Mango', line: 'I’ll guard the ship!' }],
+    [7600, 'Wasabi’s bubble lets Spartacus breathe.', 3400],
     [11400, 'Tip: hidden hermit crabs blow bubbles. Follow the bubbles!', 3800],
   ],
   win: {
