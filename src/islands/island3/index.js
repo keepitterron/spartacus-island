@@ -833,7 +833,8 @@ const island = {
     if (
       carryingId === 'flower' &&
       !island.done.trade &&
-      distXZ(p, HIVE.x, HIVE.z) < 2.8 &&
+      // the zipline lands 3 m from the hive: Give from there, so the button never says Drop first
+      distXZ(p, HIVE.x, HIVE.z) < 3.5 &&
       Math.abs(p.y - HIVE.y) < 1.5
     )
       return { label: 'Give', run: giveFlower };
