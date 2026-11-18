@@ -29,10 +29,11 @@ const HEIGHT_CELL = 0.5;
 // outside the ground mesh is open sea (deeper than player.js OPEN_SEA, so the current brings him back)
 const SEA_FLOOR = -4.2;
 
-export function makeLevel(url, { center, heightsUrl, seaFloor = SEA_FLOOR }) {
+export function makeLevel(url, { center, heightsUrl, groundPalette, seaFloor = SEA_FLOOR }) {
   const level = {
     url,
     center,
+    groundPalette, // the painted ground's two greens (world/terrain.js buildGround), if not the usual
     root: null, // the loaded glTF scene, placed at the island's centre
     heights: null, // the ground baked into a height grid (bakeHeights)
     spots: {}, // `spot:name` markers by name, for the island's own code
@@ -171,6 +172,7 @@ function drawGround(level) {
   buildGround(level.center.x + minX + width / 2, level.center.z + minZ + depth / 2, {
     size,
     segments: Math.round(size / (LOW_POWER ? 1.8 : 1.2)),
+    ...(level.groundPalette && { palette: level.groundPalette }),
   });
 }
 

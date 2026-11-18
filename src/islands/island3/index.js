@@ -1,6 +1,6 @@
 // Island 3, Mossy Paw Woods: big trees linked by vines, the bees' hive, the water gate and Wasabi's spring.
 import * as THREE from 'three';
-import { clamp, distXZ, lerp, smoothstep, rand, distToSegmentXZ, vec3 } from '../../core/util.js';
+import { clamp, distXZ, lerp, rand, distToSegmentXZ, vec3 } from '../../core/util.js';
 import { scene, LOW_POWER } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { addStatic } from '../../world/statics.js';
@@ -10,16 +10,16 @@ import { burst, textSprite, onFontsReady } from '../../core/fx.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
 import { say } from '../../game/talk.js';
 import { addCylinder, addBox } from '../../core/colliders.js';
-import { terrainHeight, buildGround } from '../../world/terrain.js';
+import { terrainHeight } from '../../world/terrain.js';
 import { CENTER_3 } from '../../world/layout.js';
-import { scatter, dock } from '../../world/props.js';
+import { scatter } from '../../world/props.js';
+import { makeLevel } from '../../world/level.js';
 import { ship, addBucket } from '../../world/ship.js';
 import { makeKey, makeFlower, makeAcorn } from '../../models/items.js';
 import { player } from '../../player/player.js';
 import { addItem, carryItem, useUpCarried } from '../../systems/items.js';
 import { addPickup, pickupText } from '../../systems/collect.js';
-import { addFruit } from '../../systems/powers.js';
-import { addDig } from '../../systems/digs.js';
+import { visitPlaces, seenPlaces, restorePlaces } from '../../systems/places.js';
 import { addHook } from '../../systems/hooks.js';
 import { climbVine, zipVine, vineAction } from '../../systems/vines.js';
 import { mango, ensureMangoCrew, mangoFetch } from '../../npcs/mango.js';
@@ -28,23 +28,29 @@ import { startBubble } from '../../cutscenes/bubble.js';
 import { completeTask } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
 import { hintTooHigh } from '../../game/interact.js';
+import levelUrl from './level.glb?url';
+import heightsUrl from './heights.bin?url';
 
 /* Grow-Grow fruit: magic seeds grow a climbing vine and ziplines between treetops.
    Mango fetches a flower, the bees trade it for a key, the key opens the water gate,
    the stream refills Wasabi's spring and she swims down to the ship.
 
-   Everything is positioned with toWorld(x, z) in island-local coordinates. */
+   Laid out in Blender (levels/island3.blend, made by tools/levels/make_island3.py, dressed by
+   dress_island3.py; see docs/island3.md): this code builds the big trees, vines, hive, gate,
+   stream, flower tree and mushroom at the level's `spot:` markers. */
 
-const toWorld = (x, z) => ({ x: CENTER_3.x + x, z: CENTER_3.z + z });
-const SPRING = { x: CENTER_3.x - 12, z: CENTER_3.z - 4 }; // Wasabi's spring
-// the stream bed, from just below the gate down past the spring to the beach
-const STREAM = [
-  [-14, -15],
-  [-12, -4],
-  [-10, 6],
-  [-8, 16],
-  [-7, 30],
-].map(([x, z]) => vec3(CENTER_3.x + x, 0, CENTER_3.z + z));
+// the forest floor is a deeper green than the beach islands'
+const level = makeLevel(levelUrl, {
+  center: CENTER_3,
+  heightsUrl,
+  groundPalette: { g: 0x4fa84a, g2: 0x6fbf55 },
+});
+
+// filled in from the level's spots by readSpots(), world coordinates
+const SPRING = {}; // Wasabi's spring
+const STREAM = []; // the stream bed, from just below the gate down past the spring to the beach
+const TREE_SPOTS = {}; // name -> {x, z, top}
+const DOCK_END = {};
 
 function distToStream(x, z) {
   let d = 1e9;
@@ -52,32 +58,12 @@ function distToStream(x, z) {
     d = Math.min(d, distToSegmentXZ({ x, z }, STREAM[i], STREAM[i + 1]));
   return d;
 }
-// wobbly radius of the shoreline at angle a around the island centre
-function coastRadius(a) {
-  return 26 + Math.sin(a * 5) * 1.2 + Math.sin(a * 3 + 2) * 1.4;
-}
-// ground height: gentle hills, carved down for the stream bed and the spring, then the beach and sea
-function height(x, z) {
-  const lx = x - CENTER_3.x,
-    lz = z - CENTER_3.z,
-    r = Math.hypot(lx, lz),
-    coast = coastRadius(Math.atan2(lz, lx));
-  let y =
-    1.25 + 0.3 * Math.sin(x * 0.35 + 1) * Math.cos(z * 0.3) + 0.18 * Math.sin(x * 0.8 + z * 0.7);
-  const dStream = distToStream(x, z);
-  if (dStream < 2.2) y = lerp(0.5, y, smoothstep(1.1, 2.2, dStream));
-  const dSpring = Math.hypot(x - SPRING.x, z - SPRING.z);
-  if (dSpring < 4.6) y = lerp(0.45, y, smoothstep(3.2, 4.6, dSpring));
-  y = lerp(y, 0.35, smoothstep(coast - 5, coast - 2, r));
-  return lerp(y, -4, smoothstep(coast, coast + 2.5, r));
-}
 
 // A big tree with a flat leafy deck on top; smooth bark can't be climbed even with a vine.
 // Returns the tree record systems/vines.js uses: {x, z, gh (ground), top, grown, col}.
 // (its meshes never move: merged for phones, world/statics.js)
-function bigTree(lx, lz, { top, smoothBark = false }) {
-  const { x, z } = toWorld(lx, lz),
-    gh = terrainHeight(x, z),
+function bigTree({ x, z, top }, { smoothBark = false } = {}) {
+  const gh = terrainHeight(x, z),
     trunkHeight = top - gh;
   const tree = { x, z, gh, top, grown: false };
   const trunk = mesh(
@@ -167,10 +153,25 @@ let flowProgress = 0, // 0..1: how far the water has run down the stream since t
 // These are filled in by build(): HIVE {x, y, z, bees, excite}, GATE {y, frontX, frontZ, doors, lock, col, open},
 // FLOWER {x, y, z, treeX} (also Mango's fetch target), MUSHROOM {top}.
 const HIVE = {},
-  GATE = toWorld(-14, -17.5),
+  GATE = {},
   FLOWER = {},
-  MUSHROOM = toWorld(14, 6);
-const FRUIT_BUSHES = { grow: toWorld(5, 9), boing: toWorld(11, 1), stretch: toWorld(9, -2) };
+  MUSHROOM = {};
+
+const levelSpot = (name) => level.spots[name];
+function readSpots() {
+  Object.assign(SPRING, { x: levelSpot('spring').x, z: levelSpot('spring').z });
+  Object.assign(GATE, { x: levelSpot('gate').x, z: levelSpot('gate').z });
+  Object.assign(MUSHROOM, { x: levelSpot('mushroom').x, z: levelSpot('mushroom').z });
+  for (let i = 1; levelSpot(`stream ${i}`); i++)
+    STREAM.push(vec3(levelSpot(`stream ${i}`).x, 0, levelSpot(`stream ${i}`).z));
+  for (const name of ['seed tree', 'junction tree', 'hive tree', 'acorn tree'])
+    TREE_SPOTS[name] = {
+      x: levelSpot(name).x,
+      z: levelSpot(name).z,
+      top: levelSpot(name).props.top,
+    };
+  Object.assign(DOCK_END, { x: levelSpot('dock end').x, z: levelSpot('dock end').z });
+}
 
 // the bees' hive sits on hiveTree's deck, on the side facing junctionTree (where the zipline lands)
 function buildHive() {
@@ -336,8 +337,9 @@ function buildStream() {
 
 // tall tree with the flower on a branch high above the stream (Mango fetches it)
 function buildFlowerTree() {
-  const treeX = CENTER_3.x - 5,
-    treeZ = CENTER_3.z + 9,
+  const flowerTree = level.spots['flower tree'],
+    treeX = flowerTree.x,
+    treeZ = flowerTree.z,
     gh = terrainHeight(treeX, treeZ);
   const trunk = mesh(new THREE.CylinderGeometry(0.4, 0.55, 6.5, 7), material(0x6e4a30));
   trunk.position.set(treeX, gh + 3.25, treeZ);
@@ -351,7 +353,7 @@ function buildFlowerTree() {
     leaf.position.set(treeX + (rand() - 0.5) * 2, gh + 6.8 + rand(), treeZ + (rand() - 0.5) * 2);
     scene.add(leaf);
   }
-  const branchX = CENTER_3.x - 9.6,
+  const branchX = treeX - 4.6, // over the stream
     branchY = gh + 5.4;
   const branch = mesh(new THREE.CylinderGeometry(0.08, 0.16, 4.8, 5), material(0x6e4a30));
   branch.rotation.z = Math.PI / 2 + 0.12;
@@ -408,7 +410,7 @@ function buildMushroom() {
 function isForestSpot(x, z) {
   const lx = x - CENTER_3.x,
     lz = z - CENTER_3.z;
-  if (Math.hypot(lx, lz) > 19 || distToStream(x, z) < 3.2) return false;
+  if (Math.hypot(lx, lz) > 34 || distToStream(x, z) < 3.2) return false;
   for (const tree of [seedTree, junctionTree, hiveTree, acornTree])
     if (Math.hypot(x - tree.x, z - tree.z) < 5) return false;
   if (
@@ -418,16 +420,16 @@ function isForestSpot(x, z) {
     Math.hypot(x - FLOWER.treeX, z - FLOWER.z) < 3
   )
     return false;
-  for (const bush of Object.values(FRUIT_BUSHES))
-    if (Math.hypot(x - bush.x, z - bush.z) < 3.5) return false;
+  // fruit bushes, acorns, digs, signposts and the rest of the level's markers
+  if (level.markers.some((marker) => Math.hypot(x - marker.x, z - marker.z) < 3.5)) return false;
   return !(Math.abs(lx) < 4 && lz > 9); // the path up from the dock
 }
 
 function buildForest() {
   // try random spots until enough trees fit (or we give up)
-  for (let i = 0, n = 0; i < 300 && n < (LOW_POWER ? 16 : 28); i++) {
+  for (let i = 0, n = 0; i < 500 && n < (LOW_POWER ? 26 : 44); i++) {
     const a = rand() * 6.28,
-      r = 3 + rand() * 16,
+      r = 3 + rand() * 31,
       x = CENTER_3.x + Math.cos(a) * r,
       z = CENTER_3.z + Math.sin(a) * r;
     if (!isForestSpot(x, z)) continue;
@@ -435,9 +437,9 @@ function buildForest() {
     forestTree(x, z);
   }
   // little toadstools, mostly red, every third one orange
-  for (let i = 0, n = 0; i < 200 && n < 24; i++) {
+  for (let i = 0, n = 0; i < 300 && n < 36; i++) {
     const a = rand() * 6.28,
-      r = 2 + rand() * 18,
+      r = 2 + rand() * 32,
       x = CENTER_3.x + Math.cos(a) * r,
       z = CENTER_3.z + Math.sin(a) * r;
     if (!isForestSpot(x, z)) continue;
@@ -458,24 +460,18 @@ function buildForest() {
     scene.add(cap);
     addStatic(cap);
   }
-  scatter(CENTER_3.x, CENTER_3.z, { radius: 18, allowed: isForestSpot, bushes: 10, flowers: 70 });
+  scatter(CENTER_3.x, CENTER_3.z, { radius: 34, allowed: isForestSpot, bushes: 18, flowers: 130 });
 }
 
 function build() {
-  buildGround(CENTER_3.x, CENTER_3.z, {
-    size: 68,
-    segments: LOW_POWER ? 90 : 140,
-    palette: { g: 0x4fa84a, g2: 0x6fbf55 },
-  });
-  island.spawn = vec3(CENTER_3.x, 0, CENTER_3.z + 15);
-  island.spawn.y = terrainHeight(island.spawn.x, island.spawn.z);
-  dock(CENTER_3.x, { zFrom: CENTER_3.z + 18, zTo: CENTER_3.z + 33 });
+  level.build(island);
+  readSpots();
   // seedTree has a magic seed at its roots; the other three have bark too smooth to climb,
   // so you climb seedTree and zip seedTree -> junctionTree -> hiveTree
-  seedTree = bigTree(-2, 2, { top: 10 });
-  junctionTree = bigTree(6, -6, { top: 8.5, smoothBark: true });
-  hiveTree = bigTree(-3, -13, { top: 7, smoothBark: true });
-  acornTree = bigTree(15, -12, { top: 8, smoothBark: true });
+  seedTree = bigTree(TREE_SPOTS['seed tree']);
+  junctionTree = bigTree(TREE_SPOTS['junction tree'], { smoothBark: true });
+  hiveTree = bigTree(TREE_SPOTS['hive tree'], { smoothBark: true });
+  acornTree = bigTree(TREE_SPOTS['acorn tree'], { smoothBark: true });
   seedVine = climbVine(seedTree, island.spawn.x, island.spawn.z);
   zipVine(seedTree, junctionTree);
   zipVine(junctionTree, hiveTree);
@@ -499,14 +495,7 @@ function build() {
   addPickup(seedTree.x - 1.5, seedTree.z + 0.4, { y: seedTree.top, island: 3 });
   addPickup(acornTree.x, acornTree.z, { y: acornTree.top, island: 3 });
   addPickup(MUSHROOM.x, MUSHROOM.z, { y: MUSHROOM.top, island: 3 });
-  const buried = toWorld(-16, 9);
-  addDig(buried.x, buried.z, {
-    holdsPickup: true,
-    reward: (dig) => {
-      addPickup(dig.x, dig.z, { y: dig.y, island: 3, pop: 0.6 });
-      toast('A buried golden acorn!', 1800);
-    },
-  });
+  island.collect.total += 3; // these three, on top of the level's acorns and digs
   wasabi.g.position.set(SPRING.x, 0.5, SPRING.z);
   wasabi.g.rotation.y = 0.6;
   onFontsReady(() => {
@@ -517,10 +506,8 @@ function build() {
     scene.add(thirstyLabel);
   });
 }
-function buildLate() {
-  for (const [type, pos] of Object.entries(FRUIT_BUSHES))
-    addFruit(pos.x, pos.z, { type, y: terrainHeight(pos.x, pos.z), bush: true });
-}
+// the fruit bushes and the buried acorn are level markers (no rand() here)
+const buildLate = () => level.buildLate(island);
 
 function giveFlower() {
   useUpCarried();
@@ -641,9 +628,8 @@ function updateHappy(g, dt) {
   const bucket = ship.localToWorld(vec3(0.65, 1.6, 1.4));
   wasabi.path = new THREE.CatmullRomCurve3([
     vec3(g.position.x, 0.8, g.position.z),
-    vec3(STREAM[2].x, 0.8, STREAM[2].z),
-    vec3(STREAM[3].x, 0.8, STREAM[3].z),
-    vec3(STREAM[4].x, 0.15, STREAM[4].z),
+    ...STREAM.slice(2, -1).map((point) => vec3(point.x, 0.8, point.z)),
+    vec3(STREAM.at(-1).x, 0.15, STREAM.at(-1).z),
     vec3(ship.position.x - 2.5, 0.1, ship.position.z),
     bucket,
   ]);
@@ -704,7 +690,8 @@ const addKeyItem = () =>
 
 // putting a save back: everything follows from the ticked tasks. The flower and the key are made
 // again here, and the items system puts them where they were (carried, dropped or used up).
-function loadState() {
+function loadState(state) {
+  restorePlaces(3, state.places);
   const { done } = island;
   if (done.flower) {
     flowerCalled = true;
@@ -733,8 +720,13 @@ const island = {
   center: CENTER_3,
   name: 'Mossy Paw Woods',
   zMax: -245,
-  height,
+  level, // main.js loads it before anything is built
+  height: level.height,
+  // the old hand-built island left the shared random sequence here (see main.js)
+  sharedSeedAfter: 1494877858,
+  layout: 2, // the Blender remake: saves from the old layout start the island fresh
   savesProgress: true,
+  saveState: () => ({ places: seenPlaces(3) }),
   loadState,
   tasks: {
     title: 'Mossy Paw Woods',
@@ -747,27 +739,16 @@ const island = {
       { id: 'wasabi', ic: '💧', t: () => 'Bring Wasabi to the ship' },
     ],
   },
+  // total: the level's acorns and digs, plus the three build() adds
   collect: {
-    total: 4,
+    total: 0,
     count: 0,
     taskId: 'acorns',
     name: 'Golden acorn',
     all: 'All the golden acorns! Good boy, Spartacus!',
     model: makeAcorn,
   },
-  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
-  balls: [[3, 12]],
-  critters: {
-    birds: [[8, 22]],
-    butterflies: [
-      [5, 9],
-      [-8, 12],
-      [12, 0],
-      [-6, -6],
-      [-20, 4],
-      [18, 10],
-    ],
-  },
+  // beach balls and critters are level markers
   // a slow walk in the woods (core/music.js)
   music: {
     tempo: 84,
@@ -785,7 +766,7 @@ const island = {
   },
   exit: {
     label: 'Dive',
-    at: (p) => p.z > CENTER_3.z + 27 && Math.abs(p.x - CENTER_3.x) < 1.6 && p.y > 0.5,
+    at: (p) => p.z > DOCK_END.z + 2 && Math.abs(p.x - DOCK_END.x) < 1.6 && p.y > 0.5,
     run: () => startBubble(() => enterIsland(4, true)),
   },
   build,
@@ -801,6 +782,7 @@ const island = {
     updateWasabiStory(dt);
   },
   interact(p) {
+    visitPlaces(p);
     const carryingId = player.carrying?.id;
     if (wasabi.state === 'stuck' && distXZ(p, SPRING.x, SPRING.z) < 6)
       hintOnce('pool', 'Wasabi’s spring has dried up! The water gate upstream is locked.', 3800);

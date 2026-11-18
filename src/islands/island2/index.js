@@ -59,9 +59,9 @@ const sailPath = new THREE.CatmullRomCurve3([
   vec3(SHIP.x, 0, SHIP.z),
   vec3(30, 0, CENTER_2.z + 66),
   vec3(62, 0, CENTER_2.z + 10),
-  vec3(58, 0, -245),
-  vec3(24, 0, -288),
-  vec3(5.6, 0, CENTER_3.z + 32),
+  vec3(56, 0, -232),
+  vec3(26, 0, -258),
+  vec3(5.6, 0, CENTER_3.z + 54), // island 3's spot:ship
 ]);
 
 // a wooden launch platform with a painted paw on top; returns its standing spot
