@@ -43,7 +43,7 @@ With Zoë out of the critical path, the main reason for going one island at a ti
 
 ## Phase A: foundations (no island changes how it plays)
 
-1. **Phone performance.** Islands 2–7 register their own fixed props with `addStatic`; characters use `mergeParts`. Islands 4 and 2 first. It also makes the later Blender export simpler (static scenery is exactly what goes into the `.blend`).
+1. ✅ **Phone performance** (done: instanced particles, small far things not drawn, islands 2–7's props merged; see architecture.md). Islands 2–7 register their own fixed props with `addStatic`; characters use `mergeParts`. Islands 4 and 2 first. It also makes the later Blender export simpler (static scenery is exactly what goes into the `.blend`).
 2. **Mid-island saves for islands 2–4**, so all seven islands save the same way before their layouts move.
 3. **Pipeline upgrades:**
    - **A small ground.** Export the height grid as a 16-bit heightmap instead of a mesh. Today the ground is half of island 1's 2.9 MB file; seven levels at that rate would add about 17 MB to the offline download.

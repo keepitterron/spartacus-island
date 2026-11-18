@@ -9,7 +9,8 @@ import {
   vec3,
 } from '../../core/util.js';
 import { scene, LOW_POWER } from '../../core/renderer.js';
-import { material, mesh } from '../../core/materials.js';
+import { material, mergeParts, mesh } from '../../core/materials.js';
+import { addStatic } from '../../world/statics.js';
 import { game, followCam, isPlaying } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
@@ -124,6 +125,7 @@ function addSeaweed(
     blade.rotation.y = rand() * 3;
     g.add(blade);
   }
+  mergeParts(g); // two draw calls a clump, not six (it sways and shrinks as one)
   scene.add(g);
   const col = addCylinder(x, z, {
     r: radius,
@@ -163,6 +165,7 @@ function addVent(x, z, { kind, offset, dir }) {
   ring.rotation.x = Math.PI / 2;
   ring.position.set(x, gh + 0.15, z);
   scene.add(ring);
+  addStatic(ring);
   const hole = new THREE.Mesh(
     new THREE.CircleGeometry(isLift ? 0.85 : 1.25, 14),
     material(0x2b3a55),
@@ -170,6 +173,7 @@ function addVent(x, z, { kind, offset, dir }) {
   hole.rotation.x = -Math.PI / 2;
   hole.position.set(x, gh + 0.05, z);
   scene.add(hole);
+  addStatic(hole);
   // bubbles for onDur seconds of every period; offset staggers the vents
   vents.push({
     x,
@@ -195,11 +199,13 @@ function addPillar(x, z, { height }) {
   });
   column.position.set(x, gh + height / 2, z);
   scene.add(column);
+  addStatic(column);
   const cap = mesh(new THREE.CylinderGeometry(2.2, 1.6, 0.5, 10), material(0x9fb3c6), {
     receiveShadow: true,
   });
   cap.position.set(x, top - 0.25, z);
   scene.add(cap);
+  addStatic(cap);
   const pillar = { x, z, gh, top, grown: false };
   pillar.col = addCylinder(x, z, { r: 1.2, bottom: gh - 1, top: top - 0.6 });
   pillar.col.tree = pillar;
@@ -447,6 +453,7 @@ function buildCoral() {
     if (n % 4 === 0) addBlobCoral(g, color);
     else addBranchCoral(g, color);
     scene.add(g);
+    addStatic(g);
   }
 }
 function buildStarfish() {
@@ -471,6 +478,7 @@ function buildStarfish() {
       g.add(pivot);
     }
     scene.add(g);
+    addStatic(g);
   }
 }
 function buildLooseKelp() {

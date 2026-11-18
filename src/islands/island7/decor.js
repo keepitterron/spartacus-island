@@ -4,7 +4,8 @@
 import * as THREE from 'three';
 import { vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
-import { material, mesh, canvasTexture } from '../../core/materials.js';
+import { material, mergeParts, mesh, canvasTexture } from '../../core/materials.js';
+import { addStatic } from '../../world/statics.js';
 import { game } from '../../core/state.js';
 import { onFontsReady } from '../../core/fx.js';
 import { addBox, addCylinder } from '../../core/colliders.js';
@@ -50,9 +51,11 @@ export function addArch(x, z) {
     const pole = mesh(new THREE.CylinderGeometry(0.4, 0.5, height, 10), striped());
     pole.position.set(x + side * half, ground + height / 2, z);
     scene.add(pole);
+    addStatic(pole);
     const ball = mesh(new THREE.SphereGeometry(0.6, 12, 10), material(0xffd84d));
     ball.position.set(x + side * half, ground + height + 0.4, z);
     scene.add(ball);
+    addStatic(ball);
     addCylinder(x + side * half, z, { r: 0.55, bottom: ground - 1, top: ground + height });
   }
   for (let i = 0; i <= 10; i++)
@@ -71,6 +74,7 @@ export function addArch(x, z) {
     ]);
     sign.position.set(x, ground + height - 0.2, z);
     scene.add(sign);
+    addStatic(sign);
   });
   return vec3(x, ground + height + 0.55, z);
 }
@@ -100,22 +104,27 @@ export function addBigTop(x, z, { radius }) {
   });
   drum.position.set(x, ground + wall / 2, z);
   scene.add(drum);
+  addStatic(drum);
   const cone = mesh(new THREE.ConeGeometry(radius + 0.7, roof, 24), look.tent);
   cone.position.set(x, ground + wall + roof / 2, z);
   scene.add(cone);
+  addStatic(cone);
   const pole = mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.4, 5), material(0xfffaf0));
   pole.position.set(x, ground + wall + roof + 1, z);
   scene.add(pole);
+  addStatic(pole);
   const flag = mesh(new THREE.ConeGeometry(0.5, 1.3, 3), material(0xffd84d), { castShadow: false });
   flag.rotation.z = -Math.PI / 2;
   flag.position.set(x + 0.7, ground + wall + roof + 1.8, z);
   scene.add(flag);
+  addStatic(flag);
   const door = mesh(new THREE.CircleGeometry(1.5, 16, 0, Math.PI), material(0x3a2a4a), {
     castShadow: false,
   });
   door.position.set(x, ground, z + radius + 0.02);
   door.scale.y = 1.6;
   scene.add(door);
+  addStatic(door);
   addCylinder(x, z, { r: radius, bottom: ground - 1, top: ground + wall + roof });
 }
 
@@ -130,6 +139,7 @@ export function addStall(x, z, { color = 0x5aa8ff, goods = 0xffd84d } = {}) {
   });
   counter.position.set(x, ground + 0.55, z);
   scene.add(counter);
+  addStatic(counter);
   for (const sideX of [-1, 1])
     for (const sideZ of [-1, 1]) {
       const post = mesh(new THREE.CylinderGeometry(0.08, 0.08, ROOF, 5), material(0xfffaf0), {
@@ -137,20 +147,24 @@ export function addStall(x, z, { color = 0x5aa8ff, goods = 0xffd84d } = {}) {
       });
       post.position.set(x + sideX * 1.5, ground + ROOF / 2, z + sideZ * 0.95);
       scene.add(post);
+      addStatic(post);
     }
   const awning = mesh(new THREE.BoxGeometry(3.6, 0.22, 2.5), material(color));
   awning.position.set(x, top - 0.11, z);
   scene.add(awning);
+  addStatic(awning);
   const trim = mesh(new THREE.BoxGeometry(3.7, 0.3, 0.1), material(0xfffaf0), {
     castShadow: false,
   });
   trim.position.set(x, top - 0.3, z + 1.25);
   scene.add(trim);
+  addStatic(trim);
   // things for sale on the counter
   for (let i = -1; i <= 1; i++) {
     const thing = mesh(new THREE.SphereGeometry(0.28, 8, 6), material(goods));
     thing.position.set(x + i * 0.85, ground + 1.35, z + 0.2);
     scene.add(thing);
+    addStatic(thing);
   }
   addBox(x, z, { hw: 1.8, hd: 1.25, bottom: ground - 1, top });
   return top;
@@ -162,6 +176,7 @@ export function addLamp(x, z) {
   const pole = mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.4, 6), material(0x3d4a6b));
   pole.position.set(x, ground + 1.7, z);
   scene.add(pole);
+  addStatic(pole);
   pending.bulbs.push(vec3(x, ground + 3.55, z));
   addCylinder(x, z, { r: 0.2, bottom: ground - 1, top: ground + 3.4 });
   return vec3(x, ground + 3.4, z);
@@ -202,6 +217,7 @@ export function addBalloons(x, z) {
     string.rotation.z = -(i - 1) * 0.18;
     g.add(string);
   }
+  mergeParts(g); // the bunch bobs as one
   g.position.set(x, ground, z);
   scene.add(g);
   balloons.push({ g, y: ground, phase: balloons.length * 1.7 });
@@ -216,12 +232,14 @@ export function addHay(x, z) {
   });
   stack.position.set(x, ground + height / 2, z);
   scene.add(stack);
+  addStatic(stack);
   const band = mesh(new THREE.TorusGeometry(2.78, 0.07, 5, 20), material(0xc48a54), {
     castShadow: false,
   });
   band.rotation.x = Math.PI / 2;
   band.position.set(x, ground + height * 0.5, z);
   scene.add(band);
+  addStatic(band);
   addCylinder(x, z, { r: 2.7, bottom: ground - 1, top: ground + height });
   return ground + height;
 }
@@ -244,6 +262,7 @@ export function addBullseye(x, z) {
   const ground = terrainHeight(x, z);
   target.position.set(x, ground + 0.1, z);
   scene.add(target);
+  addStatic(target);
   addCylinder(x, z, { r: 3, bottom: ground - 1, top: ground + 0.25 });
   return ground + 0.25;
 }
@@ -265,6 +284,7 @@ export function addTinyHouse(x, z, { color, yaw = 0 }) {
   g.position.set(x, ground, z);
   g.rotation.y = yaw;
   scene.add(g);
+  addStatic(g);
   addBox(x, z, { hw: 0.8, hd: 0.8, bottom: ground - 1, top: ground + 1.1 });
 }
 

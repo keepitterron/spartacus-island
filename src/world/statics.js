@@ -4,7 +4,7 @@
 // cullable: what's behind the camera, or outside the sun's shadow box, is still skipped.
 //
 // Build code calls addStatic(mesh) for a mesh already placed in the scene (directly or inside a
-// group); main.js calls batchStatics() once, after every island is built. Don't register anything
+// group), or addStatic(group) for every mesh in a group that never moves; main.js calls batchStatics() once, after every island is built. Don't register anything
 // that moves, hides, gets picked up or is looked up later: it stops being its own object.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -15,7 +15,9 @@ const PATCH = 40; // m: the side of a patch of the map that's merged together
 const pending = [];
 
 export function addStatic(object) {
-  pending.push(object);
+  object.traverse((child) => {
+    if (child.isMesh) pending.push(child);
+  });
 }
 
 // Merges everything registered so far. Meshes with a texture (and anything hidden) are left alone.

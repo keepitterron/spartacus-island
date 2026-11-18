@@ -24,6 +24,7 @@ import { player, stepPlayer } from './player/player.js';
 import { animateDog } from './player/dog.js';
 import { POWERS, updateFruits } from './systems/powers.js';
 import { updatePickups } from './systems/collect.js';
+import { collectDetails, updateDetails } from './world/detail.js';
 import { updateDigSpots, updateDigging } from './systems/digs.js';
 import { updateFloaters, updatePlacing } from './systems/items.js';
 import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
@@ -90,6 +91,8 @@ buildCritters();
 batchStatics();
 buildPalms();
 showSavedTreasures();
+// small props far into the fog aren't drawn (phones)
+collectDetails();
 player.pos.copy(island1.spawn);
 
 /* ---------- HUD + menus ---------- */
@@ -248,6 +251,7 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 1 / 30); // cap the step so a slow frame can't tunnel through things
   game.time += dt;
   update(dt);
+  updateDetails(dt);
   renderer.render(scene, camera);
 }
 

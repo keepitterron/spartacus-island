@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { clamp, distXZ, lerp, smoothstep, rand, distToSegmentXZ, vec3 } from '../../core/util.js';
 import { scene, LOW_POWER } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
+import { addStatic } from '../../world/statics.js';
 import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst, textSprite, onFontsReady } from '../../core/fx.js';
@@ -73,6 +74,7 @@ function height(x, z) {
 
 // A big tree with a flat leafy deck on top; smooth bark can't be climbed even with a vine.
 // Returns the tree record systems/vines.js uses: {x, z, gh (ground), top, grown, col}.
+// (its meshes never move: merged for phones, world/statics.js)
 function bigTree(lx, lz, { top, smoothBark = false }) {
   const { x, z } = toWorld(lx, lz),
     gh = terrainHeight(x, z),
@@ -85,11 +87,13 @@ function bigTree(lx, lz, { top, smoothBark = false }) {
   );
   trunk.position.set(x, gh + trunkHeight / 2, z);
   scene.add(trunk);
+  addStatic(trunk);
   const deck = mesh(new THREE.CylinderGeometry(3.2, 2.9, 0.5, 14), material(0x5ea84c), {
     receiveShadow: true,
   });
   deck.position.set(x, top - 0.25, z);
   scene.add(deck);
+  addStatic(deck);
   // a ring of leaf clumps around the deck edge, then a bigger ring underneath
   for (let k = 0; k < 11; k++) {
     const a = (k / 11) * 6.283;
@@ -99,12 +103,14 @@ function bigTree(lx, lz, { top, smoothBark = false }) {
     );
     leaf.position.set(x + Math.cos(a) * 3.5, top - 0.3 + rand() * 0.5, z + Math.sin(a) * 3.5);
     scene.add(leaf);
+    addStatic(leaf);
   }
   for (let k = 0; k < 6; k++) {
     const a = (k / 6) * 6.283 + 0.3;
     const leaf = mesh(new THREE.IcosahedronGeometry(1.5, 0), material(0x3a8a3c));
     leaf.position.set(x + Math.cos(a) * 2.3, top - 1.5, z + Math.sin(a) * 2.3);
     scene.add(leaf);
+    addStatic(leaf);
   }
   tree.col = addCylinder(x, z, { r: 1.2, bottom: gh - 1, top: top - 0.6 });
   tree.col.tree = tree; // lets the player climb the trunk once its vine has grown
@@ -119,6 +125,7 @@ function forestTree(x, z) {
     const trunk = mesh(new THREE.CylinderGeometry(0.22, 0.3, 1.4, 6), material(0x6e4a30));
     trunk.position.set(x, gh + 0.7, z);
     scene.add(trunk);
+    addStatic(trunk);
     for (let k = 0; k < 3; k++) {
       const cone = mesh(
         new THREE.ConeGeometry(1.6 - k * 0.4, 1.8, 7),
@@ -126,12 +133,14 @@ function forestTree(x, z) {
       );
       cone.position.set(x, gh + 1.6 + k * 1.1, z);
       scene.add(cone);
+      addStatic(cone);
     }
   } else {
     const trunkHeight = 2.5 + rand() * 1.5;
     const trunk = mesh(new THREE.CylinderGeometry(0.25, 0.35, trunkHeight, 6), material(0x6e4a30));
     trunk.position.set(x, gh + trunkHeight / 2, z);
     scene.add(trunk);
+    addStatic(trunk);
     for (let k = 0; k < 3; k++) {
       const leaf = mesh(
         new THREE.IcosahedronGeometry(1.1 + rand() * 0.5, 0),
@@ -143,6 +152,7 @@ function forestTree(x, z) {
         z + (rand() - 0.5) * 1.2,
       );
       scene.add(leaf);
+      addStatic(leaf);
     }
   }
   addCylinder(x, z, { r: 0.4, bottom: gh - 1, top: gh + 3 });
@@ -438,6 +448,7 @@ function buildForest() {
     });
     stem.position.set(x, gh + 0.15, z);
     scene.add(stem);
+    addStatic(stem);
     const cap = mesh(
       new THREE.SphereGeometry(0.2, 7, 5, 0, Math.PI * 2, 0, Math.PI / 2),
       material(n % 3 ? 0xf2545b : 0xffa53d),
@@ -445,6 +456,7 @@ function buildForest() {
     );
     cap.position.set(x, gh + 0.28, z);
     scene.add(cap);
+    addStatic(cap);
   }
   scatter(CENTER_3.x, CENTER_3.z, { radius: 18, allowed: isForestSpot, bushes: 10, flowers: 70 });
 }

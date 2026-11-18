@@ -152,10 +152,12 @@ export function crate(x, z, { size = 1.1 } = {}) {
   });
   m.position.set(x, ground + size / 2, z);
   scene.add(m);
+  addStatic(m);
   for (const k of [-1, 1]) {
     const band = mesh(new THREE.BoxGeometry(size * 1.03, 0.14, size * 1.03), material(0x9c6436));
     band.position.set(x, ground + size / 2 + k * size * 0.36, z);
     scene.add(band);
+    addStatic(band);
   }
   addBox(x, z, { hw: size / 2, hd: size / 2, bottom: ground - 1, top: ground + size });
   return ground + size;

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { rand } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { material, mesh } from '../core/materials.js';
+import { material, mergeParts, mesh } from '../core/materials.js';
 
 const clouds = [];
 // called after the islands are built (it uses the shared random sequence)
@@ -17,6 +17,9 @@ export function buildSky() {
       puff.position.set(k * 1.6 - puffCount * 0.8, rand() * 0.6, rand() * 1.2);
       g.add(puff);
     }
+    mergeParts(g); // one draw call a cloud, not five (it drifts as one)
+    // sky dressing: never culled in the distance, so no clouds pop in (world/detail.js)
+    for (const part of g.children) part.userData.alwaysDrawn = true;
     g.position.set(-110 + rand() * 220, 18 + rand() * 10, -390 + rand() * 450);
     g.userData.speed = 0.4 + rand() * 0.6;
     scene.add(g);
