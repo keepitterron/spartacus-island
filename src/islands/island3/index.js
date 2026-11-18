@@ -173,7 +173,8 @@ function readSpots() {
   Object.assign(DOCK_END, { x: levelSpot('dock end').x, z: levelSpot('dock end').z });
 }
 
-// the bees' hive sits on hiveTree's deck, on the side facing junctionTree (where the zipline lands)
+// the bees' hive sits on hiveTree's deck, on the far side from junctionTree (the zipline lands on
+// the near side, so it's in plain view across the deck when you arrive)
 function buildHive() {
   const dx = hiveTree.x - junctionTree.x,
     dz = hiveTree.z - junctionTree.z,
