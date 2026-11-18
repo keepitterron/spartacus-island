@@ -6,18 +6,19 @@ Island 1 is the example ([island1.md](island1.md)): a story island moved from co
 
 **Moving an existing island to Blender:** its old code used the shared random sequence, so the islands after it would get different trees and flowers. Measure `rand.seed()` after the old island's `build()` and set it as the island's `sharedSeedAfter`; `main.js` carries on from there, and nothing else moves.
 
-| File                            | What                                                                    |
-| ------------------------------- | ----------------------------------------------------------------------- |
-| `levels/island1.blend`          | The level source: open this in Blender                                  |
-| `src/islands/island1/level.glb` | The export the game loads (commit it: the site has no Blender)          |
-| `src/islands/island1/index.js`  | The island module: tasks, hints, hooks, exit                            |
-| `src/world/level.js`            | The loader: ground → heights, colliders, markers                        |
-| `tools/levels/export.py`        | Exports a `.blend` with the right settings                              |
-| `tools/levels/make_island1.py`  | Made `island1.blend`'s grey-box from scratch (a one-off; it overwrites) |
-| `tools/levels/dress_island1.py` | Island 1's looks over its grey boxes, and its models (re-runnable)      |
-| `tools/levels/library.py`       | The model Library both dressing scripts share                           |
-| `tools/levels/run_with_bpy.py`  | Runs any of these without Blender installed (below)                     |
-| `levels/assets/quaternius/`     | The CC0 models (originals) and their credits                            |
+| File                              | What                                                                    |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| `levels/island1.blend`            | The level source: open this in Blender                                  |
+| `src/islands/island1/level.glb`   | The export the game loads (commit it: the site has no Blender)          |
+| `src/islands/island1/heights.bin` | The ground baked into heights by the export (commit it too)             |
+| `src/islands/island1/index.js`    | The island module: tasks, hints, hooks, exit                            |
+| `src/world/level.js`              | The loader: ground → heights, colliders, markers                        |
+| `tools/levels/export.py`          | Exports a `.blend` with the right settings                              |
+| `tools/levels/make_island1.py`    | Made `island1.blend`'s grey-box from scratch (a one-off; it overwrites) |
+| `tools/levels/dress_island1.py`   | Island 1's looks over its grey boxes, and its models (re-runnable)      |
+| `tools/levels/library.py`         | The model Library both dressing scripts share                           |
+| `tools/levels/run_with_bpy.py`    | Runs any of these without Blender installed (below)                     |
+| `levels/assets/quaternius/`       | The CC0 models (originals) and their credits                            |
 
 ## Workflow
 
@@ -41,13 +42,13 @@ Objects are recognised by **name**. Blender adds `.001`, `.002` to copies; they'
 
 ### Meshes
 
-| Object                             | In the game                                                                                                                                                                                                                             |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| a mesh named `ground`              | The island's terrain. Its top surface is baked into a height grid (half a metre apart) that becomes the island's `height(x, z)`. It's drawn the game's way (painted grass and sand by height), unless custom property `look` = `model`. |
-| any other mesh                     | Scenery, as modelled. A plain colour becomes the game's flat-shaded material; textured models (asset packs) keep their own.                                                                                                             |
-| custom property `collider` = `box` | Also a collider: an upright box around the object's bounds. Colliders don't rotate, so rotate boxes in 90° steps.                                                                                                                       |
-| custom property `collider` = `cyl` | Also a collider: an upright cylinder around its bounds (posts, towers, mesas). With `radius` too: a cylinder that wide round the object's origin (a tree's trunk).                                                                      |
-| custom property `invisible` = 1    | Not drawn (an invisible wall, with `collider`).                                                                                                                                                                                         |
+| Object                             | In the game                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a mesh named `ground`              | The island's terrain. The export bakes its top surface into a height grid (half a metre apart, `heights.bin`, 16-bit) that becomes the island's `height(x, z)`, and leaves the mesh out of the `.glb`. It's drawn the game's way (painted grass and sand by height), unless custom property `look` = `model` (then the mesh is exported and shown as modelled). |
+| any other mesh                     | Scenery, as modelled. A plain colour becomes the game's flat-shaded material; textured models (asset packs) keep their own.                                                                                                                                                                                                                                     |
+| custom property `collider` = `box` | Also a collider: an upright box around the object's bounds. Colliders don't rotate, so rotate boxes in 90° steps.                                                                                                                                                                                                                                               |
+| custom property `collider` = `cyl` | Also a collider: an upright cylinder around its bounds (posts, towers, mesas). With `radius` too: a cylinder that wide round the object's origin (a tree's trunk).                                                                                                                                                                                              |
+| custom property `invisible` = 1    | Not drawn (an invisible wall, with `collider`).                                                                                                                                                                                                                                                                                                                 |
 
 Custom properties are in the **Object Properties** tab (orange square) → **Custom Properties** → **New**.
 
@@ -77,7 +78,8 @@ A marker is snapped down onto whatever is right under it (terrain, or the top of
 
 ```js
 import levelUrl from './level.glb?url';
-const level = makeLevel(levelUrl, { center: CENTER_N });
+import heightsUrl from './heights.bin?url';
+const level = makeLevel(levelUrl, { center: CENTER_N, heightsUrl });
 
 const island = {
   id: N,
@@ -130,7 +132,7 @@ Island 1 is dressed with free [Quaternius](https://quaternius.com/) models (CC0:
 blender -b levels/island1.blend --python tools/levels/dress_island1.py && npm run levels
 ```
 
-**Keep it light:** a few groups of things with space between them, not a carpet. Every model is a few draw calls on a phone, and the `.glb` is precached for offline play (limit 8 MB; island 1 is 2.9 MB, half of it the ground). Models are exported smooth-shaded (shared corners, a smaller file); the game draws them flat-shaded anyway. Keep the ground smooth-shaded too (flat exports four times bigger). Skip anything that breaks Zoë's rules (weapons, traps, skulls, enemies).
+**Keep it light:** a few groups of things with space between them, not a carpet. Every model is a few draw calls on a phone, and the `.glb` is precached for offline play (limit 8 MB per file; island 1 is 1.7 MB plus 0.18 MB of heights). Models are exported smooth-shaded (shared corners, a smaller file); the game draws them flat-shaded anyway. Keep the ground smooth-shaded too (flat exports four times bigger). Skip anything that breaks Zoë's rules (weapons, traps, skulls, enemies).
 
 ## Not done yet
 

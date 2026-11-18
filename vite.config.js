@@ -27,8 +27,8 @@ export default defineConfig({
         categories: ['games', 'kids'],
       },
       workbox: {
-        // .glb: islands made in Blender (levels/), so they work offline too
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,glb}'],
+        // .glb + .bin: islands made in Blender (levels/) and their heights, so they work offline too
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,glb,bin}'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         cleanupOutdatedCaches: true,
       },

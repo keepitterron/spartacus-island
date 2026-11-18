@@ -51,6 +51,7 @@ import {
 } from './amethyst.js';
 import { addCampfire, addSpringBubbles, updateAmbience } from './ambience.js';
 import levelUrl from './level.glb?url';
+import heightsUrl from './heights.bin?url';
 
 // Island 1, the starter island: bones, the Boing-Boing fruit, a sleepy seagull, the lighthouse
 // bell, a broken bridge, a buried key and a treasure chest with the map to island 2.
@@ -58,7 +59,7 @@ import levelUrl from './level.glb?url';
 // docs/island1.md): the terrain, the cave, camp, grove ledges, reeds and ruins come from there,
 // and every place this code builds at is a `spot:` marker.
 
-const level = makeLevel(levelUrl, { center: CENTER_1 });
+const level = makeLevel(levelUrl, { center: CENTER_1, heightsUrl });
 
 // Filled in by build() from the level's spots.
 const GULL_POST = {}; // {x, z, top}: the top of the beached boat's mast

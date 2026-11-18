@@ -3,10 +3,12 @@
 // (optionally with colliders), and empties are markers that turn into game things (palms,
 // bones, fruit bushes, dig spots, named spots for the island's own code).
 //
-//   const level = makeLevel(levelUrl, { center: CENTER_1 });
+//   const level = makeLevel(levelUrl, { center: CENTER_1, heightsUrl });
 //   island = { level, height: level.height, build() { level.build(island, { markers }) }, … }
 //
 // main.js loads every island's level before anything is built, so heights are ready in time.
+// The terrain comes from heights.bin, baked from the ground mesh by tools/levels/export.py (the
+// mesh itself stays out of the download); without one, the ground mesh in the .glb is baked here.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { vec3 } from '../core/util.js';
@@ -26,7 +28,7 @@ const HEIGHT_CELL = 0.5;
 // outside the ground mesh is open sea (deeper than player.js OPEN_SEA, so the current brings him back)
 const SEA_FLOOR = -4.2;
 
-export function makeLevel(url, { center, seaFloor = SEA_FLOOR }) {
+export function makeLevel(url, { center, heightsUrl, seaFloor = SEA_FLOOR }) {
   const level = {
     url,
     center,
@@ -35,10 +37,15 @@ export function makeLevel(url, { center, seaFloor = SEA_FLOOR }) {
     spots: {}, // `spot:name` markers by name, for the island's own code
     markers: [], // every marker, in file order
     async load() {
-      const gltf = await new GLTFLoader().loadAsync(url);
+      const [gltf, heights] = await Promise.all([
+        new GLTFLoader().loadAsync(url),
+        heightsUrl && fetch(heightsUrl).then((response) => response.arrayBuffer()),
+      ]);
       level.root = gltf.scene;
       level.root.updateMatrixWorld(true);
-      level.heights = bakeHeights(groundMeshes(level.root), { cell: HEIGHT_CELL });
+      level.heights = heights
+        ? readHeights(heights)
+        : bakeHeights(groundMeshes(level.root), { cell: HEIGHT_CELL });
     },
     // island-local ground height: the island's height(x, z) for its terrain band
     height: (x, z) => sampleHeights(level.heights, { x: x - center.x, z: z - center.z, seaFloor }),
@@ -110,6 +117,7 @@ function buildLevel(level, { island, markers = {} }) {
   root.traverse((object) => {
     if (object.userData.collider) addColliderFor(object);
   });
+  if (!level.groundDrawn) drawGround(level); // heights.bin: the ground mesh isn't in the file
   scene.add(root);
   for (const object of empties) {
     const marker = readMarker(object);
@@ -145,7 +153,9 @@ function prepareGround(object, level) {
     return;
   }
   object.visible = false;
-  if (level.groundDrawn) return;
+  if (!level.groundDrawn) drawGround(level);
+}
+function drawGround(level) {
   level.groundDrawn = true;
   const { minX, minZ, cols, rows, cell } = level.heights;
   const width = (cols - 1) * cell,
@@ -280,6 +290,20 @@ function addCritterSpot(kind, { marker, island, extra = [] }) {
 }
 
 /* ---------- terrain heights ---------- */
+
+// heights.bin (tools/levels/heights.py): 7 float32 (minX, minZ, cell, cols, rows, low, high),
+// then cols * rows uint16 heights from low to high, 65535 where there's no ground
+const NO_GROUND = 65535;
+function readHeights(buffer) {
+  const [minX, minZ, cell, cols, rows, low, high] = new Float32Array(buffer, 0, 7);
+  const values = new Uint16Array(buffer, 7 * 4, cols * rows);
+  const heights = new Float32Array(cols * rows);
+  const step = (high - low) / (NO_GROUND - 1);
+  values.forEach((value, i) => {
+    heights[i] = value === NO_GROUND ? -Infinity : low + value * step;
+  });
+  return { minX, minZ, cell, cols, rows, heights };
+}
 
 // The ground mesh's top surface sampled on a regular grid (island-local x/z), so height(x, z)
 // is a cheap lookup every frame. Each triangle is rasterised onto the grid points under it.
