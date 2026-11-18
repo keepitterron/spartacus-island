@@ -18,7 +18,7 @@ import { addFader } from './fade.js';
 // the top of the cloud sea; anything that sinks into it pops back up
 export const CLOUD_SEA_Y = -6;
 const SINK_TIME = 0.6; // seconds in the cloud sea before popping back up
-// its own random sequence, so the clouds never move the scenery that uses the shared rand()
+// its own random sequence, so the clouds never move the scenery that uses the island's rand()
 const cloudRand = seededRandom(606);
 
 // every platform (its collider: {type:'cyl', x, z, r, bottom, top}); instances: transforms

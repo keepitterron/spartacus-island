@@ -6,7 +6,6 @@ Spartacus's Island, rebuilt about twice as wide (130 m across, was 60 m) with th
 
 - Level: `levels/island1.blend`. Its grey-box was made by `tools/levels/make_island1.py` (don't re-run it: it overwrites the file). `tools/levels/dress_island1.py` dresses it (re-runnable, see Dressing below).
 - Code: `src/islands/island1/index.js` builds the lighthouse, bridge, chest and lily pads at the level's `spot:` markers.
-- Islands 2–7 keep their scenery: island 1 says where the shared random sequence stood after the old hand-built island (`sharedSeedAfter`, see main.js). Checked: the sequence after every island is identical to before.
 
 ## The places
 

@@ -41,7 +41,7 @@ CI runs lint and the format check before every deploy, so a red lint blocks the 
 
 Comments are for humans who know JavaScript but not this game.
 
-- **Explain why, or what's not obvious.** For example: "build order matters: all scenery shares one seeded rand()", "coyote time and a jump buffer make jumps forgiving", "phone GPUs drew vertex colours black, so paint into a texture".
+- **Explain why, or what's not obvious.** For example: "its own random sequence, so the clouds never move anyone's scenery", "coyote time and a jump buffer make jumps forgiving", "phone GPUs drew vertex colours black, so paint into a texture".
 - **One line at the top of each module** says what lives there and how it's used.
 - **Document data shapes** where they're defined: `// {type:'cyl', x, z, r, bottom, top}`.
 - **Explain magic numbers** when the value matters for gameplay (reach distances, heights, timers). Leave the obvious ones alone.
@@ -60,7 +60,7 @@ Comments are for humans who know JavaScript but not this game.
 
 These are easy to break when refactoring. See [architecture.md](architecture.md) for details.
 
-- **Build order matters.** All scenery shares one seeded `rand()`. Don't reorder `rand()` calls inside `build()`; add new random scenery at the end.
+- **Each island has its own `rand()` sequence** (reseeded with its id before `build()`). Reordering `rand()` calls inside an island's `build()` moves only that island's random scenery; never place anything gameplay needs with `rand()`.
 - Shared mutable state lives on objects (`game`, `player`, `followCam`), not exported `let`s.
 - Don't call imported functions at module top level (there are harmless import cycles). Do the work in `build()`.
 - Create text sprites inside `onFontsReady()` and start them hidden.

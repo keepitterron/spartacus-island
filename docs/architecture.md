@@ -59,7 +59,7 @@ src/
 0. **Load levels:** islands with a `level` (Blender, [levels.md](levels.md)) load their `.glb` first, with a top-level `await` (hence the `es2022` build target): their terrain comes from it.
 1. **Register** each island: `game.islands[island.id] = island`, `initTasks(island)`, `addTerrain(island.zMax, island.height)`. All terrain must exist before anything is built, because props sit on `terrainH`.
 2. **Build** every island in play order (`island.build()`), then `buildSky()`, then `island.buildLate()`.
-   **Order matters:** all scenery uses one seeded generator (`rand()` in `core/util.js`). Building in a different order, or adding a `rand()` call in the middle of an existing island, moves trees/flowers/coral around. Put new random scenery at the end of your island's `build()`, or add a new island after the others. Islands with a `level` build with their own seed and then put `rand` back where it was, so they never shift anyone else's scenery.
+   **Random scenery:** every island is a Blender level and `main.js` reseeds `rand()` (`core/util.js`) with the island's id before its `build()`, so an island's trees, flowers and coral depend only on its own code: changing one island never moves another's. Afterwards `rand()` is reseeded with `SKY_SEED` for the sky's clouds, the stars, balls and critters. Nothing gameplay needs is placed with `rand()`.
    `buildLate()` is for things that don't use `rand()` (fruit bushes, dig spots).
 3. Wire HUD/menus and input, start `frame()`.
 

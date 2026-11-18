@@ -241,7 +241,7 @@ function bonkPlayer(gate) {
 }
 
 /* ---------------- build ----------------
-   Build order matters: all scenery shares one seeded rand(), so these run in a fixed order. */
+   These run in a fixed order: the island's own rand() sequence decides the coral and kelp. */
 
 // the water surface seen from below, and sun rays
 function buildSurface() {
@@ -818,8 +818,6 @@ const island = {
   zMax: -600,
   level, // main.js loads it before anything is built
   height: level.height,
-  // the old hand-built island left the shared random sequence here (see main.js)
-  sharedSeedAfter: -1349754716,
   layout: 2, // the bigger basin: saves from the old layout start the island fresh
   savesProgress: true,
   saveState,

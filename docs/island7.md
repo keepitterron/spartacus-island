@@ -76,3 +76,7 @@ Things she might want a say in. Ask her after she's played it, and change them t
 - Tuning to try with her: jelly bounce heights (`BOUNCE` in `jellies.js`), Mega-Me's length and size (`MEGA` in `player/player.js`), the coaster's speed (`PULL` in `coaster.js`).
 
 Ideas that didn't make this build: giant bowling (a huge ball and skittles only a Mega-Me dog can play), riding on Leo's back as a Mini-Me dog, a carousel, and friends playing together on the rides (the multiplayer goal in backlog.md).
+
+## In Blender (Nov 2026)
+
+The terrain moved to `levels/island7.blend` as it was (`tools/levels/make_island7.py`, the same height function; heights match to 0.1 mm), so the rides, stalls and saves are unchanged. It adds the named places (Welcome Arch, The Plaza, Jelly Jumps, Kaboom Cannon, Bullseye Rock, Secret Garden, The Big Wheel, Loop-de-Woof, The Big Top, Skittles Alley) and a signpost on the plaza. `tools/levels/dress_island7.py` adds supplies by the dock and a bench on the plaza; the fair's own decorations are still the code's. **Skittles Alley** (in front of the Big Top): ten red and white skittles (toys) and a beach ball to roll at them; a giant Mega-Me stomp bowls them all over.

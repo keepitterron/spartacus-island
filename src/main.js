@@ -57,6 +57,7 @@ import island7 from './islands/island7/index.js';
 
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
+const SKY_SEED = 1797601831;
 const ISLANDS = [island1, island2, island3, island4, island5, island6, island7];
 // islands made in Blender (world/level.js) load their .glb first: their terrain comes from it
 await Promise.all(ISLANDS.map((island) => island.level?.load()));
@@ -65,19 +66,17 @@ for (const island of ISLANDS) {
   initTasks(island);
   addTerrain(island.zMax, island.height);
 }
-// Build order matters: all scenery shares one seeded random sequence (see core/util.js rand).
-// game.building tells systems which island the digs, seeds and items they add belong to
-// A Blender island uses a random sequence of its own and then puts the shared one back where it
-// was, so editing its level never moves any other island's scenery (or the clouds, built next).
-// An island that used to be built in code says where the shared sequence stood after it
-// (`sharedSeedAfter`), so the islands after it keep the scenery they always had.
+// Every island is a Blender level and builds with a random sequence of its own (seeded with its
+// id), so changing one island's scenery never moves another's. game.building tells systems which
+// island the digs, seeds and items they add belong to.
 for (const island of ISLANDS) {
-  const shared = rand.seed();
-  if (island.level) rand.reseed(island.id);
+  rand.reseed(island.id);
   game.building = island.id;
   island.build();
-  if (island.level) rand.reseed(island.sharedSeedAfter ?? shared);
 }
+// the sky's clouds, the stars, balls and critters: where the shared sequence stood when the
+// islands were still built in code, so they stay where they always were
+rand.reseed(SKY_SEED);
 buildSky();
 buildStars();
 for (const island of ISLANDS) {

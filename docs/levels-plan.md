@@ -71,9 +71,9 @@ The order:
 3. ✅ **Island 4, Bubbly Ocean** (done, [island4.md](island4.md); the puzzle kept as it was, the basin wider). The first underwater level.
 4. ✅ **Island 5, Rainbow Reef** (done: terrain moved as it was, places, hub dressing, toys). Five islets in one ground.
 5. ✅ **Island 6, Cottoncrest Islets** (done: the clouds are `cloud` markers in a level with no ground). The first level with no ground.
-6. **Island 7, Jamboree Island.** Last: the most code, the newest design.
+6. ✅ **Island 7, Jamboree Island** (done: terrain moved as it was, places, Skittles Alley). Last: the most code, the newest design.
 
-When every island has its own seed, delete `sharedSeedAfter` and the "build order matters" rule (CLAUDE.md, islands.md, levels.md).
+✅ Every island has its own seed now: `sharedSeedAfter` and the "build order matters" rule are gone; `SKY_SEED` in `main.js` keeps the sky's clouds, stars, balls and critters where they were.
 
 ## Toys on every island
 

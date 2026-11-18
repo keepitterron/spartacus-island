@@ -11,7 +11,7 @@ Each island is one module, `src/islands/islandN/index.js`, that default-exports 
 | 5   | Rainbow Reef (terrain in Blender)                                           | none: every fruit comes back                          | the unicorn             | Four islets, four colour stars for the unicorn's rainbow: Crab Cove (Eduardo pinches ropes, slam a crate), the sea stack (Boing → hooks → vine), the tide pools (night lowers the tide), the kelp garden (chop, beach balls on plates, Wasabi). At night the rainbow comes back and lifts the ship into the sky. Design: [island5.md](island5.md) |
 | 6   | Cottoncrest Islets (sky, clouds in Blender)                                 | Mini-Me (shrink) and Smash-Smash (roll through walls) | Leo the magpie          | Float on Lina's updraft cloud to cloud, squeeze through gaps, smash crystal walls, find a fork, sneak up to Leo's nest and swap it for the Sky Jewel, light the fountain. Design: [island6.md](island6.md)                                                                                                                                        |
 
-| 7 | Jamboree Island (funfair) | Mega-Me (GIANT for 30 s) | — (Zoë picks) | Five show rockets, one per ride: bounce up the Jelly Jumps, fly from the Kaboom Cannon, step over the Secret Garden's hedge as a giant, wake the Big Wheel with a giant woof and ride it to the Sky Deck, loop the Loop-de-Woof coaster. Leo finds golden tickets. At night, light the fireworks. Design: [island7.md](island7.md) |
+| 7 | Jamboree Island (funfair, terrain in Blender) | Mega-Me (GIANT for 30 s) | — (Zoë picks) | Five show rockets, one per ride: bounce up the Jelly Jumps, fly from the Kaboom Cannon, step over the Secret Garden's hedge as a giant, wake the Big Wheel with a giant woof and ride it to the Sky Deck, loop the Loop-de-Woof coaster. Leo finds golden tickets. At night, light the fireworks. Design: [island7.md](island7.md) |
 
 Zoë doesn't design islands: we do, around the direction she gives, and she plays them as surprises (see [design-rules.md](design-rules.md)). Names she might change are listed in each island's doc.
 
@@ -41,7 +41,7 @@ const island = {
   sailPath,                                              // optional: the next island's ship spot is the end of this path
   onAllDone(){…},                                        // optional extra when the list completes
 
-  build(),          // meshes, colliders, items, pickups (may use rand(): see architecture.md)
+  build(),          // meshes, colliders, items, pickups (rand() is the island's own sequence: see architecture.md)
   buildLate(),      // optional: fruit bushes, dig spots (no rand())
   enter(arrived),   // optional: on arrival (place ship, bring crew, …)
   update(dt),       // per-frame animation while this is the current island
@@ -85,7 +85,7 @@ Island 5 is a good example (`islands/island5/`, a land island past the underwate
 8. **Hints.** For every new object or mechanic add a `hintOnce` in `interact()`. Use `hintTooHigh(near, msg)` for "you need Boing-Boing here".
 9. **Arriving.** Give the previous island a `sailPath` ending at the new dock and have its exit (or ending cutscene) call `startSail(sailPath, () => enterIsland(N, true))`. Island 4's whale does this for island 5, unless island 5 is a `preview`. In `enter()`, bring the crew (`ensureMangoCrew()`, `wasabiToBucket()`, `ensureEduardoCrew()`) and set the ship up.
 10. **Saves.** For a big island set `savesProgress: true`. Digs, pickups, seeds, items, tasks, the power and Spartacus's spot are saved for you. Write dig rewards so they're fine to run again (spawn a pickup, hand over an item), and add `saveState()`/`loadState()` for anything else.
-11. **Register it** in `src/main.js`: add to `ISLANDS` **at the end** (build order). `continueIsland()` and `#islandN` work automatically.
+11. **Register it** in `src/main.js`: add to `ISLANDS` at the end. `continueIsland()` and `#islandN` work automatically.
 12. **Test** with `npm run dev`, `__g.go(N)`, and the checklist in [testing.md](testing.md). Check it on a phone.
 
 ## Checklist for any level change

@@ -1,11 +1,11 @@
-// Drifting clouds: built once from the shared random sequence, then they slide along +x.
+// Drifting clouds: built once from the sky's random sequence (SKY_SEED in main.js), then they slide along +x.
 import * as THREE from 'three';
 import { rand } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { material, mergeParts, mesh } from '../core/materials.js';
 
 const clouds = [];
-// called after the islands are built (it uses the shared random sequence)
+// called after the islands are built (main.js reseeds rand() with SKY_SEED first)
 export function buildSky() {
   for (let i = 0; i < 26; i++) {
     const g = new THREE.Group();

@@ -4,7 +4,7 @@ An island can be laid out in [Blender](https://www.blender.org/) (free) instead 
 
 Island 1 is the example ([island1.md](island1.md)): a story island moved from code to Blender, with `tools/levels/make_island1.py` building its grey-box, `tools/levels/dress_island1.py` dressing it and `tools/levels/helpers.py` holding the shared Blender helpers for new level scripts. (Island 8, a big test island for the pipeline, was removed in Nov 2026; it's in git history before then.)
 
-**Moving an existing island to Blender:** its old code used the shared random sequence, so the islands after it would get different trees and flowers. Measure `rand.seed()` after the old island's `build()` and set it as the island's `sharedSeedAfter`; `main.js` carries on from there, and nothing else moves.
+**Random scenery:** every island builds with its own random sequence (seeded with its id, see `main.js`), so editing one level never moves another island's trees and flowers.
 
 | File                              | What                                                                    |
 | --------------------------------- | ----------------------------------------------------------------------- |

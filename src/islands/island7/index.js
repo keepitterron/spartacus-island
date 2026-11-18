@@ -1,12 +1,13 @@
 import * as THREE from 'three';
-import { distXZ, lerp, seededRandom, smoothstep, vec3 } from '../../core/util.js';
-import { scene, LOW_POWER } from '../../core/renderer.js';
+import { distXZ, seededRandom, vec3 } from '../../core/util.js';
+import { scene } from '../../core/renderer.js';
 import { material, mesh } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
 import { say } from '../../game/talk.js';
 import { addBox, addCylinder } from '../../core/colliders.js';
-import { terrainHeight, buildGround } from '../../world/terrain.js';
+import { terrainHeight } from '../../world/terrain.js';
+import { makeLevel } from '../../world/level.js';
 import { CENTER_7 } from '../../world/layout.js';
 import { palm, scatter, dock } from '../../world/props.js';
 import { addSea } from '../../world/ocean.js';
@@ -26,8 +27,6 @@ import { completeTask } from '../../game/tasks.js';
 import { showEnd } from '../../game/flow.js';
 import {
   toWorld,
-  GROUND,
-  SHORE,
   DOCK,
   SPAWN,
   SHIP_SPOT,
@@ -42,7 +41,6 @@ import {
   CANNON_OUT,
   CANNON_BACK,
   HAY,
-  MOUNDS,
   WHEEL,
   SKY_DECK,
   TRACK_IN,
@@ -90,6 +88,10 @@ import {
 import { startShow, updateFireworks, encore } from './fireworks.js';
 import { leoToPerch, sendLeo, updateScout } from './scout.js';
 import { buildSlide } from './arrive.js';
+import { addToyArea, addToy } from '../../systems/toys.js';
+import { visitPlaces, seenPlaces, restorePlaces } from '../../systems/places.js';
+import levelUrl from './level.glb?url';
+import heightsUrl from './heights.bin?url';
 
 // Island 7, Jamboree Island: a funfair run by the Fuzzles, tiny fluffy folk in party hats.
 // Tonight is their fireworks show, but the cannon went off by mistake and blew the five show
@@ -101,36 +103,39 @@ import { buildSlide } from './arrive.js';
 // magpie finds golden tickets for a woof (scout.js). The map is in layout.js; the design, and
 // what Zoë might want to rename, is in docs/island7.md.
 
-const SEA_FLOOR = -4.6; // deeper than the open-sea depth, so the current carries swimmers home
 const TICKETS = 12;
 const ENCORE_EVERY = 7; // seconds between the fireworks that go up by themselves after the show
 
 /* ---------------- terrain ---------------- */
 
-// Bullseye Rock: a low grassy bump with a beach, out past the shore
-function isletHeight(x, z) {
-  const dist = Math.hypot(x - ISLET.x, z - ISLET.z),
-    h = lerp(ISLET.height, 0.35, smoothstep(ISLET.radius - 5, ISLET.radius - 1.5, dist));
-  return lerp(h, SEA_FLOOR, smoothstep(ISLET.radius, ISLET.radius + 2.5, dist));
-}
-
-// a big, nearly flat fairground with a wobbly shore, a beach ring, and the islet
-function height(x, z) {
-  const local = { x: x - CENTER_7.x, z: z - CENTER_7.z },
-    r = Math.hypot(local.x, local.z),
-    angle = Math.atan2(local.z, local.x),
-    shore = SHORE + 3 * Math.sin(angle * 3 + 1) + 2 * Math.sin(angle * 5);
-  let h = GROUND + 0.18 * Math.sin(local.x * 0.21) * Math.cos(local.z * 0.19);
-  for (const mound of MOUNDS) {
-    const dist = Math.hypot(local.x - mound.x, local.z - mound.z);
-    h += mound.height * Math.exp(-(dist * dist) / (2 * mound.radius * mound.radius));
-  }
-  h = lerp(h, 0.35, smoothstep(shore - 6, shore - 2.5, r));
-  h = lerp(h, SEA_FLOOR, smoothstep(shore, shore + 3, r));
-  return Math.max(h, isletHeight(local.x, local.z));
-}
+// The fairground, its beach, the cannon's mound and Bullseye Rock are levels/island7.blend, moved
+// there as they were (tools/levels/make_island7.py), with the places, the plaza's signpost and
+// the skittles' beach ball; dressed by dress_island7.py.
+const level = makeLevel(levelUrl, {
+  center: CENTER_7,
+  heightsUrl,
+  groundPalette: { g: 0x7ed56f, g2: 0xa9e67e },
+  seaFloor: -4.6, // deeper than the open-sea depth, so the current carries swimmers home
+});
 
 /* ---------------- building ---------------- */
+
+// Skittles Alley (systems/toys.js): ten skittles in a triangle and a beach ball to roll at them
+// (a giant Mega-Me dog bowls them over with one stomp)
+function buildSkittles() {
+  const at = level.spots.skittles;
+  addToyArea(at.x, at.z, { size: 14 });
+  const colors = [0xfffaf0, 0xf2545b];
+  let pin = 0;
+  for (let row = 0; row < 4; row++)
+    for (let i = 0; i <= row; i++)
+      addToy('barrel', {
+        x: at.x + (i - row / 2) * 0.75,
+        z: at.z - row * 0.7,
+        size: 0.5,
+        color: colors[pin++ % 2],
+      });
+}
 
 // filled in by build(): the rides and spots the triggers use
 const spots = {};
@@ -142,11 +147,7 @@ const onGround = (x, z) => {
 };
 
 function build() {
-  buildGround(CENTER_7.x, CENTER_7.z, {
-    size: 224,
-    segments: LOW_POWER ? 112 : 180,
-    palette: { g: 0x7ed56f, g2: 0xa9e67e },
-  });
+  level.build(island);
   addSea(CENTER_7.x, CENTER_7.z, { width: 520, depth: 520 });
   dock(CENTER_7.x + DOCK.x, { zFrom: CENTER_7.z + DOCK.zFrom, zTo: CENTER_7.z + DOCK.zTo });
   island.spawn = onGround(...SPAWN);
@@ -159,7 +160,8 @@ function build() {
   buildFair();
   finishDecor();
   finishFuzzles();
-  buildGreenery(); // last: palms and flowers use the shared rand() (see architecture.md)
+  buildGreenery(); // palms and flowers use the island's rand()
+  buildSkittles();
 }
 
 // the way in: arch, Pip on his drum, the rocket stand, and the hay the cannon back lands on
@@ -256,7 +258,7 @@ function buildEndStation(end) {
 // and a jelly inside to bounce back out over the hedge
 function buildGarden() {
   const garden = toWorld(GARDEN.x, GARDEN.z),
-    hedgeRand = seededRandom(717), // its own sequence: the shared rand() stays untouched
+    hedgeRand = seededRandom(717), // its own sequence: the island's rand() stays untouched
     count = Math.round((Math.PI * 2 * GARDEN.radius) / 1.9),
     lumps = [],
     flowers = [];
@@ -585,6 +587,7 @@ function hints(p) {
 }
 
 function interact(p) {
+  visitPlaces(p);
   grabRockets(p);
   bounceOnJellies();
   spots.wheel.interact(p);
@@ -635,6 +638,7 @@ const sailOn = () =>
 // tasks, tickets and the power are saved for you; the wheel isn't, and the rockets are put
 // back from their tasks
 function loadState(state) {
+  restorePlaces(7, state.places);
   if (state.wheel) spots.wheel.start({ quiet: true });
   for (const rocket of allRockets()) {
     if (island.done[rocket.task]) sendRocketHome(rocket, { quiet: true });
@@ -647,7 +651,8 @@ const island = {
   center: CENTER_7,
   name: 'Jamboree Island',
   zMax: -1800,
-  height,
+  level, // main.js loads it before anything is built
+  height: level.height,
   savesProgress: true,
   // keeps Spartacus over the ground mesh; the sea current brings him back long before this
   physics: { bound: { x: CENTER_7.x, z: CENTER_7.z, r: 106 } },
@@ -732,7 +737,7 @@ const island = {
   bark,
   stomp,
   pound,
-  saveState: () => ({ wheel: spots.wheel.on() }),
+  saveState: () => ({ wheel: spots.wheel.on(), places: seenPlaces(7) }),
   loadState,
 };
 export default island;

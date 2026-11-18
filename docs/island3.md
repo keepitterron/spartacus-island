@@ -4,7 +4,6 @@ Remade in Nov 2026 (the second round of the [levels plan](levels-plan.md)): abou
 
 - Level: `levels/island3.blend`, made by `tools/levels/make_island3.py` (don't re-run once edited by hand) and dressed by `tools/levels/dress_island3.py` (re-runnable, data). Its ground is painted a deeper green (`groundPalette` in `makeLevel`).
 - Code: `src/islands/island3/index.js` builds the four big trees, the vines and zip lines, the hive, the water gate and reservoir, the stream and spring, the flower tree and the giant mushroom at the level's `spot:` markers, plus the woods' own little pines, round trees and toadstools (`buildForest`).
-- Islands 4–7 keep their scenery (`sharedSeedAfter`, checked).
 
 ## The story
 

@@ -106,7 +106,7 @@ function build() {
   buildBeacons();
   buildPalms();
   addShells();
-  // the other islets (added last: build order matters, see architecture.md)
+  // the other islets
   const at = (name) => toWorld(ISLETS[name].x, ISLETS[name].z);
   const addHiddenStar = (name, pos) => makeStar(name, pos, { hidden: true });
   islets.cove = buildCrabCove(at('cove'), { addStar: addHiddenStar });
@@ -418,8 +418,6 @@ const island = {
   zMax: -950,
   level, // main.js loads it before anything is built
   height: level.height,
-  // the old hand-built island left the shared random sequence here (see main.js)
-  sharedSeedAfter: -1827648295,
   savesProgress: true,
   // keeps Spartacus over the ground mesh; the sea current brings him back long before this
   physics: { bound: { x: CENTER_5.x, z: CENTER_5.z, r: 105 } },

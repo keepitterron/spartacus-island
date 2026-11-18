@@ -4,7 +4,6 @@ Remade in Nov 2026 (the third round of the [levels plan](levels-plan.md)). The p
 
 - Level: `levels/island4.blend`, made by `tools/levels/make_island4.py` (the sea floor, 20 m down, and its walls; boulders; places) and dressed by `tools/levels/dress_island4.py` (a sunken rowing boat with its cargo, mossy boulders). The ground is painted sandy, fading to rock where it rises (`groundPalette: { seabed }`).
 - Code: everything the puzzle needs stays in code at the positions in `src/islands/island4/geo.js` and `index.js`: the seaweed lane and its tentacle gates, the octopus, the vent canyon and pillow, the high places and the crabs, the ship in its bubble, the surface and sun rays. The coral, starfish and loose kelp are scattered over the whole basin now.
-- Islands 5–7 keep their scenery (`sharedSeedAfter`, checked).
 - No toys here yet: Rapier's toys fall with normal gravity, which would look wrong under water (the plan's slow, drifting shells need low gravity per toy area first).
 
 ## The places

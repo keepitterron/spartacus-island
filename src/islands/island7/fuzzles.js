@@ -19,7 +19,7 @@ const COLORS = [0xff8fd0, 0xffd84d, 0x7fd8ee, 0xb59cff, 0x9be36c, 0xffa86b];
 const GRAVITY = 16;
 const WATCH_RANGE = 12; // they turn to look at Spartacus within this
 const ROAM = 1.6; // how far from its spot a Fuzzle wanders
-// its own random sequence, so the Fuzzles never move the scenery that uses the shared rand()
+// its own random sequence, so the Fuzzles never move the scenery that uses the island's rand()
 const fuzzRand = seededRandom(707);
 
 // {home: {x, z}, target: {x, z}, pos, vel, yaw, size, hopIn (seconds to the next hop), squash}

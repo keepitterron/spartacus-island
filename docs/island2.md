@@ -4,7 +4,6 @@ Remade in Nov 2026 as the first round of the [levels plan](levels-plan.md): abou
 
 - Level: `levels/island2.blend`. Its grey-box was made by `tools/levels/make_island2.py` (don't re-run it once the `.blend` is edited by hand: it overwrites the file). `tools/levels/dress_island2.py` dresses it (re-runnable; the model list is data, using `Dresser` from `tools/levels/library.py`).
 - Code: `src/islands/island2/index.js` builds the swing pads, the hooks, Mango's nest, the X on the mesa, the camp's fire, the rock pools' bubbles and the toys at the level's `spot:` markers.
-- Islands 3–7 keep their scenery: `sharedSeedAfter` is where the shared random sequence stood after the old hand-built island (checked identical for every island after it).
 
 ## The story
 

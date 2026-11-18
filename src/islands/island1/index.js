@@ -658,9 +658,6 @@ const island = {
   zMax: Infinity,
   level,
   height: level.height,
-  // where the shared random sequence stood after the hand-built island 1, so islands 2–7 keep
-  // exactly the scenery they had (main.js)
-  sharedSeedAfter: 988508491,
   // a big island: closing the tab mid-way keeps what was done (game/progress.js)
   savesProgress: true,
   saveState,

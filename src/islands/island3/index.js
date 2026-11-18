@@ -722,8 +722,6 @@ const island = {
   zMax: -245,
   level, // main.js loads it before anything is built
   height: level.height,
-  // the old hand-built island left the shared random sequence here (see main.js)
-  sharedSeedAfter: 1494877858,
   layout: 2, // the Blender remake: saves from the old layout start the island fresh
   savesProgress: true,
   saveState: () => ({ places: seenPlaces(3) }),

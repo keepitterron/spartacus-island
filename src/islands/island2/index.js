@@ -211,9 +211,6 @@ const island = {
   zMax: -85,
   level, // main.js loads it before anything is built
   height: level.height,
-  // the old hand-built island left the shared random sequence here; the islands after it carry
-  // on from it, so their scenery doesn't move (see main.js)
-  sharedSeedAfter: -542749440,
   layout: 2, // the Blender remake: saves from the old layout don't put Spartacus back mid-island
   savesProgress: true,
   saveState,

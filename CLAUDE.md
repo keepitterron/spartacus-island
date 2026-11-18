@@ -25,7 +25,7 @@ Vite + plain ES modules + three.js 0.160.0 (+ Rapier, only for physics toys), de
 ## Rules of thumb
 
 - Islands are modules with one shared interface (`src/islands/islandN/index.js`); the loop and menus never branch on island number.
-- **Build order matters:** all scenery shares one seeded `rand()`. Add new random scenery at the end of an island's `build()`, add new islands at the end of `ISLANDS` in `main.js`.
+- **Every island has its own random sequence** (`rand()`, reseeded with the island's id before its `build()`), so changing one island's scenery never moves another's. Within an island, reordering `rand()` calls moves its own random scenery (bushes, flowers, palm turns): fine, but don't let gameplay positions depend on `rand()`. Add new islands at the end of `ISLANDS` in `main.js`.
 - Mutable shared state goes on objects (`game`, `followCam`, `player`), not exported `let`s.
 - Don't call imported functions at module top level (there are harmless import cycles); do the work in `build()`.
 - Text sprites: create inside `onFontsReady()`, start hidden.

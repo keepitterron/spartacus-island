@@ -366,8 +366,6 @@ const island = {
   // no ground up here, only clouds: the "terrain" is far below the cloud sea
   level, // main.js loads it before anything is built
   height: level.height, // no ground: the cloud sea far below
-  // where the shared random sequence stood after the old code-built island (see main.js)
-  sharedSeedAfter: -1827648295,
   savesProgress: true,
   // Lina flaps the whole time, so Spartacus always floats: low gravity, a slow fall, flapping
   physics: { gravity: 16, maxFall: 7, water: false, flap: true, floor: CLOUD_SEA_Y },
