@@ -25,7 +25,7 @@ const ACTIVE_RANGE = 45; // m past an area's edge: further away, its toys sleep
 const FLOAT_TIME = 2.5; // s bobbing in the sea before popping back home
 const SEA = 0; // the water surface
 // under water: gravity scaled down and lots of drag, so a nudge sends a toy floating off
-const UNDERWATER = { gravityScale: 0.18, linearDamping: 1.6, angularDamping: 1.2 };
+const UNDERWATER = { gravityScale: 0.18, linearDamping: 1.6, angularDamping: 1.2, lift: 3 };
 
 // physics: Rapier, its world and the body standing in for Spartacus, once loaded
 const physics = { RAPIER: null, world: null, dog: null, loading: false, carry: 0 };
@@ -264,10 +264,12 @@ export function shoveToys(pos, { reach, push, up }) {
     const away = vec3(at.x - pos.x, 0, at.z - pos.z).normalize();
     const strength = (1 - dist / reach) * 0.7 + 0.3; // gentler at the edge
     const mass = toy.body.mass();
+    // thick water soaks up a push: under water it's a big upward one, so they float up and away
+    const lift = toy.area?.underwater ? UNDERWATER.lift : 1;
     toy.body.applyImpulse(
       {
         x: away.x * push * strength * mass,
-        y: up * strength * mass,
+        y: up * strength * mass * lift,
         z: away.z * push * strength * mass,
       },
       true,

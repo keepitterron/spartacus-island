@@ -52,7 +52,7 @@ With Zoë out of the critical path, the main reason for going one island at a ti
      - the **capture tool** (record an island's terrain and its palms, rocks, docks, pickups, fruit and digs from the running game; a Blender script builds the `.blend` from it) and **sailing into a level island**: island 2's round
      - the **data-driven grey-box and dressing script**: island 2's round, generalised from `make_island1.py` and `dress_island1.py`
      - **under water**: island 4's round; **no ground** (clouds): island 6's round
-4. **The ambience kit** grows round by round: `world/bubble-spot.js` is the first piece (island 1's spring, island 5's Wasabi spot); the campfire, fish, frogs and birds that land follow as the islands need them.
+4. **The ambience kit** grows round by round: `world/bubble-spot.js` is the first piece (island 1's spring, island 5's Wasabi spot), then the campfire. ✅ Nov 2026: frogs at island 1's Lily Pond, fish leaping off the docks (islands 1, 2, 5, 7), birds perched on signposts that come and sit on Spartacus's hat if he keeps still (islands 1, 2, 3, 5, 7), placed by `tools/levels/ambience.py`. ✅ Toys under water: island 4's Starfish Flats (low gravity per toy area).
 
 ## Phase B: the islands, in order
 
@@ -81,7 +81,7 @@ Rapier stays for toys only (Spartacus keeps `stepPlayer`). One themed toy area p
 
 - **2, Hook Rock Bay:** a pirate's stack of barrels and crates on the beach; buoys bobbing in the bay
 - **3, Mossy Paw Woods:** pine cones and acorns that roll downhill; a log stack
-- **4, Bubbly Ocean:** shells and sea urchins that drift and bounce slowly (low gravity, if Rapier's per-area gravity allows it, or heavy damping)
+- **4, Bubbly Ocean:** ✅ shells and sea urchins at Starfish Flats that float up from a woof and settle slowly (Rapier's per-body gravity scale plus damping)
 - **5, Rainbow Reef:** beach balls and floats in the lagoon; crates in Crab Cove
 - **6, Cottoncrest Islets:** fluffy cloud puffs that bounce high
 - **7, Jamboree Island:** a coconut shy and skittles to bowl over (giant Spartacus bowling, an idea from island 7's notes)
