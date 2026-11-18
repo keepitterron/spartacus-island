@@ -1,4 +1,4 @@
-# The model Library shared by the level-dressing scripts (dress_test_island.py, dress_island1.py):
+# The model Library shared by the level-dressing scripts (dress_island1.py, and the next islands'):
 # Quaternius models (levels/assets/quaternius, CC0) imported into a level's Library collection,
 # scaled to the game and recoloured to its palette, and `place()` to put linked copies round the
 # island. Run inside Blender (docs/levels.md).

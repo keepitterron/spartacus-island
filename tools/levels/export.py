@@ -4,7 +4,7 @@
 #   levels/islandN.blend  ->  src/islands/islandN/level.glb
 #
 # From a terminal (Blender in the background):
-#   blender -b levels/island8.blend --python tools/levels/export.py
+#   blender -b levels/island1.blend --python tools/levels/export.py
 # Or inside Blender: Scripting tab, open this file, Run Script (save the .blend first).
 import os
 import re

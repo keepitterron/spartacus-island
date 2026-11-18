@@ -7,7 +7,7 @@ Plain JavaScript ES modules, bundled by Vite. `three` is pinned to **0.160.0** (
 ```
 index.html            HUD, touch controls, overlays (start, win, end, error)
 levels/               islandN.blend: islands laid out in Blender (levels.md)
-tools/levels/         Blender scripts: export.py (.blend -> .glb), make_test_island.py
+tools/levels/         Blender scripts: export.py (.blend -> .glb), make_island1.py, dress_island1.py
 src/
   main.js             boot: register islands, build the world in order, wire menus/input, main loop
   style.css
@@ -51,7 +51,7 @@ src/
     debug.js          window.__g helpers (dev / ?debug)
     progress.js       mid-island saves (islands with savesProgress)
   islands/
-    island1/ … island8/   one module per island (see islands.md); island8/level.glb is its Blender export
+    island1/ … island7/   one module per island (see islands.md); island1/level.glb is its Blender export
 ```
 
 ## Boot order (main.js)

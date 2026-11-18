@@ -52,11 +52,10 @@ import island4 from './islands/island4/index.js';
 import island5 from './islands/island5/index.js';
 import island6 from './islands/island6/index.js';
 import island7 from './islands/island7/index.js';
-import island8 from './islands/island8/index.js';
 
 /* ---------- world ---------- */
 // Islands in play order. To add one, see docs/islands.md.
-const ISLANDS = [island1, island2, island3, island4, island5, island6, island7, island8];
+const ISLANDS = [island1, island2, island3, island4, island5, island6, island7];
 // islands made in Blender (world/level.js) load their .glb first: their terrain comes from it
 await Promise.all(ISLANDS.map((island) => island.level?.load()));
 for (const island of ISLANDS) {

@@ -2,29 +2,28 @@
 
 An island can be laid out in [Blender](https://www.blender.org/) (free) instead of in code. You sculpt the ground, place scenery and drop markers (empties) where things go, then export a `.glb` that the game loads. The island's code then only holds what's special about it: its story, tasks and puzzles.
 
-Island 8 (Big Test Island, reached from its chip on the start screen) is the example. It is about ten times the area of Hook Rock Bay. Island 1 is laid out this way too ([island1.md](island1.md)): a story island moved from code to Blender, with `tools/levels/make_island1.py` building its grey-box and `tools/levels/helpers.py` holding the shared Blender helpers for new level scripts.
+Island 1 is the example ([island1.md](island1.md)): a story island moved from code to Blender, with `tools/levels/make_island1.py` building its grey-box, `tools/levels/dress_island1.py` dressing it and `tools/levels/helpers.py` holding the shared Blender helpers for new level scripts. (Island 8, a big test island for the pipeline, was removed in Nov 2026; it's in git history before then.)
 
 **Moving an existing island to Blender:** its old code used the shared random sequence, so the islands after it would get different trees and flowers. Measure `rand.seed()` after the old island's `build()` and set it as the island's `sharedSeedAfter`; `main.js` carries on from there, and nothing else moves.
 
-| File                                | What                                                               |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| `levels/island8.blend`              | The level source: open this in Blender                             |
-| `src/islands/island8/level.glb`     | The export the game loads (commit it: the site has no Blender)     |
-| `src/islands/island8/index.js`      | The island module: tasks, hints, hooks, exit                       |
-| `src/world/level.js`                | The loader: ground → heights, colliders, markers                   |
-| `tools/levels/export.py`            | Exports a `.blend` with the right settings                         |
-| `tools/levels/make_test_island.py`  | Made `island8.blend` from scratch (a one-off; it overwrites)       |
-| `tools/levels/dress_test_island.py` | Adds the model Library and places models round island 8            |
-| `tools/levels/dress_island1.py`     | Island 1's looks over its grey boxes, and its models (re-runnable) |
-| `tools/levels/library.py`           | The model Library both dressing scripts share                      |
-| `tools/levels/run_with_bpy.py`      | Runs any of these without Blender installed (below)                |
-| `levels/assets/quaternius/`         | The CC0 models (originals) and their credits                       |
+| File                            | What                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `levels/island1.blend`          | The level source: open this in Blender                                  |
+| `src/islands/island1/level.glb` | The export the game loads (commit it: the site has no Blender)          |
+| `src/islands/island1/index.js`  | The island module: tasks, hints, hooks, exit                            |
+| `src/world/level.js`            | The loader: ground → heights, colliders, markers                        |
+| `tools/levels/export.py`        | Exports a `.blend` with the right settings                              |
+| `tools/levels/make_island1.py`  | Made `island1.blend`'s grey-box from scratch (a one-off; it overwrites) |
+| `tools/levels/dress_island1.py` | Island 1's looks over its grey boxes, and its models (re-runnable)      |
+| `tools/levels/library.py`       | The model Library both dressing scripts share                           |
+| `tools/levels/run_with_bpy.py`  | Runs any of these without Blender installed (below)                     |
+| `levels/assets/quaternius/`     | The CC0 models (originals) and their credits                            |
 
 ## Workflow
 
 1. Open `levels/islandN.blend` in Blender and edit it.
 2. Save, then export: `npm run levels` (needs `blender` on your PATH; on a Mac, `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender npm run levels`). Or in Blender: **Scripting** tab → open `tools/levels/export.py` → **Run Script**.
-3. `npm run dev` and go to the island (`__g.go(8)`, or its chip on the start screen). Vite reloads the page when the `.glb` changes.
+3. `npm run dev` and go to the island (`__g.go(1)`, or its chip on the start screen). Vite reloads the page when the `.glb` changes.
 
 **No Blender to hand** (a cloud session, CI): Blender's Python module runs the same scripts headless. `python3.13 -m venv .bpy && .bpy/bin/pip install bpy` once (bpy 5.3 matches the `.blend` files, saved by Blender 5.3), then `.bpy/bin/python tools/levels/run_with_bpy.py levels/island1.blend tools/levels/export.py`. That's how island 1 was dressed.
 
@@ -78,16 +77,16 @@ A marker is snapped down onto whatever is right under it (terrain, or the top of
 
 ```js
 import levelUrl from './level.glb?url';
-const level = makeLevel(levelUrl, { center: CENTER_8 });
+const level = makeLevel(levelUrl, { center: CENTER_N });
 
 const island = {
-  id: 8,
-  center: CENTER_8,
-  zMax: -2300,
+  id: N,
+  center: CENTER_N,
+  zMax: …,
   level, // main.js loads it before anything is built
   height: level.height, // the terrain comes from the ground mesh
   build() {
-    addSea(CENTER_8.x, CENTER_8.z, { width: 280, depth: 280 });
+    addSea(CENTER_N.x, CENTER_N.z, { width: 280, depth: 280 });
     level.build(island, {
       // optional: marker kinds of its own (or replacing a built-in one)
       markers: {
@@ -110,28 +109,28 @@ const island = {
 
 ## Adding a new level island
 
-1. Copy `levels/island8.blend` to `levels/islandN.blend` (or start fresh: a mesh named `ground` is all it needs).
-2. Copy `src/islands/island8/` to `src/islands/islandN/`, set `id`, `name`, tasks, and add `CENTER_N` to `world/layout.js` (far enough along −z, see [islands.md](islands.md)).
+1. Start `levels/islandN.blend` from a script like `tools/levels/make_island1.py` (or by hand: a mesh named `ground` is all it needs).
+2. Make `src/islands/islandN/` with an `index.js` like island 1's, set `id`, `name`, tasks, and add `CENTER_N` to `world/layout.js` (far enough along −z, see [islands.md](islands.md)).
 3. Add it at the end of `ISLANDS` in `main.js`, with `preview: true` if it should stay hidden from the start screen (dev / `?debug` only) while you build it.
 4. `npm run levels`, `npm run dev`.
 
 ## Assets (models from packs)
 
-Island 8 is dressed with 23 free [Quaternius](https://quaternius.com/) models (CC0: public domain): trees, willows, berry bushes, flowers, water lilies, mossy rocks and logs, a tent, a campfire, benches, barrels, crates, a well and two boats. The originals are in `levels/assets/quaternius/` (with a README crediting the packs); GitHub mirrors are the easy source, since the packs' own sites are often blocked for scripts.
+Island 1 is dressed with free [Quaternius](https://quaternius.com/) models (CC0: public domain): trees, willows, berry bushes, flowers, water lilies, mossy rocks and logs, a tent, a campfire, benches, barrels, crates, a well and two boats. The originals are in `levels/assets/quaternius/` (with a README crediting the packs); GitHub mirrors are the easy source, since the packs' own sites are often blocked for scripts.
 
-**The Library.** `island8.blend` has a **Library** collection with one copy of each model, already scaled for a dog about 1.1 m tall and recoloured to the game's palette (Quaternius greens and browns are muted; the game's are bright). It's excluded from the scene and never exported. Each model is also marked as an asset, so in Blender: open an **Asset Browser**, pick **Current File**, and drag a tree onto the island. Or copy one with **Alt+D** (a linked duplicate: the `.glb` stores the mesh once however many you place).
+**The Library.** A dressed level's `.blend` has a **Library** collection with one copy of each model, already scaled for a dog about 1.1 m tall and recoloured to the game's palette (Quaternius greens and browns are muted; the game's are bright). It's excluded from the scene and never exported. Each model is also marked as an asset, so in Blender: open an **Asset Browser**, pick **Current File**, and drag a tree onto the island. Or copy one with **Alt+D** (a linked duplicate: the `.glb` stores the mesh once however many you place).
 
 **Placing them:** a dragged-in model is plain scenery. Give it a custom property `collider` (`box` for crates, benches, boats; `cyl` for barrels, rocks, stumps) if Spartacus should bump into it or stand on it. For trees use `collider` = `cyl` plus `radius` = `0.45`: the collider is then just the trunk, not the whole canopy. Leave flowers, bushes, grass and lilies without colliders.
 
-**Adding a model:** put its `.glb` in `levels/assets/quaternius/`, add it to `MODELS` (with its scale) in `tools/levels/dress_test_island.py`, and add any new colours to `PALETTE` there (the script prints colours it doesn't know). Then re-run it.
+**Adding a model:** put its `.glb` in `levels/assets/quaternius/`, add it to `MODELS` (with its scale) in `tools/levels/library.py`, and add any new colours to `PALETTE` there (the script prints colours it doesn't know). Then re-run it.
 
-**`tools/levels/dress_test_island.py`** rebuilds the Library and the **Dressing** collection (where it placed the models: the pirate camp by the dock, shade trees, the lagoon's willows and lilies, the mossy glade, the fort's supplies, the well, the summit bench, a grove). It only replaces those two collections, but hand edits _inside_ Dressing are lost when it runs, so once you start arranging things by hand in Blender, stop running it (or move your models to another collection).
+**`tools/levels/dress_island1.py`** rebuilds the Library, **Looks** and **Dressing** collections (see Dressing in [island1.md](island1.md)). It only replaces those two collections, but hand edits _inside_ Dressing are lost when it runs, so once you start arranging things by hand in Blender, stop running it (or move your models to another collection).
 
 ```bash
-blender -b levels/island8.blend --python tools/levels/dress_test_island.py && npm run levels
+blender -b levels/island1.blend --python tools/levels/dress_island1.py && npm run levels
 ```
 
-**Keep it light:** a few groups of things with space between them, not a carpet. Every model is a few draw calls on a phone, and the `.glb` is precached for offline play (limit 8 MB; island 8 is 2.2 MB, half of it the ground). Models are exported smooth-shaded (shared corners, a smaller file); the game draws them flat-shaded anyway. Keep the ground smooth-shaded too (flat exports four times bigger). Skip anything that breaks Zoë's rules (weapons, traps, skulls, enemies).
+**Keep it light:** a few groups of things with space between them, not a carpet. Every model is a few draw calls on a phone, and the `.glb` is precached for offline play (limit 8 MB; island 1 is 2.9 MB, half of it the ground). Models are exported smooth-shaded (shared corners, a smaller file); the game draws them flat-shaded anyway. Keep the ground smooth-shaded too (flat exports four times bigger). Skip anything that breaks Zoë's rules (weapons, traps, skulls, enemies).
 
 ## Not done yet
 
@@ -139,4 +138,3 @@ blender -b levels/island8.blend --python tools/levels/dress_test_island.py && np
 - **Grey box, then looks.** Island 1 keeps its grey boxes as invisible colliders (`invisible` = 1) and puts a look on top: a model stretched to the box, or a lumpy stone copy (Subdivision + Displace with mid-level 1, so it only dents inwards and never sticks out of its collider). Gameplay can't change when the looks do.
 - **Physics stay home-made for Spartacus.** Terrain is a height grid and colliders are upright boxes and cylinders, exactly like the hand-built islands, so every existing system (vines, hooks, balls, rides) works unchanged. Rapier is in the game for loose props only (`systems/toys.js`): toys tumble on a heightfield copy of the ground. Moving Spartacus onto it (rotated and mesh colliders, overhangs) would replace `stepPlayer` on every island: worth doing only when a level needs it.
 - Instanced palms and flowers (each is still its own set of meshes; see the phone-performance item in [backlog.md](backlog.md)).
-- No ship sailing in: island 8 is reached with the picker or `__g.go(8)`, and island 7's dock still ends the game.

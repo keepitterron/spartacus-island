@@ -3,7 +3,7 @@
 // (optionally with colliders), and empties are markers that turn into game things (palms,
 // bones, fruit bushes, dig spots, named spots for the island's own code).
 //
-//   const level = makeLevel(levelUrl, { center: CENTER_8 });
+//   const level = makeLevel(levelUrl, { center: CENTER_1 });
 //   island = { level, height: level.height, build() { level.build(island, { markers }) }, … }
 //
 // main.js loads every island's level before anything is built, so heights are ready in time.
