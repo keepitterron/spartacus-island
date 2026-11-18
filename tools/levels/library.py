@@ -216,7 +216,11 @@ class Dresser:
 
     def check_markers(self, ignore=()):
         markers = [
-            o for o in bpy.data.objects if o.type == "EMPTY" and o.name.split(".")[0] not in ignore
+            o
+            for o in bpy.data.objects
+            if o.type == "EMPTY"
+            and o.name.split(".")[0] not in ignore
+            and not o.name.startswith("place:")  # a place is an area, not a spot
         ]
         for name, x, z in self.solid:
             for m in markers:

@@ -68,7 +68,7 @@ The order:
 
 1. ✅ **Island 2, Hook Rock Bay** (done, [island2.md](island2.md)). Next in the story, the smallest and plainest: the new tools get tested on an easy one. Also the worst draw calls for its size.
 2. ✅ **Island 3, Mossy Paw Woods** (done, [island3.md](island3.md)). Land again; trees and vines stay code on markers.
-3. **Island 4, Bubbly Ocean.** The first underwater level.
+3. ✅ **Island 4, Bubbly Ocean** (done, [island4.md](island4.md); the puzzle kept as it was, the basin wider). The first underwater level.
 4. **Island 5, Rainbow Reef.** Five islets in one ground.
 5. **Island 6, Cottoncrest Islets.** The first level with no ground.
 6. **Island 7, Jamboree Island.** Last: the most code, the newest design.

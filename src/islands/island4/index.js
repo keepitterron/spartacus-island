@@ -1,13 +1,5 @@
 import * as THREE from 'three';
-import {
-  lerpAngle,
-  distXZ,
-  lerp,
-  smoothstep,
-  rand,
-  distToSegmentXZ,
-  vec3,
-} from '../../core/util.js';
+import { lerpAngle, distXZ, lerp, rand, distToSegmentXZ, vec3 } from '../../core/util.js';
 import { scene, LOW_POWER } from '../../core/renderer.js';
 import { material, mergeParts, mesh } from '../../core/materials.js';
 import { addStatic } from '../../world/statics.js';
@@ -17,7 +9,8 @@ import { burst } from '../../core/fx.js';
 import { toast, hintOnce } from '../../core/ui.js';
 import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
-import { terrainHeight, buildGround } from '../../world/terrain.js';
+import { terrainHeight } from '../../world/terrain.js';
+import { makeLevel } from '../../world/level.js';
 import { CENTER_4, CENTER_5 } from '../../world/layout.js';
 import { rock } from '../../world/props.js';
 import { ship, shipBubble, shipState } from '../../world/ship.js';
@@ -31,6 +24,9 @@ import { ensureMangoCrew } from '../../npcs/mango.js';
 import { wasabiFollow } from '../../npcs/wasabi.js';
 import { completeTask } from '../../game/tasks.js';
 import { hintTooHigh } from '../../game/interact.js';
+import { visitPlaces, seenPlaces, restorePlaces } from '../../systems/places.js';
+import levelUrl from './level.glb?url';
+import heightsUrl from './heights.bin?url';
 import {
   SEA_BED_Y,
   toWorld,
@@ -78,16 +74,16 @@ import { buildWhale, startWhale } from './whale.js';
    fetch the octopus's pillow through the bubble vent canyon so he goes back to sleep,
    bring Eduardo to the ship. A whale pushes the ship back to the surface. */
 
-// a gently rippled sea bed that curves up into walls past radius 28
-function seabedHeight(x, z) {
-  const r = Math.hypot(x - CENTER_4.x, z - CENTER_4.z);
-  return (
-    SEA_BED_Y +
-    0.4 * Math.sin(x * 0.3) * Math.cos(z * 0.25) +
-    0.25 * Math.sin(x * 0.7 + z * 0.5) +
-    smoothstep(28, 40, r) * 16
-  );
-}
+// The sea floor is laid out in Blender (levels/island4.blend, made by tools/levels/make_island4.py,
+// dressed by dress_island4.py; see docs/island4.md): a wider basin round the puzzle, with the
+// Sunken Boat, the Coral Garden and Starfish Flats. The puzzle's own positions stay in geo.js and
+// below. The painted ground is sandy, fading to rock where it rises (palette.seabed).
+const level = makeLevel(levelUrl, {
+  center: CENTER_4,
+  heightsUrl,
+  groundPalette: { seabed: SEA_BED_Y },
+});
+const BASIN = 42; // m from the middle: the open sea floor (the walls rise past 44)
 
 let surfaceGeo, breathBubble, KELP_PILLAR, LEDGE, SHELF, pillowItem;
 const sunRays = [], // {m, phase}
@@ -405,7 +401,14 @@ function buildCrabs() {
 
 // sea floor dressing is kept inside the basin and off the paths and puzzle spots
 function isFreeSeaFloor(x, z) {
-  if (Math.hypot(x - CENTER_4.x, z - CENTER_4.z) > 27) return false;
+  if (Math.hypot(x - CENTER_4.x, z - CENTER_4.z) > BASIN - 3) return false;
+  // the level's rocks, boat and places' signposts
+  if (
+    level.markers.some(
+      (marker) => marker.kind !== 'place' && Math.hypot(x - marker.x, z - marker.z) < 3.5,
+    )
+  )
+    return false;
   const p = { x, z };
   if (distToSegmentXZ(p, lanePoint(-1, 0), OCTOPUS_SPOT) < 4.6) return false;
   if (distToSegmentXZ(p, CANYON_START, CANYON_END) < 4.4) return false;
@@ -454,8 +457,8 @@ function addBranchCoral(g, color) {
 const CORAL_COLORS = [0xff8fb1, 0xffa53d, 0xb59cff, 0x5fd3c8, 0xff6b8a];
 // coral: every 4th is a blob, the rest branchy. Up to 300 tries to place them.
 function buildCoral() {
-  for (let i = 0, n = 0; i < 300 && n < (LOW_POWER ? 18 : 32); i++) {
-    const { x, z } = randomSeaSpot({ minR: 3, spanR: 24 });
+  for (let i = 0, n = 0; i < 500 && n < (LOW_POWER ? 28 : 50); i++) {
+    const { x, z } = randomSeaSpot({ minR: 3, spanR: BASIN - 6 });
     if (!isFreeSeaFloor(x, z)) continue;
     n++;
     const g = new THREE.Group(),
@@ -468,8 +471,8 @@ function buildCoral() {
   }
 }
 function buildStarfish() {
-  for (let i = 0, n = 0; i < 200 && n < 12; i++) {
-    const { x, z } = randomSeaSpot({ minR: 3, spanR: 24 });
+  for (let i = 0, n = 0; i < 300 && n < 20; i++) {
+    const { x, z } = randomSeaSpot({ minR: 3, spanR: BASIN - 6 });
     if (!isFreeSeaFloor(x, z)) continue;
     n++;
     const g = new THREE.Group();
@@ -493,8 +496,8 @@ function buildStarfish() {
   }
 }
 function buildLooseKelp() {
-  for (let i = 0, n = 0; i < 200 && n < 8; i++) {
-    const { x, z } = randomSeaSpot({ minR: 6, spanR: 20 });
+  for (let i = 0, n = 0; i < 300 && n < 14; i++) {
+    const { x, z } = randomSeaSpot({ minR: 6, spanR: BASIN - 10 });
     if (!isFreeSeaFloor(x, z)) continue;
     n++;
     addSeaweed(x, z, { thick: true, height: 4 + rand() * 3, radius: 0.6 });
@@ -519,11 +522,7 @@ function buildBreathBubble() {
 }
 
 function build() {
-  buildGround(CENTER_4.x, CENTER_4.z, {
-    size: 92,
-    segments: LOW_POWER ? 90 : 150,
-    palette: { seabed: SEA_BED_Y },
-  });
+  level.build(island);
   island.spawn = vec3(CENTER_4.x, 0, CENTER_4.z + 10);
   island.spawn.y = terrainHeight(island.spawn.x, island.spawn.z);
   buildSurface();
@@ -712,6 +711,7 @@ function checkTentacleGates(p) {
 }
 
 function interact(p) {
+  visitPlaces(p);
   touchCrabs(p);
   if (crabNear(p, 7))
     hintOnce(
@@ -778,6 +778,7 @@ function interact(p) {
 /* mid-island saves (game/progress.js) */
 
 const saveState = () => ({
+  places: seenPlaces(4),
   chopped: seaweeds.flatMap((clump, i) => (clump.cut ? [i] : [])),
   crabs: foundCrabs(),
   eduardoStage: eduardo.stage,
@@ -797,6 +798,7 @@ function cutQuietly(clump) {
 }
 
 function loadState(state) {
+  restorePlaces(4, state.places);
   const { done } = island;
   for (const i of state.chopped ?? []) if (seaweeds[i]) cutQuietly(seaweeds[i]);
   restoreCrabs(state.crabs);
@@ -814,10 +816,14 @@ const island = {
   sailPath,
   name: 'Bubbly Ocean',
   zMax: -600,
+  level, // main.js loads it before anything is built
+  height: level.height,
+  // the old hand-built island left the shared random sequence here (see main.js)
+  sharedSeedAfter: -1349754716,
+  layout: 2, // the bigger basin: saves from the old layout start the island fresh
   savesProgress: true,
   saveState,
   loadState,
-  height: seabedHeight,
   underwater: true,
   physics: {
     gravity: 16,
@@ -825,7 +831,7 @@ const island = {
     speed: 0.85,
     jump: 0.72,
     water: false,
-    bound: { x: CENTER_4.x, z: CENTER_4.z, r: 30 },
+    bound: { x: CENTER_4.x, z: CENTER_4.z, r: BASIN + 4 },
   },
   camera: {
     // stay below the surface and above the sand
