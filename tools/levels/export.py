@@ -43,7 +43,10 @@ def main():
     os.makedirs(os.path.dirname(path), exist_ok=True)
     heights_path = os.path.join(os.path.dirname(path), "heights.bin")
     ground, grid = export_heights(heights_path)
-    print(f"baked {heights_path} ({grid['cols']} x {grid['rows']}, {os.path.getsize(heights_path) // 1024} KB)")
+    if grid:
+        print(f"baked {heights_path} ({grid['cols']} x {grid['rows']}, {os.path.getsize(heights_path) // 1024} KB)")
+    else:
+        print("no ground: no heights.bin (a sky level)")
     select_level_objects(ground)
     bpy.ops.export_scene.gltf(
         filepath=path,

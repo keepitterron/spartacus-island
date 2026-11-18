@@ -125,7 +125,8 @@ function buildLevel(level, { island, markers = {} }) {
   root.traverse((object) => {
     if (object.userData.collider) addColliderFor(object);
   });
-  if (!level.groundDrawn) drawGround(level); // heights.bin: the ground mesh isn't in the file
+  // heights.bin: the ground mesh isn't in the file (and a sky level has no ground at all)
+  if (!level.groundDrawn && level.heights) drawGround(level);
   scene.add(root);
   for (const object of empties) {
     const marker = readMarker(object);
@@ -340,7 +341,7 @@ function readHeights(buffer) {
 // is a cheap lookup every frame. Each triangle is rasterised onto the grid points under it.
 // {minX, minZ, cell, cols, rows, heights: Float32Array} with -Infinity where there's no ground.
 function bakeHeights(meshes, { cell }) {
-  if (!meshes.length) throw new Error('level has no mesh named "ground"');
+  if (!meshes.length) return null; // a level with no ground (the sky island): open air everywhere
   const bounds = new THREE.Box3();
   for (const m of meshes) bounds.expandByObject(m);
   const minX = Math.floor(bounds.min.x),

@@ -9,6 +9,7 @@
 #   low + value / 65534 * (high - low)
 # Used by export.py; run inside Blender.
 import math
+import os
 import struct
 
 import bpy
@@ -96,8 +97,10 @@ def write(grid, path):
 
 def export_heights(path):
     objects = ground_objects()
-    if not objects:
-        raise SystemExit('the level has no mesh named "ground"')
+    if not objects:  # a level with no ground (island 6's clouds): no heights, and none left over
+        if os.path.exists(path):
+            os.remove(path)
+        return [], None
     grid = bake(ground_triangles(objects))
     write(grid, path)
     return objects, grid
