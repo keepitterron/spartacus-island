@@ -47,7 +47,7 @@ With Zoë out of the critical path, the main reason for going one island at a ti
 2. ✅ **Mid-island saves for islands 2–4** (done), so all seven islands save the same way before their layouts move.
 3. **Pipeline upgrades:**
    - ✅ **A small ground** (done: `heights.bin`, island 1 went from 2.9 MB to 1.9 MB). Export the height grid as a 16-bit heightmap instead of a mesh. Today the ground is half of island 1's 2.9 MB file; seven levels at that rate would add about 17 MB to the offline download.
-   - **Places and signposts as markers**, not code positions (island 1's first, as the example).
+   - ✅ **Places and signposts as markers** (done: `place:Name`, `sign:Name`), not code positions (island 1's first, as the example).
    - **A data-driven grey-box and dressing script** per island (a Python data file with grounds, boxes, markers and model groups), sharing island 1's helpers.
    - **Levels without a ground** (island 6's clouds) and **under water** (island 4's sea floor).
    - **Sailing into a level island** (island 1 has only ever been sailed out of).

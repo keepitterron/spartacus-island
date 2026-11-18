@@ -22,6 +22,7 @@ import { palm, rock, dock } from './props.js';
 import { addPickup } from '../systems/collect.js';
 import { addFruit } from '../systems/powers.js';
 import { addDig } from '../systems/digs.js';
+import { addPlace, addSignpost } from '../systems/places.js';
 
 // grid spacing of the baked terrain heights: half a metre is finer than the ground mesh is drawn
 const HEIGHT_CELL = 0.5;
@@ -92,9 +93,15 @@ function readMarker(object) {
     z: pos.z,
     ground: pos.y,
     scale: { x: scale.x, y: scale.y, z: scale.z },
-    yaw: new THREE.Euler().setFromQuaternion(object.getWorldQuaternion(new THREE.Quaternion())).y,
+    yaw: yawOf(object),
     props: object.userData,
   };
+}
+// which way it faces, as a turn about the vertical (0: along +z). From its forward direction, not
+// Euler angles: those flip x and z by 180° past a quarter turn and give the wrong yaw.
+function yawOf(object) {
+  const forward = vec3(0, 0, 1).applyQuaternion(object.getWorldQuaternion(new THREE.Quaternion()));
+  return Math.atan2(forward.x, forward.z);
 }
 // half a metre of slack, so a marker placed just under a surface still lands on it
 const groundUnder = (marker) => supportHeight(marker.x, marker.z, marker.y + 0.5);
@@ -139,7 +146,7 @@ function runMarkers(level, { island, phase }) {
   for (const marker of level.markers) {
     if (marker.handler?.phase !== phase) continue;
     marker.ground = groundUnder(marker);
-    marker.handler.run(marker, island);
+    marker.handler.run(marker, island, level);
   }
   // everything built so far is now underneath: spots for the island's code see it too
   for (const marker of level.markers) marker.ground = groundUnder(marker);
@@ -270,6 +277,26 @@ const BUILT_IN = {
           toast(`A buried ${island.collect.name.toLowerCase()}!`, 1800);
         },
       });
+    },
+  },
+  // place:Name, a named place (systems/places.js): the first time Spartacus walks in, its name
+  // comes up. The empty's X scale is the radius (a sphere empty shows it in Blender).
+  place(marker) {
+    addPlace(marker.arg, { x: marker.x, z: marker.z, radius: marker.scale.x });
+  },
+  // sign:Name, a signpost for that place; the board faces the way the empty faces (its front,
+  // Blender's -Y). Custom property `arrows`: other places' names, comma-separated, top to bottom.
+  sign: {
+    phase: 'late', // after every place: the arrows point at them
+    run(marker, island, level) {
+      const placeAt = (name) => level.all('place').find((place) => place.arg === name);
+      const arrows = (marker.props.arrows ?? '')
+        .split(',')
+        .map((name) => name.trim())
+        .filter((name) => placeAt(name))
+        .map((name) => ({ text: name, to: placeAt(name) }));
+      const faceTo = { x: marker.x + Math.sin(marker.yaw), z: marker.z + Math.cos(marker.yaw) };
+      addSignpost(marker.x, marker.z, { name: marker.arg, faceTo, arrows });
     },
   },
   // beach balls and ambient critters are island data (systems/balls.js, systems/critters.js)

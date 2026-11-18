@@ -18,14 +18,7 @@ import { addItem, carryItem, useUpCarried, placeItem } from '../../systems/items
 import { addPickup, pickupText } from '../../systems/collect.js';
 import { addDig, digNear } from '../../systems/digs.js';
 import { addToyArea, addToy, toysNear } from '../../systems/toys.js';
-import {
-  addPlace,
-  addSignpost,
-  letterBoard,
-  visitPlaces,
-  seenPlaces,
-  restorePlaces,
-} from '../../systems/places.js';
+import { letterBoard, visitPlaces, seenPlaces, restorePlaces } from '../../systems/places.js';
 import { gull, perchGull, wakeGull, gullJoinsShip } from '../../npcs/gull.js';
 import { startSail } from '../../cutscenes/sail.js';
 import { completeTask, allTasksDone } from '../../game/tasks.js';
@@ -82,28 +75,9 @@ const lilies = []; // {g, phase}: bobbing lily pads
 let plankGhost, mapScroll; // see-through plank showing where it goes; the map that pops out of the chest
 let plankItem; // the plank (systems/items.js), which Chris points at while it's in the pile
 
-// The places, named for Zoë (she lives in Amsterdam and goes to a Montessori school), island-local
-// like the level's spots: x, z, radius (m) for the title card; sign: where its signpost stands.
-// Hallo Harbour's signpost has arrows to the others; Lost & Found Camp paints the level's own sign.
-const PLACES = [
-  { name: 'Hallo Harbour', x: 0, z: 50, radius: 13, sign: { x: 4.5, z: 45 } },
-  { name: 'Sleepy Gull Beach', x: -37, z: 48, radius: 12, sign: { x: -29, z: 43 } },
-  { name: 'Boing-Boing Grove', x: 39, z: 30, radius: 12, sign: { x: 29, z: 31 } },
-  { name: 'Growly Cave', x: -3, z: 20, radius: 8, sign: { x: 4, z: 25.5 } },
-  { name: 'Lost & Found Camp', x: -41, z: -1, radius: 10 },
-  { name: 'Lily Pond', x: 14, z: -4, radius: 19, sign: { x: -4.5, z: 3 } },
-  { name: 'Ding-Dong Point', x: -40, z: -35, radius: 12, sign: { x: -30, z: -27 } },
-  { name: 'Treasure Hill', x: -6, z: -48, radius: 11, sign: { x: -5, z: -36 } },
-  { name: 'Bubbly Spring', x: 24, z: -40, radius: 8, sign: { x: 19, z: -42 } },
-];
-// the harbour signpost's arrows, top to bottom
-const HARBOUR_ARROWS = [
-  'Growly Cave',
-  'Treasure Hill',
-  'Ding-Dong Point',
-  'Sleepy Gull Beach',
-  'Boing-Boing Grove',
-];
+// The places, named for Zoë (she lives in Amsterdam and goes to a Montessori school), and their
+// signposts are `place:` and `sign:` markers in levels/island1.blend (docs/levels.md). Lost & Found
+// Camp paints the level's own sign instead.
 
 // from the ship at the dock, round the east of the island and north to Hook Rock Bay
 const sailPath = new THREE.CatmullRomCurve3([
@@ -523,20 +497,8 @@ function buildLostAndFoundToys() {
   }
 }
 
-const placeNamed = (name) => PLACES.find((place) => place.name === name);
-
-// the named places, their signposts, and the name on the camp's sign
+// the name on the camp's sign (the places and signposts are level markers)
 function buildPlaces() {
-  const centre = { x: 0, z: 10 }; // signs face the middle of the island
-  for (const place of PLACES) {
-    addPlace(place.name, place);
-    if (!place.sign) continue;
-    const arrows =
-      place.name === 'Hallo Harbour'
-        ? HARBOUR_ARROWS.map((text) => ({ text, to: placeNamed(text) }))
-        : [];
-    addSignpost(place.sign.x, place.sign.z, { name: place.name, faceTo: centre, arrows });
-  }
   const campSign = level.root.getObjectByName('sign');
   if (!campSign) return;
   const board = new THREE.Box3().setFromObject(campSign);

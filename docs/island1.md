@@ -40,7 +40,7 @@ Named for Zoë, who lives in Amsterdam and goes to a Montessori school ("Surpris
 
 Juf Anne's lesson is the Montessori nod: the class sits round her with a pink tower and a chalkboard.
 
-Ask Zoë if she wants to rename any. The positions are in code, not Blender markers (there was no Blender to hand); they could become `spot:` markers next time the `.blend` is edited.
+Ask Zoë if she wants to rename any. They're `place:` and `sign:` markers in the `.blend` (its **Places** collection, added by `tools/levels/add_places_island1.py`); rename one there and re-export.
 
 ## Zoë's notes (from the map)
 

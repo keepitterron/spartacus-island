@@ -58,19 +58,21 @@ The terrain is a height grid, so it can't have overhangs, caves or arches: make 
 
 ### Markers (empties: Add → Empty)
 
-| Name                              | Becomes                                                                                                                    |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `spawn`                           | Where Spartacus arrives                                                                                                    |
-| `dock`                            | A wooden dock from here towards game +z (Blender −Y). Custom property `length` (default 11).                               |
-| `palm`                            | A palm tree (`world/props.js`), shakes when you woof                                                                       |
-| `rock`                            | A mossy rock: the empty's X scale is its radius, its Z scale its height. Optional custom property `color`, e.g. `#9aa6b8`. |
-| `pickup`                          | One of the island's collectibles (bones…). The island needs `collect`; its `total` is counted for you.                     |
-| `dig` / `dig:marked`              | A sand mound with a collectible inside (`marked`: with a red X)                                                            |
-| `fruit:boing`, `fruit:stretch`, … | A regrowing fruit bush (any power in `POWERS`)                                                                             |
-| `ball`                            | A beach ball                                                                                                               |
-| `birds`, `butterflies`, `fish`    | Ambient critters (fish swim at the empty's height)                                                                         |
-| `spot:name`                       | Nothing by itself: a named position for the island's code, `level.spots['name']`                                           |
-| anything else                     | Whatever the island's code says (below), or a console warning                                                              |
+| Name                              | Becomes                                                                                                                                                              |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spawn`                           | Where Spartacus arrives                                                                                                                                              |
+| `dock`                            | A wooden dock from here towards game +z (Blender −Y). Custom property `length` (default 11).                                                                         |
+| `palm`                            | A palm tree (`world/props.js`), shakes when you woof                                                                                                                 |
+| `rock`                            | A mossy rock: the empty's X scale is its radius, its Z scale its height. Optional custom property `color`, e.g. `#9aa6b8`.                                           |
+| `pickup`                          | One of the island's collectibles (bones…). The island needs `collect`; its `total` is counted for you.                                                               |
+| `dig` / `dig:marked`              | A sand mound with a collectible inside (`marked`: with a red X)                                                                                                      |
+| `place:Name`                      | A named place: the first time Spartacus walks in, its name comes up as a title card. A sphere empty: its size is the radius.                                         |
+| `sign:Name`                       | A signpost for that place, its board facing the empty's front (Blender −Y) as turned. Custom property `arrows`: other places' names, comma-separated, top to bottom. |
+| `fruit:boing`, `fruit:stretch`, … | A regrowing fruit bush (any power in `POWERS`)                                                                                                                       |
+| `ball`                            | A beach ball                                                                                                                                                         |
+| `birds`, `butterflies`, `fish`    | Ambient critters (fish swim at the empty's height)                                                                                                                   |
+| `spot:name`                       | Nothing by itself: a named position for the island's code, `level.spots['name']`                                                                                     |
+| anything else                     | Whatever the island's code says (below), or a console warning                                                                                                        |
 
 A marker is snapped down onto whatever is right under it (terrain, or the top of a rock, crate or wall), as long as it's no more than half a metre below the marker. So to put a bone on a tower, place the empty just above the tower's top.
 
