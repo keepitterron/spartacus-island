@@ -8,6 +8,9 @@ import { game } from '../core/state.js';
 
 // {geo, cx, cz, halfW, halfD}: only patches near the camera animate
 const patches = [];
+// every patch's flat sea floor, 4.2 m down. Island 5's patch reaches back over island 4's basin,
+// and from island 4's sea floor a camera higher than that looked down onto it: a blue screen
+const floors = [];
 const WAVE_CELL = 660 / 90; // the size of one wave square in the original patch
 // further than this from a patch's edge its waves stand still (they are deep in the fog by then),
 // so island 3 doesn't also animate the sea out to island 5
@@ -21,6 +24,7 @@ export function addSea(cx, cz, { width, depth }) {
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(cx, -4.2, cz);
   scene.add(floor);
+  floors.push(floor);
   const cell = WAVE_CELL * (LOW_POWER ? 1.8 : 1);
   const geo = new THREE.PlaneGeometry(
     width,
@@ -52,6 +56,8 @@ const nearCamera = (patch) =>
   Math.abs(camera.position.z - patch.cz) < patch.halfD + ANIMATE_WITHIN;
 
 export function updateOcean() {
+  // under water (island 4) there's no sea above to see, only island 4's own surface
+  for (const floor of floors) floor.visible = !ambience.under;
   if (ambience.under) return; // can't be seen from the sea floor, skip the per-vertex work
   for (const patch of patches) if (nearCamera(patch)) animateWaves(patch.geo);
 }
