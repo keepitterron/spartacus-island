@@ -6,6 +6,7 @@
 // touched, so islands still show on the horizon.
 //
 // collectDetails() once after the world is built; updateDetails(dt) every frame.
+import * as THREE from 'three';
 import { scene, camera } from '../core/renderer.js';
 
 const SMALL = 1.5; // m radius: small things go first...
@@ -16,7 +17,8 @@ const MEDIUM_FOG = 0.8;
 const CHECK_EVERY = 0.25; // s
 const FAR_LAYER = 3; // a layer the camera never renders
 
-const details = []; // {object, fogDepth}
+const details = []; // {object, fogDepth, middle: the bounding sphere's centre, in its own space}
+const at = new THREE.Vector3();
 const check = { timer: 0 };
 
 export function collectDetails() {
@@ -26,8 +28,11 @@ export function collectDetails() {
     if (object.material.fog === false || object.userData.alwaysDrawn) return;
     if (!object.geometry.boundingSphere) object.geometry.computeBoundingSphere();
     const radius = object.geometry.boundingSphere.radius * object.matrixWorld.getMaxScaleOnAxis();
-    if (radius < SMALL) details.push({ object, fogDepth: SMALL_FOG });
-    else if (radius < MEDIUM) details.push({ object, fogDepth: MEDIUM_FOG });
+    // the middle of what it draws, not its origin: merged scenery has its origin at the world's
+    // centre, wherever its triangles are
+    const middle = object.geometry.boundingSphere.center;
+    if (radius < SMALL) details.push({ object, middle, fogDepth: SMALL_FOG });
+    else if (radius < MEDIUM) details.push({ object, middle, fogDepth: MEDIUM_FOG });
   });
 }
 
@@ -37,10 +42,10 @@ export function updateDetails(dt) {
   check.timer = CHECK_EVERY;
   const { near, far } = scene.fog;
   const { x, z } = camera.position;
-  for (const { object, fogDepth } of details) {
+  for (const { object, middle, fogDepth } of details) {
     const reach = near + (far - near) * fogDepth;
-    const at = object.matrixWorld.elements; // world position: elements 12-14
-    const distant = Math.hypot(at[12] - x, at[14] - z) > reach;
+    at.copy(middle).applyMatrix4(object.matrixWorld);
+    const distant = Math.hypot(at.x - x, at.z - z) > reach;
     if (distant) object.layers.set(FAR_LAYER);
     else object.layers.set(0);
   }
