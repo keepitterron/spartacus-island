@@ -48,10 +48,11 @@ With Zoë out of the critical path, the main reason for going one island at a ti
 3. **Pipeline upgrades:**
    - ✅ **A small ground** (done: `heights.bin`, island 1 went from 2.9 MB to 1.9 MB). Export the height grid as a 16-bit heightmap instead of a mesh. Today the ground is half of island 1's 2.9 MB file; seven levels at that rate would add about 17 MB to the offline download.
    - ✅ **Places and signposts as markers** (done: `place:Name`, `sign:Name`), not code positions (island 1's first, as the example).
-   - **A data-driven grey-box and dressing script** per island (a Python data file with grounds, boxes, markers and model groups), sharing island 1's helpers.
-   - **Levels without a ground** (island 6's clouds) and **under water** (island 4's sea floor).
-   - **Sailing into a level island** (island 1 has only ever been sailed out of).
-4. **The ambience kit** grows: `world/bubble-spot.js` is the first piece; then the campfire, fish, frogs, birds that land, as reusable pieces.
+   - **Moved into the rounds** (Nov 2026), because each is best built and tested against the island that first needs it:
+     - the **capture tool** (record an island's terrain and its palms, rocks, docks, pickups, fruit and digs from the running game; a Blender script builds the `.blend` from it) and **sailing into a level island**: island 2's round
+     - the **data-driven grey-box and dressing script**: island 2's round, generalised from `make_island1.py` and `dress_island1.py`
+     - **under water**: island 4's round; **no ground** (clouds): island 6's round
+4. **The ambience kit** grows round by round: `world/bubble-spot.js` is the first piece (island 1's spring, island 5's Wasabi spot); the campfire, fish, frogs and birds that land follow as the islands need them.
 
 ## Phase B: the islands, in order
 
