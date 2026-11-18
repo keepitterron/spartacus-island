@@ -101,7 +101,11 @@ export function buildWheel(at, { radius, hubHeight, deck }) {
       const near = Math.hypot(p.x - hub.x, p.z - hub.z) < 16 && p.y < ground + 5;
       if (!near) return;
       if (!wheel.on)
-        hintOnce('wheelStuck', 'The Big Wheel is stuck! It needs a GIANT woof to get going…', 3800);
+        hintOnce(
+          'wheelStuck',
+          'The Big Wheel is stuck! It needs a GIANT woof… A Mega-Me fruit grows by the Secret Garden!',
+          3800,
+        );
       else hintOnce('wheelGo', 'Hop in a gondola and ride to the top!', 3000);
     },
     // a giant woof nearby starts it; returns true if this woof did

@@ -13,7 +13,7 @@ Each island is one module, `src/islands/islandN/index.js`, that default-exports 
 
 | 7 | Jamboree Island (funfair) | Mega-Me (GIANT for 30 s) | — (Zoë picks) | Five show rockets, one per ride: bounce up the Jelly Jumps, fly from the Kaboom Cannon, step over the Secret Garden's hedge as a giant, wake the Big Wheel with a giant woof and ride it to the Sky Deck, loop the Loop-de-Woof coaster. Leo finds golden tickets. At night, light the fireworks. Design: [island7.md](island7.md) |
 
-Layouts for islands 3 and 4 are **placeholders** until Zoë draws them. Island 7 was built as a surprise for her, so its names and story are placeholders too.
+Zoë doesn't design islands: we do, around the direction she gives, and she plays them as surprises (see [design-rules.md](design-rules.md)). Names she might change are listed in each island's doc.
 
 ## The island interface
 

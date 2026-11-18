@@ -1,12 +1,21 @@
 // Spinning collectibles (bones, golden acorns…) that Spartacus picks up by walking into them.
-import { distXZ, spotKey } from '../core/util.js';
+import { distXZ, spotKey, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { game } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { burst } from '../core/fx.js';
-import { toast } from '../core/ui.js';
+import { toast, hintOnce } from '../core/ui.js';
 import { terrainHeight } from '../world/terrain.js';
 import { completeTask, renderTasks } from '../game/tasks.js';
+import { player } from '../player/player.js';
+import { undugPickupDigs } from './digs.js';
+
+// the last few of an island's collectibles sparkle (and so do mounds with one inside), so the
+// final hunt is about getting there, not about spotting a tiny bone from across the island
+const SPARKLE_WHEN_LEFT = 2;
+const SPARKLE_EVERY = 1.2; // s
+const SPARKLE_REACH = 45; // m: further away, no sparkles (nobody would see them)
+const sparkle = { timer: 0 };
 
 // Each island describes its own in
 //   collect:{total, taskId, name, all, model}
@@ -30,6 +39,41 @@ export function updatePickups(dt) {
     if (pickup.pop > 0) pickup.pop -= dt;
     pickup.model.position.y =
       pickup.y + Math.sin(time * 3 + pickup.x) * 0.12 + Math.max(0, pickup.pop) * 1.4;
+  }
+  sparkleLastOnes(dt);
+}
+
+function sparkleLastOnes(dt) {
+  const collect = game.islands[game.island]?.collect;
+  if (!collect || collect.total <= SPARKLE_WHEN_LEFT) return;
+  const left = collect.total - collect.count;
+  if (left <= 0 || left > SPARKLE_WHEN_LEFT) return;
+  sparkle.timer -= dt;
+  if (sparkle.timer > 0) return;
+  sparkle.timer = SPARKLE_EVERY;
+  // (one that isn't out yet, like Juf Anne's thank-you bone, can't sparkle)
+  const spots = [
+    ...pickups
+      .filter((pickup) => pickup.island === game.island && !pickup.taken)
+      .map((pickup) => pickup.model.position),
+    ...undugPickupDigs(game.island).map((dig) => ({ x: dig.x, y: dig.y + 0.3, z: dig.z })),
+  ];
+  if (!spots.length) return;
+  hintOnce(
+    `lastOnes${game.island}`,
+    `Only ${left === 1 ? 'one' : 'two'} left to find! Look for the golden sparkles ✨`,
+    3400,
+  );
+  for (const spot of spots) {
+    if (distXZ(player.pos, spot.x, spot.z) > SPARKLE_REACH) continue;
+    burst(vec3(spot.x, spot.y, spot.z), {
+      count: 6,
+      color: [0xffd84d, 0xffffff, 0xfff3a8],
+      speed: 1.2,
+      up: 4,
+      life: 1.1,
+      size: 1.3,
+    });
   }
 }
 

@@ -1,6 +1,6 @@
 # Island 7: Jamboree Island (the funfair)
 
-Built and playable from the rainbow slide down to "To be continued…". **A surprise for Zoë:** Claudio asked for a level bigger and sillier than the others, with much more to play with, so this one was designed without her. Everything she usually decides is a **placeholder** until she has her say (see **For Zoë** at the end).
+Built and playable from the rainbow slide down to "To be continued…". **A surprise for Zoë:** Claudio asked for a level bigger and sillier than the others, with much more to play with, so this one was designed without her (now the way every island is made). Names and choices she might want to change are listed in **For Zoë** at the end.
 
 ## The story in one breath
 
@@ -66,7 +66,7 @@ The rockets can be found in any order, except that the wheel (and so the coaster
 
 ## For Zoë
 
-Things she'd normally decide. Ask her after she's played it, and change them to her answers:
+Things she might want a say in. Ask her after she's played it, and change them to her answers:
 
 - **The name** of the island (Jamboree Island) and of the Fuzzles and **Pip**.
 - **What the Mega-Me fruit looks like.** For now it's the Mini-Me mushroom's big twin: fat, yellow with red spots.

@@ -299,13 +299,14 @@ function glintFork(dt) {
   if (island.done.skyFork || glint.timeLeft > 0) return;
   glint.timeLeft = 0.5;
   const { back } = spots.cubby;
+  // big enough, and shooting high enough, to be spotted from the palace
   burst(back.clone().add(vec3(0, 0.25, 0)), {
-    count: 3,
+    count: 5,
     color: [0xffffff, 0xdfe6f0, 0xffd84d],
     speed: 1,
-    up: 1.2,
-    life: 0.6,
-    size: 0.7,
+    up: 3.5,
+    life: 0.9,
+    size: 1.2,
   });
 }
 

@@ -10,17 +10,17 @@ import { game } from '../../core/state.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { daylight } from '../../world/daylight.js';
+import { addBubbleSpot } from '../../world/bubble-spot.js';
 
 const SEE_REACH = 60; // m: further away, nothing here animates
 const CRACKLE_REACH = 6; // m: close enough to hear the fire
 const SMOKE_EVERY = 0.45; // s between puffs
-const BUBBLE_EVERY = 0.5; // s between bubbles
 const WIND = vec3(0.35, 0, -0.2); // smoke drifts a little this way (m/s)
 
 // fire: {pos, flames: [{m, phase}], glow, smoke: [{m, age}], smokeTimer, crackleTimer, sparkTimer}
 const fire = { pos: null };
-// spring: {pos, bubbles: [{m, age, x, z}], ripples: [{m, age}], bubbleTimer}
-const spring = { pos: null };
+// spring: {spot} (world/bubble-spot.js)
+const spring = { spot: null };
 
 const unlit = (color, opacity = 1) =>
   new THREE.MeshBasicMaterial({
@@ -79,28 +79,12 @@ export function addCampfire(pos) {
 
 // pos: {x, y, z} the middle of the spring, at the water's surface
 export function addSpringBubbles(pos) {
-  spring.pos = vec3(pos.x, pos.y, pos.z);
-  const bubbleMaterial = unlit(0xffffff, 0.75);
-  const bubbleGeometry = new THREE.IcosahedronGeometry(0.09, 1);
-  spring.bubbles = Array.from({ length: 8 }, () => {
-    const m = mesh(bubbleGeometry, bubbleMaterial, { castShadow: false });
-    m.visible = false;
-    scene.add(m);
-    return { m, age: Infinity, x: 0, z: 0 };
-  });
-  const ringGeometry = new THREE.RingGeometry(0.85, 1, 24).rotateX(-Math.PI / 2);
-  spring.ripples = Array.from({ length: 4 }, () => {
-    const m = mesh(ringGeometry, unlit(0xffffff, 0), { castShadow: false });
-    m.visible = false;
-    scene.add(m);
-    return { m, age: Infinity };
-  });
-  spring.bubbleTimer = 0;
+  spring.spot = addBubbleSpot(pos);
 }
 
 export function updateAmbience(dt, p) {
   if (fire.pos && distXZ(p, fire.pos.x, fire.pos.z) < SEE_REACH) updateFire(dt, p);
-  if (spring.pos && distXZ(p, spring.pos.x, spring.pos.z) < SEE_REACH) updateSpring(dt);
+  spring.spot?.update(dt, p);
 }
 
 /* the campfire */
@@ -168,60 +152,4 @@ function updatePuff(puff, dt) {
   puff.m.position.addScaledVector(WIND, dt * t * 2);
   puff.m.scale.setScalar(0.6 + t * 2.4);
   puff.m.material.opacity = Math.sin(t * Math.PI) * 0.45;
-}
-
-/* the spring */
-
-function updateSpring(dt) {
-  spring.bubbleTimer -= dt;
-  if (spring.bubbleTimer <= 0) {
-    spring.bubbleTimer = BUBBLE_EVERY * (0.5 + Math.random());
-    const bubble = spring.bubbles.find((each) => each.age === Infinity);
-    if (bubble) {
-      bubble.age = 0;
-      bubble.x = spring.pos.x + (Math.random() - 0.5) * 2.4;
-      bubble.z = spring.pos.z + (Math.random() - 0.5) * 2.4;
-      bubble.m.visible = true;
-    }
-  }
-  for (const bubble of spring.bubbles) updateBubble(bubble, dt);
-  for (const ripple of spring.ripples) updateRipple(ripple, dt);
-}
-
-// from the bottom of the pool to the surface in 1.2 s, wobbling, then a ripple
-function updateBubble(bubble, dt) {
-  if (bubble.age === Infinity) return;
-  bubble.age += dt;
-  const t = bubble.age / 1.2;
-  if (t >= 1) {
-    bubble.age = Infinity;
-    bubble.m.visible = false;
-    startRipple(bubble);
-    return;
-  }
-  const wobble = Math.sin(bubble.age * 14) * 0.04;
-  bubble.m.position.set(bubble.x + wobble, spring.pos.y - 0.9 + t * 0.9, bubble.z);
-  bubble.m.scale.setScalar(0.6 + t * 0.6);
-}
-
-function startRipple(bubble) {
-  const ripple = spring.ripples.find((each) => each.age === Infinity);
-  if (!ripple) return;
-  ripple.age = 0;
-  ripple.m.visible = true;
-  ripple.m.position.set(bubble.x, spring.pos.y + 0.03, bubble.z);
-}
-
-// a ring spreading out to 0.8 m and fading over 1.4 s
-function updateRipple(ripple, dt) {
-  if (ripple.age === Infinity) return;
-  ripple.age += dt;
-  const t = ripple.age / 1.4;
-  if (t >= 1) {
-    ripple.age = Infinity;
-    ripple.m.visible = false;
-    return;
-  }
-  ripple.m.scale.setScalar(0.15 + t * 0.65);
-  ripple.m.material.opacity = (1 - t) * 0.6;
 }

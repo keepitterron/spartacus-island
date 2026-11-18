@@ -141,8 +141,12 @@ function findHiddenCrabs(p, { reach, maxDy }) {
       popCrab(c);
 }
 // barking finds hidden crabs a little further away than walking up
-export const barkCrabs = (p) => findHiddenCrabs(p, { reach: 5, maxDy: 2 });
+export const barkCrabs = (p) => findHiddenCrabs(p, { reach: 6.5, maxDy: 2 });
 export const touchCrabs = (p) => findHiddenCrabs(p, { reach: 2.2, maxDy: 1.6 });
+
+// a hidden crab up on a rock above Spartacus (he has to get up there first)
+export const crabAbove = (p, r) =>
+  crabs.some((c) => c.state === 'hidden' && distXZ(p, c.x, c.z) < r && c.y - p.y > 2);
 
 export const crabNear = (p, r) =>
   crabs.some((c) => (c.state === 'hidden' || c.state === 'inClump') && distXZ(p, c.x, c.z) < r);
@@ -151,17 +155,37 @@ export function crabsParty() {
   for (const c of crabs) if (c.state === 'follow' || c.state === 'pop') c.state = 'party';
 }
 
-// the bubbles that give a hiding crab away
+// the bubbles that give a hiding crab away: a steady trickle, and now and then a tall column
+// that shows over rocks and through the murk (three of the crabs sit up on tall rocks)
+const COLUMN_EVERY = 3; // s between two columns from the same crab
 function blowBubbles(pos) {
   burst(pos, {
-    count: 2,
+    count: 3,
     color: [0xffffff, 0xdff9ff],
     speed: 0.4,
     up: 3,
     life: 2.6,
-    size: 0.9,
+    size: 1.5,
     gravity: -0.12,
   });
+}
+function blowColumn(pos) {
+  burst(pos, {
+    count: 12,
+    color: [0xffffff, 0xdff9ff],
+    speed: 0.5,
+    up: 7,
+    life: 3,
+    size: 1.6,
+    gravity: -0.1,
+  });
+}
+function bubbleUp(c, dt, pos) {
+  if (Math.random() < dt * 2.5) blowBubbles(pos);
+  c.columnTimer = (c.columnTimer ?? Math.random() * COLUMN_EVERY) - dt;
+  if (c.columnTimer > 0) return;
+  c.columnTimer = COLUMN_EVERY;
+  blowColumn(pos);
 }
 
 // walk along Spartacus's trail, 3 trail points further back per parade slot
@@ -198,13 +222,13 @@ export function updateCrabs(dt) {
     c.t += dt;
     switch (c.state) {
       case 'inClump':
-        if (Math.random() < dt * 2.5) blowBubbles(vec3(c.x, c.y + 0.8, c.z));
+        bubbleUp(c, dt, vec3(c.x, c.y + 0.8, c.z));
         break;
       case 'hidden':
         // the shell jiggles now and then
         c.g.position.y = c.y + Math.abs(Math.sin(T * 2 + c.x)) * 0.03;
         c.g.rotation.z = Math.sin(T * 9 + c.x) * (Math.sin(T * 1.3 + c.x) > 0.5 ? 0.18 : 0);
-        if (Math.random() < dt * 2.5) blowBubbles(c.g.position.clone().add(vec3(0, 0.4, 0)));
+        bubbleUp(c, dt, c.g.position.clone().add(vec3(0, 0.4, 0)));
         break;
       case 'pop':
         c.g.position.y = c.y + Math.sin(Math.min(1, c.t / 0.5) * Math.PI) * 0.8;

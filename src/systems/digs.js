@@ -1,5 +1,6 @@
 // Sand mounds you dig up with the action button. reward(dig) runs when digging finishes
-// (spawn a pickup, hand Spartacus an item…). marked=true paints a red X on it.
+// (spawn a pickup, hand Spartacus an item…). marked=true paints a red X on it. holdsPickup=true says
+// one of the island's collectibles is inside (the last few sparkle, systems/collect.js).
 import * as THREE from 'three';
 import { distXZ, spotKey, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
@@ -15,7 +16,11 @@ const digs = [];
 const holeMaterial = new THREE.MeshStandardMaterial({ color: 0xb08a4a, roughness: 1 });
 const DIG_TIME = 1.1;
 
-export function addDig(x, z, { reward, marked = false, y = terrainHeight(x, z) }) {
+export function addDig(
+  x,
+  z,
+  { reward, marked = false, holdsPickup = false, y = terrainHeight(x, z) },
+) {
   const mound = mesh(new THREE.SphereGeometry(0.65, 9, 6), material(0xf0c86a), {
     receiveShadow: true,
   });
@@ -33,10 +38,14 @@ export function addDig(x, z, { reward, marked = false, y = terrainHeight(x, z) }
       scene.add(bar);
       marks.push(bar);
     }
-  const dig = { x, z, y, mound, marks, reward, dug: false, island: ownerIsland() };
+  const dig = { x, z, y, mound, marks, reward, holdsPickup, dug: false, island: ownerIsland() };
   digs.push(dig);
   return dig;
 }
+
+// mounds on an island that still have a collectible inside
+export const undugPickupDigs = (island) =>
+  digs.filter((dig) => dig.island === island && dig.holdsPickup && !dig.dug);
 
 export const digNear = (pos, radius) =>
   digs.find((dig) => !dig.dug && distXZ(pos, dig.x, dig.z) < radius);

@@ -3,7 +3,7 @@ import { CENTER_4 } from '../../world/layout.js';
 
 // Shared layout of the Bubbly Ocean: the sea floor basin around CENTER_4, the seaweed lane
 // and the bubble vent canyon. Used by every island4 module.
-// PLACEHOLDER LAYOUT until Zoë draws the map: positions use toWorld(x, z) island-local coordinates.
+// Positions use toWorld(x, z) island-local coordinates.
 export const SEA_BED_Y = -20;
 export const toWorld = (x, z) => ({ x: CENTER_4.x + x, z: CENTER_4.z + z });
 

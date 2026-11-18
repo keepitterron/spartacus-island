@@ -182,7 +182,10 @@ function dropCrate(cove, { quiet = false } = {}) {
     up: 2,
     life: 0.6,
   });
-  toast('Bonk! The crate fell down. Jump on it and SLAM it open!', 3400);
+  toast(
+    `Bonk! The crate fell down. Jump on it and SLAM it open (${actionKeyName()} in the air)!`,
+    3600,
+  );
 }
 function breakCrate(cove, { quiet = false } = {}) {
   const { crate, rope, col } = cove.crane;
@@ -234,10 +237,17 @@ function makeIslet(cove) {
           `The bridge is tied up! Eduardo can Pinch the rope (${actionKeyName()}).`,
           3600,
         );
+      const belowRock = distXZ(p, rock.x, rock.z) < 5 && p.y < rock.y - 1.5;
+      if (!cove.bridgeDown && belowRock)
+        hintOnce('coveTall', 'Too tall to climb! The bridge up on the hill could reach it.', 3400);
       if (onRock(p) && cove.crate === 'hanging')
         hintOnce('coveCrate', 'A crate on a rope! Stand under it and Pinch.', 3200);
       if (onRock(p) && cove.crate === 'dropped')
-        hintOnce('coveSlam', 'Jump on the crate, then SLAM it in the air!', 3200);
+        hintOnce(
+          'coveSlam',
+          `Jump on the crate, then press ${actionKeyName()} in the air to SLAM it!`,
+          3200,
+        );
       if (onRock(p) && !cove.shellFetched)
         hintOnce('coveShell', 'A shell up on the crane! Bark to call Mango.', 3200);
     },
@@ -257,7 +267,7 @@ function makeIslet(cove) {
     },
     // a slam landing on top of the dropped crate breaks it
     pound(p) {
-      const onCrate = distXZ(p, rock.x, rock.z) < 1 && Math.abs(p.y - (rock.y + 1.1)) < 0.6;
+      const onCrate = distXZ(p, rock.x, rock.z) < 1.4 && Math.abs(p.y - (rock.y + 1.1)) < 0.6;
       if (cove.crate === 'dropped' && onCrate) breakCrate(cove);
     },
     save: () => ({

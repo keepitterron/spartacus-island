@@ -32,8 +32,7 @@ import { hintTooHigh } from '../../game/interact.js';
    Mango fetches a flower, the bees trade it for a key, the key opens the water gate,
    the stream refills Wasabi's spring and she swims down to the ship.
 
-   PLACEHOLDER LAYOUT until Zoë draws the map. Everything is positioned with toWorld(x, z) in
-   island-local coordinates, so her layout can be dropped in by editing the numbers. */
+   Everything is positioned with toWorld(x, z) in island-local coordinates. */
 
 const toWorld = (x, z) => ({ x: CENTER_3.x + x, z: CENTER_3.z + z });
 const SPRING = { x: CENTER_3.x - 12, z: CENTER_3.z - 4 }; // Wasabi's spring
@@ -490,6 +489,7 @@ function build() {
   addPickup(MUSHROOM.x, MUSHROOM.z, { y: MUSHROOM.top, island: 3 });
   const buried = toWorld(-16, 9);
   addDig(buried.x, buried.z, {
+    holdsPickup: true,
     reward: (dig) => {
       addPickup(dig.x, dig.z, { y: dig.y, island: 3, pop: 0.6 });
       toast('A buried golden acorn!', 1800);
@@ -781,6 +781,15 @@ const island = {
       });
     if (!flowerCalled && distXZ(p, FLOWER.x, FLOWER.z) < 5.5)
       hintOnce('flower', 'That flower is too high… Bark to call Mango!', 3600);
+    // the golden hook from the junction treetop to the acorn tree (island 2's hook hint is long gone)
+    const onJunctionTop =
+      distXZ(p, junctionTree.x, junctionTree.z) < 3 && Math.abs(p.y - junctionTree.top) < 1.2;
+    if (onJunctionTop && !player.canStretch)
+      hintOnce(
+        'hook3',
+        'A golden hook to the acorn tree! Eat a Stretchy fruit, then climb back up here.',
+        4000,
+      );
     hintTooHigh(
       distXZ(p, MUSHROOM.x, MUSHROOM.z) < 4,
       'Too high! A Boing-Boing jump could reach it.',

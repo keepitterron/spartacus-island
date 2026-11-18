@@ -186,6 +186,7 @@ function buildLate() {
   });
   const boneDig = toWorld(-15, -9);
   addDig(boneDig.x, boneDig.z, {
+    holdsPickup: true,
     reward: (dig) => {
       addPickup(dig.x, dig.z, { y: dig.y, island: 2, pop: 0.6 });
       toast('A buried bone!', 1800);
@@ -275,7 +276,10 @@ const island = {
   buildLate,
   interact(p) {
     const { mesa, westPad, eastPad, mangoPillar } = spots;
-    hintTooHigh(distXZ(p, mesa.x, mesa.z) < 5.5, 'Too high! A Boing-Boing fruit grows nearby.');
+    hintTooHigh(
+      distXZ(p, mesa.x, mesa.z) < 5.5,
+      'Something’s buried up on that flat rock… A Boing-Boing fruit grows nearby!',
+    );
     const nearPad = distXZ(p, westPad.x, westPad.z) < 3 || distXZ(p, eastPad.x, eastPad.z) < 3;
     if (!player.canStretch && nearPad)
       hintOnce('hook', 'Golden hooks! Spartacus needs a Stretchy fruit to swing.', 3400);
@@ -286,7 +290,11 @@ const island = {
       distXZ(p, mangoPillar.x, mangoPillar.z) < 3 &&
       player.carrying?.id !== 'snack'
     )
-      hintOnce('mango', 'Mango is too hungry to fly. Find his snack!', 3200);
+      hintOnce(
+        'mango',
+        'Mango is too hungry to fly. His snack is buried on the big flat rock!',
+        3600,
+      );
     // walking onto the dock with Mango on the hat: he flies up to the crow's nest
     if (
       mango.state === 'riding' &&
@@ -313,7 +321,7 @@ const island = {
     if (mango.state !== 'hungry' || distXZ(p, spots.mangoPillar.x, spots.mangoPillar.z) >= 8)
       return;
     sfx.parrot();
-    say('Mango', 'Snack? Snack?', { auto: true });
+    say('Mango', 'Snack? Snack? Buried on the big flat rock!', { auto: true });
   },
 };
 export default island;

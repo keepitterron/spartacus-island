@@ -54,6 +54,7 @@ import {
   barkCrabs,
   touchCrabs,
   crabNear,
+  crabAbove,
   crabsParty,
 } from './crabs.js';
 import { eduardo, buildEduardo, updateEduardo, eek, eduardoToShip } from './eduardo.js';
@@ -699,6 +700,12 @@ function interact(p) {
       'See the bubbles? A hermit crab is hiding there! Walk up close or bark.',
       3800,
     );
+  if (crabAbove(p, 9))
+    hintOnce(
+      'crabAbove',
+      'Bubbles from up on that rock! A hermit crab is hiding up there. Find a way up.',
+      3800,
+    );
   if (eduardo.state === 'idle0' && distXZ(p, eduardo.g.position.x, eduardo.g.position.z) < 5) eek();
   if (
     !octo.awake &&
@@ -719,7 +726,11 @@ function interact(p) {
   )
     hintOnce('chopneed', 'Seaweed in the way! A Chop-Chop fruit could cut through it.', 3400);
   if (distToSegmentXZ(p, CANYON_START, canyonPoint(3, 0)) < 2.5)
-    hintOnce('vents', 'Bubble vents! Wait until they stop, then dash through.', 3400);
+    hintOnce(
+      'vents',
+      'Bubble vents! Wait until they stop, then dash through… something pink is at the end!',
+      3400,
+    );
   if (distXZ(p, LIFT_VENT.x, LIFT_VENT.z) < 3)
     hintOnce('lift', 'This vent pushes UP! Stand on it when it bubbles.', 3200);
   if (octo.awake && distToSegmentXZ(p, LANE_START, lanePoint(4, 0)) < 2.5)

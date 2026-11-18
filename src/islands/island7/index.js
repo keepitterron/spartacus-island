@@ -99,7 +99,7 @@ import { buildSlide } from './arrive.js';
 // that makes him GIANT (player/mega.js). Touch a rocket and it flies home to the stand
 // (rockets.js); with all five there, at night, he lights the show (fireworks.js). Leo the
 // magpie finds golden tickets for a woof (scout.js). The map is in layout.js; the design, and
-// what's a placeholder until Zoë has her say, is in docs/island7.md.
+// what Zoë might want to rename, is in docs/island7.md.
 
 const SEA_FLOOR = -4.6; // deeper than the open-sea depth, so the current carries swimmers home
 const TICKETS = 12;
@@ -564,7 +564,11 @@ function hints(p) {
     if (!tooBigToRide()) hintOnce('cannon', `A cannon! Press ${actionKeyName()} to hop in.`, 3200);
   }
   if (onJelly(JELLIES.length - 1, p) && !island.done.fairJelly)
-    hintOnce('jellySlam', 'The cake is very high… Jump, then Slam down on this jelly!', 4000);
+    hintOnce(
+      'jellySlam',
+      `The cake is very high… Jump, then press ${actionKeyName()} in the air to SLAM this jelly!`,
+      4000,
+    );
   const garden = toWorld(GARDEN.x, GARDEN.z),
     fromHedge = distXZ(p, garden.x, garden.z) - GARDEN.radius;
   if (fromHedge > 0 && fromHedge < 4 && !player.giant && !island.done.fairGarden)

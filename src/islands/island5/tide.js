@@ -91,7 +91,7 @@ function makeIslet(tide) {
       }
     },
     interact(p) {
-      const nearRock = distXZ(p, moon.x, moon.z) < 10;
+      const nearRock = distXZ(p, moon.x, moon.z) < 16; // from the beach, not just the water
       if (nearRock && daylight.night < 0.5)
         hintOnce(
           'tideHigh',

@@ -1,12 +1,12 @@
 # Spartacus's Island
 
-A cosy 3D browser game Claudio is building for his daughter Zoë (9). Spartacus, the family dog, is a pirate pup who sails from island to island, eats fruits that give him powers, solves gentle puzzles and gathers a crew of animal friends. Zoë invents the story and the levels; we build them.
+A cosy 3D browser game Claudio is building for his daughter Zoë (9). Spartacus, the family dog, is a pirate pup who sails from island to island, eats fruits that give him powers, solves gentle puzzles and gathers a crew of animal friends. Zoë loves surprises: she gives a direction now and then (a friend, a place, a fruit) and play-tests; we design the levels, puzzles and story around it.
 
 Vite + plain ES modules + three.js 0.160.0 (+ Rapier, only for physics toys), deployed as a PWA to https://keepitterron.github.io/spartacus-island/ on every push to `main`.
 
 ## Read first
 
-- **[docs/design-rules.md](docs/design-rules.md) before changing gameplay.** No conflict, failing costs seconds never progress, one power at a time, every new thing gets a hint, Zoë writes the story, Spartacus never changes (no dress-up). Its feedback log lists what she has already said no to.
+- **[docs/design-rules.md](docs/design-rules.md) before changing gameplay.** No conflict, failing costs seconds never progress, one power at a time, every new thing gets a hint and is easy to spot, surprises for Zoë (she steers, we design), Spartacus never changes (no dress-up). Its feedback log lists what she has already said no to.
 - [docs/architecture.md](docs/architecture.md): folders, boot order, state machine, the frame.
 - [docs/islands.md](docs/islands.md): the island interface and how to add a level.
 - [docs/levels.md](docs/levels.md): laying out islands in Blender (`levels/*.blend` → `.glb`): ground, colliders, markers. Island 1 is the example. Island designs: [island1.md](docs/island1.md) (the bigger remake), [island5.md](docs/island5.md), [island6.md](docs/island6.md), [island7.md](docs/island7.md).

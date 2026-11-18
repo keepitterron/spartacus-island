@@ -254,6 +254,7 @@ const BUILT_IN = {
       addDig(marker.x, marker.z, {
         y: marker.ground,
         marked: marker.arg === 'marked',
+        holdsPickup: true,
         reward: (spot) => {
           addPickup(spot.x, spot.z, { y: spot.y, island: island.id, pop: 0.6 });
           toast(`A buried ${island.collect.name.toLowerCase()}!`, 1800);

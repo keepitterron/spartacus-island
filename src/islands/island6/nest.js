@@ -116,7 +116,10 @@ export function buildNest(toWorld, { island }) {
         if (!state.saidShiny) {
           state.saidShiny = true;
           say('Leo', 'Shiny? Shiny?', { at: nest, reach: 8 });
-          toast('He only swaps for something shiny.', 3400);
+          toast(
+            'He only swaps for something shiny… Something glints past the Tickle Tunnels!',
+            3800,
+          );
         }
     },
     action(p) {

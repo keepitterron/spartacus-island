@@ -19,6 +19,7 @@ import { addBall, ballsNear } from '../../systems/balls.js';
 import { player } from '../../player/player.js';
 import { wasabi, wasabiFetch } from '../../npcs/wasabi.js';
 import { revealStar } from './stars.js';
+import { addBubbleSpot } from '../../world/bubble-spot.js';
 
 const HEDGE_RADIUS = 11.5;
 const HEDGE_CLUMPS = 32;
@@ -28,6 +29,11 @@ const PLATE_RADIUS = 8.5; // plates and balls sit on the ring between the hedge 
 const PLATE_ANGLES = [Math.PI / 2, (Math.PI * 7) / 6, (Math.PI * 11) / 6];
 const BALL_ANGLES = [Math.PI / 6, (Math.PI * 5) / 6];
 const OUT_TO_SEA = new THREE.Vector2(1, 0.6).normalize(); // the bubbles are off this side
+// Wasabi's bubbles: big, and floating up high enough to be seen over the hedge from inside the
+// garden, with soft pops to look round for
+const BUBBLES_HINT_REACH = 12; // m: "Bubbles! …" comes up this close
+const BUBBLES_BARK_REACH = 8; // m: a woof this close calls Wasabi
+const BUBBLES_POP_REACH = 22; // m: the pops can be heard this close
 
 // center: the islet's middle (world). addStar(name, pos) makes its hidden blue star.
 export function buildKelpGarden(center, { addStar }) {
@@ -50,6 +56,10 @@ export function buildKelpGarden(center, { addStar }) {
     x: center.x + OUT_TO_SEA.x * 20.5,
     z: center.z + OUT_TO_SEA.y * 20.5,
   };
+  kelp.bubbleSpot = addBubbleSpot(
+    { x: kelp.bubbles.x, y: 0, z: kelp.bubbles.z },
+    { size: 3, spread: 3, every: 0.16, popReach: BUBBLES_POP_REACH, float: 6 },
+  );
   let r = 14;
   while (r > 12.6 && terrainHeight(center.x + OUT_TO_SEA.x * r, center.z + OUT_TO_SEA.y * r) < 0.2)
     r -= 0.2;
@@ -184,22 +194,9 @@ function openClam(kelp, { quiet = false } = {}) {
   toast('All three balls are on the plates! The giant clam opens…', 3400);
 }
 
-// bubbles rise where the lost ball is, until Wasabi has fetched it
-function updateBubbles(kelp, dt) {
-  if (kelp.wasabiBall || Math.random() > dt * 6) return;
-  const { x, z } = kelp.bubbles;
-  burst(vec3(x + (Math.random() - 0.5), 0.05, z + (Math.random() - 0.5)), {
-    count: 2,
-    color: [0xffffff, 0xbff3ff],
-    speed: 0.6,
-    up: 2.5,
-    life: 0.6,
-    size: 0.8,
-  });
-}
-
 function callWasabi(kelp) {
   kelp.wasabiBall = true;
+  kelp.bubbleSpot.stop();
   toast('Wasabi heard you! She dives down to the bubbles…', 2800);
   const carried = mesh(new THREE.SphereGeometry(0.45, 14, 10), material(0xf2545b));
   wasabiFetch({
@@ -220,7 +217,7 @@ function makeIslet(kelp) {
   return {
     update(dt) {
       updatePlates(kelp, dt);
-      updateBubbles(kelp, dt);
+      kelp.bubbleSpot.update(dt, player.pos);
       if (kelp.clamOpen && kelp.open < 1) {
         kelp.open = Math.min(1, kelp.open + dt * 0.8);
         kelp.clam.lid.rotation.x = -1.1 * kelp.open;
@@ -242,10 +239,10 @@ function makeIslet(kelp) {
       if (!kelp.wasabiBall && emptyPlates === 1 && fromCenter < HEDGE_RADIUS)
         hintOnce(
           'kelpLastBall',
-          'One ball is missing! Find the bubbles out at sea and bark for Wasabi.',
+          'One ball is missing! See the bubbles floating up past the hedge? Bark for Wasabi there.',
           4200,
         );
-      if (!kelp.wasabiBall && distXZ(p, bubbles.x, bubbles.z) < 5)
+      if (!kelp.wasabiBall && distXZ(p, bubbles.x, bubbles.z) < BUBBLES_HINT_REACH)
         hintOnce(
           'kelpBubbles',
           'Bubbles! Something is stuck down there. Bark to call Wasabi!',
@@ -253,7 +250,12 @@ function makeIslet(kelp) {
         );
     },
     bark(p) {
-      if (kelp.wasabiBall || wasabi.state !== 'crew' || distXZ(p, bubbles.x, bubbles.z) > 5) return;
+      if (
+        kelp.wasabiBall ||
+        wasabi.state !== 'crew' ||
+        distXZ(p, bubbles.x, bubbles.z) > BUBBLES_BARK_REACH
+      )
+        return;
       callWasabi(kelp);
     },
     save: () => ({
@@ -265,6 +267,7 @@ function makeIslet(kelp) {
       for (const i of state.chopped ?? []) cutClump(kelp.clumps[i], { quiet: true });
       if (state.wasabiBall) {
         kelp.wasabiBall = true;
+        kelp.bubbleSpot.stop();
         if (!state.clamOpen) addBall(kelp.drop.x, kelp.drop.z);
       }
       if (state.clamOpen) openClam(kelp, { quiet: true });

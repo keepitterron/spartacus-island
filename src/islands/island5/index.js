@@ -276,6 +276,7 @@ function buildLate() {
   addFruit(chop.x, chop.z, { type: 'chop', y: terrainHeight(chop.x, chop.z), bush: true });
   const dig = toWorld(-47, -37);
   addDig(dig.x, dig.z, {
+    holdsPickup: true,
     // fine to run again when a save is put back (see systems/digs.js)
     reward: (d) => {
       addPickup(d.x, d.z, { y: d.y, island: 5, pop: 0.6 });
