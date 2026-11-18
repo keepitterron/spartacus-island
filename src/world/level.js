@@ -313,6 +313,13 @@ const BUILT_IN = {
   fish(marker, island) {
     addCritterSpot('fish', { marker, island, extra: [marker.y] });
   },
+  // one bird sitting at the empty's height: on a signpost, a mast, a roof (put it a little above
+  // the top; the critters are built last and snap it down onto what's there)
+  perch(marker, island) {
+    addCritterSpot('perches', { marker, island, extra: [marker.y] });
+  },
+  leaps: (marker, island) => addCritterSpot('leaps', { marker, island }),
+  frogs: (marker, island) => addCritterSpot('frogs', { marker, island }),
 };
 
 const localXZ = (marker, island) => [marker.x - island.center.x, marker.z - island.center.z];

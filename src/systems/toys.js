@@ -6,6 +6,8 @@
 // Rapier is WebAssembly and loads in its own chunk the first time an island adds a toy area, so
 // nothing waits for it at boot. Toys aren't saved: a reload puts them back where they started.
 // A toy that falls in the sea bobs for a moment, then pops back where it started.
+// An underwater area (island 4's sea floor) has low gravity and thick water: toys drift up, turn
+// slowly and settle again, like shells and urchins would.
 import * as THREE from 'three';
 import { distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
@@ -22,12 +24,14 @@ const CELL = 0.5; // heightfield spacing, like the level's baked heights
 const ACTIVE_RANGE = 45; // m past an area's edge: further away, its toys sleep
 const FLOAT_TIME = 2.5; // s bobbing in the sea before popping back home
 const SEA = 0; // the water surface
+// under water: gravity scaled down and lots of drag, so a nudge sends a toy floating off
+const UNDERWATER = { gravityScale: 0.18, linearDamping: 1.6, angularDamping: 1.2 };
 
 // physics: Rapier, its world and the body standing in for Spartacus, once loaded
 const physics = { RAPIER: null, world: null, dog: null, loading: false, carry: 0 };
-// {x, z, size, island}: squares where toys live (size: m across)
+// {x, z, size, island, underwater}: squares where toys live (size: m across)
 const areas = [];
-// {mesh, kind, size, home: {pos, quat}, body, floatTime, island}
+// {mesh, kind, size, home: {pos, quat}, body, floatTime, island, area}
 const toys = [];
 
 /* models */
@@ -67,6 +71,37 @@ function makeBarrel(size, color) {
   }
   return mergeParts(g); // both hoops in one draw call
 }
+// a scallop shell: a flattened half-dome with ridges painted on by its faces
+function makeShell(size, color) {
+  const g = new THREE.Group();
+  const dome = mesh(
+    new THREE.SphereGeometry(size * 0.5, 9, 4, 0, Math.PI * 2, 0, Math.PI / 2),
+    material(color),
+  );
+  dome.scale.y = 0.45;
+  dome.position.y = -size * 0.12;
+  g.add(dome);
+  const hinge = mesh(new THREE.BoxGeometry(size * 0.3, size * 0.12, size * 0.16), material(color));
+  hinge.position.set(0, -size * 0.12, size * 0.48);
+  g.add(hinge);
+  return mergeParts(g);
+}
+// a round sea urchin with soft spikes all over (it's a toy: nothing here pricks)
+function makeUrchin(size, color) {
+  const g = new THREE.Group();
+  const radius = size * 0.32;
+  g.add(mesh(new THREE.IcosahedronGeometry(radius, 1), material(color)));
+  const spike = new THREE.ConeGeometry(size * 0.06, size * 0.3, 4);
+  const directions = new THREE.IcosahedronGeometry(1, 0).getAttribute('position');
+  for (let i = 0; i < directions.count; i += 3) {
+    const dir = vec3().fromBufferAttribute(directions, i).normalize();
+    const part = mesh(spike, material(color));
+    part.position.copy(dir).multiplyScalar(radius + size * 0.1);
+    part.quaternion.setFromUnitVectors(vec3(0, 1, 0), dir);
+    g.add(part);
+  }
+  return mergeParts(g);
+}
 function makeBucket(size, color) {
   const g = new THREE.Group();
   g.add(mesh(new THREE.CylinderGeometry(size * 0.45, size * 0.34, size, 10), material(color)));
@@ -78,20 +113,26 @@ function makeBucket(size, color) {
   g.add(handle);
   return g;
 }
-const MODELS = { crate: makeCrate, barrel: makeBarrel, bucket: makeBucket };
+const MODELS = {
+  crate: makeCrate,
+  barrel: makeBarrel,
+  bucket: makeBucket,
+  shell: makeShell,
+  urchin: makeUrchin,
+};
 
 /* setting up */
 
-// a square, size m across, centred on (x, z), where toys tumble about
-export function addToyArea(x, z, { size = 24 } = {}) {
-  const area = { x, z, size, island: ownerIsland() };
+// a square, size m across, centred on (x, z), where toys tumble about; underwater: on a sea floor
+export function addToyArea(x, z, { size = 24, underwater = false } = {}) {
+  const area = { x, z, size, island: ownerIsland(), underwater };
   areas.push(area);
   if (physics.world) addGround(area);
   else loadPhysics();
 }
 
-// A toy at (x, z): kind crate | barrel | bucket, size (m), color; y is its bottom (the ground by
-// default), yaw its turn. Sleeping until something bumps it, so a stack stays neat till then.
+// A toy at (x, z): kind crate | barrel | bucket | shell | urchin, size (m), color; y is its bottom
+// (the ground by default), yaw its turn. It belongs to the island's nearest toy area. Sleeping until something bumps it, so a stack stays neat till then.
 export function addToy(
   kind,
   { x, z, y = terrainHeight(x, z), size = 0.8, color = '#c48a54', yaw = 0 },
@@ -111,10 +152,22 @@ export function addToy(
     body: null,
     floatTime: 0,
     island: ownerIsland(),
+    area: nearestArea(x, z),
   };
   toys.push(toy);
   if (physics.world) addBody(toy);
   return toy;
+}
+
+function nearestArea(x, z) {
+  const own = areas.filter((area) => area.island === ownerIsland());
+  return own.reduce(
+    (best, area) =>
+      !best || Math.hypot(area.x - x, area.z - z) < Math.hypot(best.x - x, best.z - z)
+        ? area
+        : best,
+    null,
+  );
 }
 
 async function loadPhysics() {
@@ -170,26 +223,33 @@ function addGround(area) {
 function addBody(toy) {
   const { RAPIER, world } = physics;
   const { pos, quat } = toy.home;
+  const water = toy.area?.underwater ? UNDERWATER : null;
   toy.body = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(pos.x, pos.y, pos.z)
       .setRotation(quat)
       .setSleeping(true)
-      .setLinearDamping(0.15)
-      .setAngularDamping(0.4),
+      .setGravityScale(water?.gravityScale ?? 1)
+      .setLinearDamping(water?.linearDamping ?? 0.15)
+      .setAngularDamping(water?.angularDamping ?? 0.4),
   );
-  const half = toy.size / 2;
-  const shape =
-    toy.kind === 'crate'
-      ? RAPIER.ColliderDesc.cuboid(half, half, half)
-      : RAPIER.ColliderDesc.cylinder(half, toy.size * (toy.kind === 'barrel' ? 0.38 : 0.42));
   world.createCollider(
-    shape
+    toyShape(toy)
       .setDensity(toy.kind === 'crate' ? 0.6 : 0.4)
       .setFriction(0.7)
       .setRestitution(0.15),
     toy.body,
   );
+}
+
+// the physics shape that matches each kind of model
+function toyShape({ kind, size }) {
+  const { RAPIER } = physics;
+  const half = size / 2;
+  if (kind === 'crate') return RAPIER.ColliderDesc.cuboid(half, half, half);
+  if (kind === 'urchin') return RAPIER.ColliderDesc.ball(size * 0.4);
+  if (kind === 'shell') return RAPIER.ColliderDesc.cylinder(size * 0.12, size * 0.45);
+  return RAPIER.ColliderDesc.cylinder(half, size * (kind === 'barrel' ? 0.38 : 0.42));
 }
 
 /* playing */
@@ -248,9 +308,12 @@ function updateToy(toy, dt) {
   toy.mesh.position.set(at.x, at.y, at.z);
   const turn = toy.body.rotation();
   toy.mesh.quaternion.set(turn.x, turn.y, turn.z, turn.w);
-  const inSea = at.y < SEA + 0.1 && terrainHeight(at.x, at.z) < SEA;
+  const ground = terrainHeight(at.x, at.z);
+  // under water there's no surface to bob on; anywhere, falling well below the ground (or off
+  // the edge of the heightfield) sends it home
+  const inSea = !toy.area?.underwater && at.y < SEA + 0.1 && ground < SEA;
   toy.floatTime = inSea ? toy.floatTime + dt : 0;
-  if (toy.floatTime > FLOAT_TIME || at.y < -10) sendHome(toy);
+  if (toy.floatTime > FLOAT_TIME || at.y < Math.max(ground, -30) - 4) sendHome(toy);
 }
 
 // back where it started, with sparkles (failing costs seconds, never progress)

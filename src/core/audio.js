@@ -260,6 +260,21 @@ export const sfx = {
   tick() {
     tone(1250, { to: 1250, duration: 0.04, type: 'square', volume: 0.04 });
   },
+  // a frog: two quick low burps, quiet (it's background life, not a call for attention)
+  ribbit() {
+    tone(260, { to: 190, duration: 0.09, type: 'square', volume: 0.025 });
+    tone(300, { to: 210, duration: 0.11, type: 'square', volume: 0.025, delay: 0.12 });
+  },
+  // something small dropping into water: a frog, a fish
+  plip() {
+    tone(700, { to: 1500, duration: 0.07, type: 'sine', volume: 0.07 });
+    noise(0.12, { freq: 1400, volume: 0.06 });
+  },
+  // a little bird settling down
+  tweet() {
+    tone(2600, { to: 3400, duration: 0.06, type: 'sine', volume: 0.04 });
+    tone(2900, { to: 3700, duration: 0.07, type: 'sine', volume: 0.04, delay: 0.1 });
+  },
   // coaster wheels over a rail joint
   clack() {
     noise(0.03, { freq: 2400, volume: 0.14 });

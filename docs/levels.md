@@ -73,6 +73,7 @@ The terrain is a height grid, so it can't have overhangs, caves or arches: make 
 | `fruit:boing`, `fruit:stretch`, … | A regrowing fruit bush (any power in `POWERS`) |
 | `ball` | A beach ball |
 | `birds`, `butterflies`, `fish` | Ambient critters (fish swim at the empty's height) |
+| `frogs`, `leaps`, `perch` | Frogs by a pond edge, fish leaping out of the sea, one bird sitting at the empty's height (snapped onto the signpost or roof just under it). `tools/levels/ambience.py` places them from a table |
 | `spot:name` | Nothing by itself: a named position for the island's code, `level.spots['name']` |
 | anything else | Whatever the island's code says (below), or a console warning |
 

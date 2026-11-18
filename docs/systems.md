@@ -93,6 +93,12 @@ Island 1 has a crate pyramid and barrels at Hallo Harbour and odds and ends on C
 
 Islands list spots: `critters: { birds: [[x, z]], butterflies: [[x, z]], fish: [[x, z, height]] }`. Each spot gets a flock of 6 birds, 3 butterflies or a school of 8 fish. Birds scatter when Spartacus runs or ground-pounds within 4.5, or barks within 10, swirl around and land again ~9 s later. Butterflies loop over their spot and drift away if he comes close. Fish circle and dart round wide after a bark. Every kind is a few `InstancedMesh`es (6 draw calls in total); spots further than 80 aren't animated.
 
+More kinds (Nov 2026), placed as level markers by `tools/levels/ambience.py`:
+
+- **Perched birds** (`perches: [[x, z, y]]`, marker `perch`): one bird sitting up high (on a signpost), looking about. It flies off if Spartacus runs at it, barks or comes within 2.5 m, and lands back. **If he keeps still for 5 s within 15 m of one, it flies over and sits on his hat** (a tweet, and once a toast: "Shh… a little bird is resting on Spartacus's hat!"); it goes home as soon as he moves or barks, and never while something else rides the hat (Eduardo) or the hat is thrown. A surprise for Zoë: ask if she found it.
+- **Leaping fish** (`leaps: [[x, z]]`, marker `leaps`): every 3–8 s, while Spartacus is within 35 m, one fish jumps out of water deeper than 0.8 m near the spot, with a splash and a plip.
+- **Frogs** (`frogs: [[x, z]]`, marker `frogs`, `systems/frogs.js`): three frogs sit on land by water and croak now and then (quietly, only within 16 m). When he comes within 3.2 m or barks, they hop into the water one after another (plip), float with just their eyes out, and climb back once he's 6 m away. A spot with no water within 4.5 m stays put.
+
 ## Movement tuning (`player/player.js`)
 
 `MOVE` holds the tuning numbers (`sprint`, `runAfter`, `fullPush`, `wadeSpeed`, `current`); in debug it's `__g.move`, so you can change them live.
