@@ -325,6 +325,8 @@ function buildTentacleGates() {
         new THREE.SphereGeometry(0.5 - k * 0.03, 8, 6),
         material(k % 2 ? 0xff7a59 : 0xff8f6e),
       );
+      // at its gate from the start, not the world's centre (drawn under island 1's spawn)
+      segment.position.set(center.x, groundY + 0.4, center.z);
       scene.add(segment);
       segments.push(segment);
     }

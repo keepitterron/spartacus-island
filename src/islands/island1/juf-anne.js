@@ -147,7 +147,7 @@ function makePinkTower() {
     g.add(cube);
     y += side;
   }
-  return g;
+  return mergeParts(g); // one draw call, not ten
 }
 
 // a chalkboard on an easel: the lesson's sums and a bone (drawn once the font has loaded)

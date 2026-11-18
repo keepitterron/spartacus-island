@@ -225,6 +225,8 @@ function buildHive() {
       wing.rotation.x = -Math.PI / 2;
       bee.add(wing);
     }
+    // at the hive from the start, not the world's centre: updateBees only runs on this island
+    bee.position.set(HIVE.x, HIVE.y + 1, HIVE.z);
     scene.add(bee);
     HIVE.bees.push({
       g: bee,

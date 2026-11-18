@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { distXZ, vec3 } from '../core/util.js';
 import { scene } from '../core/renderer.js';
-import { canvasTexture, material, mesh } from '../core/materials.js';
+import { canvasTexture, material, mergeParts, mesh } from '../core/materials.js';
 import { game, ownerIsland } from '../core/state.js';
 import { burst } from '../core/fx.js';
 import { colliders } from '../core/colliders.js';
@@ -65,7 +65,7 @@ function makeBarrel(size, color) {
     band.position.y = y * size;
     g.add(band);
   }
-  return g;
+  return mergeParts(g); // both hoops in one draw call
 }
 function makeBucket(size, color) {
   const g = new THREE.Group();

@@ -1,6 +1,6 @@
 // Small reusable models: carryable items and collectibles. Each returns a fresh Group.
 import * as THREE from 'three';
-import { material, mesh } from '../core/materials.js';
+import { material, mergeParts, mesh } from '../core/materials.js';
 
 // a plank of length len (+0.3 overhang) with three darker seams
 export function makePlank(len) {
@@ -70,7 +70,7 @@ export function makeBone() {
       knob.position.set(x, y, 0);
       g.add(knob);
     }
-  return g;
+  return mergeParts(g); // one draw call, not five: there's a bone on every island
 }
 export function makeAcorn() {
   const g = new THREE.Group();

@@ -3,6 +3,7 @@
 // into a place its name comes up as a title card. Islands add them in build() and call
 // visitPlaces(p) from interact(); mid-island saves keep which ones he has seen.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { distXZ } from '../core/util.js';
 import { scene } from '../core/renderer.js';
 import { canvasTexture, material, mesh } from '../core/materials.js';
@@ -11,6 +12,7 @@ import { onFontsReady } from '../core/fx.js';
 import { showTitleCard } from '../core/ui.js';
 import { addCylinder } from '../core/colliders.js';
 import { terrainHeight } from '../world/terrain.js';
+import { addStatic } from '../world/statics.js';
 
 const WOOD = 0xc48a54;
 const POST = 0x7a4a2a;
@@ -79,18 +81,15 @@ function makeArrow(text, { length = 1.9, height = 0.4 } = {}) {
   return g;
 }
 
-// the painted text: one plane each side, both readable
+// the painted text: one plane each side, both readable, in one mesh (one draw call)
 function addLettering(g, text, { width, height, depth }) {
   const paint = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
-  for (const side of [1, -1]) {
-    const plane = mesh(new THREE.PlaneGeometry(width, height), paint, {
-      castShadow: false,
-      receiveShadow: false,
-    });
-    plane.position.z = side * (depth / 2 + 0.005);
-    if (side < 0) plane.rotation.y = Math.PI;
-    g.add(plane);
-  }
+  const sides = [1, -1].map((side) => {
+    const plane = new THREE.PlaneGeometry(width, height);
+    if (side < 0) plane.rotateY(Math.PI);
+    return plane.translate(0, 0, side * (depth / 2 + 0.005));
+  });
+  g.add(mesh(mergeGeometries(sides), paint, { castShadow: false, receiveShadow: false }));
   onFontsReady(() => {
     paint.map = canvasTexture(512, Math.round((512 * height) / width), (ctx, w, h) =>
       drawLettering(ctx, { text, w, h }),
@@ -138,6 +137,11 @@ export function addSignpost(x, z, { name, faceTo, arrows = [] }) {
     arrow.position.x = along.x;
     arrow.position.z = along.z;
     g.add(arrow);
+  });
+  // the post and boards never move: merge them with the island's scenery (the painted text has
+  // its own texture and stays as it is)
+  g.traverse((child) => {
+    if (child.isMesh && !child.material.isMeshBasicMaterial) addStatic(child);
   });
   addCylinder(x, z, { r: 0.15, bottom: y - 1, top: y + tall + 0.3 });
 }
