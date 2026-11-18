@@ -137,6 +137,16 @@ export function givePillow() {
   completeTask('sleep');
 }
 
+// putting a save back: already in bed with the pillow (pillowMesh: the pillow item's mesh)
+export function octoInBed(pillowMesh) {
+  octo.awake = false;
+  octo.moveT = 1;
+  shuffleToBed(0);
+  octo.g.attach(pillowMesh);
+  pillowMesh.position.set(0, 0.6, 1.7);
+  pillowMesh.rotation.set(0.4, 0, 0);
+}
+
 // shuffle aside to bed over 2.5s (and take his collider with him), clearing the lane
 function shuffleToBed(dt) {
   octo.moveT = Math.min(1, octo.moveT + dt / 2.5);

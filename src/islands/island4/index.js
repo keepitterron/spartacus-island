@@ -46,7 +46,7 @@ import {
   CANYON_LENGTH,
   canyonPoint,
 } from './geo.js';
-import { octo, buildOcto, updateOcto, wakeOcto, givePillow } from './octopus.js';
+import { octo, buildOcto, updateOcto, wakeOcto, givePillow, octoInBed } from './octopus.js';
 import {
   CRABS_TOTAL,
   crabCount,
@@ -57,8 +57,19 @@ import {
   crabNear,
   crabAbove,
   crabsParty,
+  foundCrabs,
+  restoreCrabs,
 } from './crabs.js';
-import { eduardo, buildEduardo, updateEduardo, eek, eduardoToShip } from './eduardo.js';
+import {
+  eduardo,
+  buildEduardo,
+  updateEduardo,
+  eek,
+  eduardoToShip,
+  eduardoRideHat,
+  ensureEduardoCrew,
+  restoreEduardoChase,
+} from './eduardo.js';
 import { buildWhale, startWhale } from './whale.js';
 
 /* ============ Island 4: Bubbly Ocean (underwater) ============
@@ -78,7 +89,7 @@ function seabedHeight(x, z) {
   );
 }
 
-let surfaceGeo, breathBubble, KELP_PILLAR, LEDGE, SHELF;
+let surfaceGeo, breathBubble, KELP_PILLAR, LEDGE, SHELF, pillowItem;
 const sunRays = [], // {m, phase}
   seaweeds = [], // every clump, see addSeaweed
   tentacleGates = [], // see buildTentacleGates
@@ -354,7 +365,7 @@ function buildCanyon() {
   });
   const q = canyonPoint(CANYON_LENGTH, 0);
   const top = rock(q.x, q.z, { radius: 0.85, height: 0.7, color: 0x9fb3c6 });
-  addItem('pillow', {
+  pillowItem = addItem('pillow', {
     model: makePillow(),
     pos: vec3(q.x, top + 0.2, q.z),
     name: 'pillow',
@@ -730,7 +741,7 @@ function interact(p) {
   }
   if (
     player.power !== 'chop' &&
-    seaweeds.some((c) => !c.cut && c.onChop && distXZ(p, c.x, c.z) < 3)
+    seaweeds.some((c) => c.onChop && !c.cut && distXZ(p, c.x, c.z) < 3)
   )
     hintOnce('chopneed', 'Seaweed in the way! A Chop-Chop fruit could cut through it.', 3400);
   if (distToSegmentXZ(p, CANYON_START, canyonPoint(3, 0)) < 2.5)
@@ -764,12 +775,48 @@ function interact(p) {
     hintOnce('seed4', 'A magic seed! Grow-Grow could make a kelp ladder.', 3400);
 }
 
+/* mid-island saves (game/progress.js) */
+
+const saveState = () => ({
+  chopped: seaweeds.flatMap((clump, i) => (clump.cut ? [i] : [])),
+  crabs: foundCrabs(),
+  eduardoStage: eduardo.stage,
+});
+
+// a clump that was chopped before the save: already cut down, its crab out, nobody shouts
+function cutQuietly(clump) {
+  clump.cut = true;
+  clump.cutT = 1;
+  clump.g.scale.y = 0.12;
+  clump.col.top = -999;
+  if (clump.forest && !island.done.sleep) octo.awake = true;
+  if (clump.crab && !clump.crab.found) {
+    clump.crab.state = 'hidden';
+    clump.crab.g.visible = true;
+  }
+}
+
+function loadState(state) {
+  const { done } = island;
+  for (const i of state.chopped ?? []) if (seaweeds[i]) cutQuietly(seaweeds[i]);
+  restoreCrabs(state.crabs);
+  if (done.sleep) octoInBed(pillowItem.mesh);
+  if (done.ship4) {
+    ensureEduardoCrew();
+    crabsParty();
+  } else if (done.eduardo) eduardoRideHat();
+  else restoreEduardoChase(state.eduardoStage);
+}
+
 const island = {
   id: 4,
   center: CENTER_4,
   sailPath,
   name: 'Bubbly Ocean',
   zMax: -600,
+  savesProgress: true,
+  saveState,
+  loadState,
   height: seabedHeight,
   underwater: true,
   physics: {

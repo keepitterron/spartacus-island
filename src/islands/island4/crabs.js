@@ -151,6 +151,21 @@ export const crabAbove = (p, r) =>
 export const crabNear = (p, r) =>
   crabs.some((c) => (c.state === 'hidden' || c.state === 'inClump') && distXZ(p, c.x, c.z) < r);
 
+/* mid-island saves */
+// which crabs have been found, by build order
+export const foundCrabs = () => crabs.flatMap((c, i) => (c.found ? [i] : []));
+// found crabs join the parade again behind Spartacus (in the order they were found)
+export function restoreCrabs(found = []) {
+  found.forEach((i, slot) => {
+    const c = crabs[i];
+    if (!c) return;
+    Object.assign(c, { found: true, state: 'follow', slot, t: 0 });
+    c.inner.visible = true;
+    c.g.visible = true;
+    c.g.position.copy(player.pos);
+  });
+}
+
 export function crabsParty() {
   for (const c of crabs) if (c.state === 'follow' || c.state === 'pop') c.state = 'party';
 }

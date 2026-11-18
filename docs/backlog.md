@@ -10,7 +10,6 @@ From Zoë and from play-testing. Zoë gives directions and plays the surprises; 
 
 ## Features
 
-- **Mid-island saves for islands 2–4**: the system exists (`savesProgress`, see systems.md) and islands 1, 5, 6 and 7 use it. The older islands would each need a `saveState`/`loadState` for their own story state (bridge fixed, chest open, Mango riding, Eduardo's chase…), and restore-safe dig rewards.
 - **Multiplayer** (the long-term goal): host-authoritative, one browser runs physics, others send inputs. Options: PeerJS/WebRTC with a share code, or PartyKit/Colyseus. Friends play crew members with built-in abilities (Mango glides/carries, Wasabi swims/bubbles, Eduardo pinches), which makes co-op puzzles natural. `stepPlayer` is already isolated, and `P` would become one of several players.
 - **Ship home base** (Minecraft-style): spend bones/acorns/crabs on ship decorations and sail patterns (not on Spartacus: no dress-up, see design-rules.md); rescued friends live on the ship.
 

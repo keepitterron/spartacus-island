@@ -183,6 +183,32 @@ function updateHop(e) {
   completeTask('eduardo');
 }
 
+// putting a save back mid-chase: stage = how many times he had run off. He's back in the first
+// hiding clump from there that's still uncut, or behind the octopus if they're all chopped.
+export function restoreEduardoChase(stage) {
+  const e = eduardo;
+  if (!stage) return;
+  const next = hideClumps.findIndex((clump, i) => i >= stage - 1 && !clump.cut);
+  if (next >= 0) {
+    e.stage = next + 1;
+    e.target = hideClumps[next];
+    e.target.hidesEduardo = true;
+    e.g.position.set(e.target.x, e.target.y, e.target.z);
+    e.g.visible = false;
+    e.state = 'inClump';
+    return;
+  }
+  e.stage = hideClumps.length + 1;
+  e.target = EDUARDO_LAST_HIDE;
+  e.g.position.set(
+    EDUARDO_LAST_HIDE.x,
+    terrainHeight(EDUARDO_LAST_HIDE.x, EDUARDO_LAST_HIDE.z),
+    EDUARDO_LAST_HIDE.z,
+  );
+  e.g.rotation.y = Math.atan2(-LANE_DIR.x, -LANE_DIR.z);
+  e.state = 'behind';
+}
+
 // riding on Spartacus's hat (island 5, where his pincers cut ropes)
 export function eduardoRideHat() {
   const eg = eduardo.g;

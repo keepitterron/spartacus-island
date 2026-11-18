@@ -17,7 +17,7 @@ import { addPickup, pickupText } from '../../systems/collect.js';
 import { addFruit } from '../../systems/powers.js';
 import { addDig } from '../../systems/digs.js';
 import { addHook, swingOption } from '../../systems/hooks.js';
-import { mango, placeMango, mangoHop, mangoToShip } from '../../npcs/mango.js';
+import { mango, placeMango, mangoHop, mangoToShip, ensureMangoCrew } from '../../npcs/mango.js';
 import { startSail } from '../../cutscenes/sail.js';
 import { completeTask } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
@@ -210,12 +210,21 @@ function feedMango() {
   completeTask('feed');
 }
 
+// putting a mid-island save back: Mango follows from the ticked tasks (the cracker tin is an item,
+// put back by the items system after its dig is redone)
+function loadState() {
+  if (island.done.crew) ensureMangoCrew();
+  else if (island.done.feed) mangoHop();
+}
+
 const island = {
   id: 2,
   center: CENTER_2,
   name: 'Hook Rock Bay',
   zMax: -85,
   height,
+  savesProgress: true,
+  loadState,
   tasks: {
     title: 'Hook Rock Bay',
     list: [

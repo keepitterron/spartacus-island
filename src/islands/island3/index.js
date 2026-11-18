@@ -23,7 +23,7 @@ import { addDig } from '../../systems/digs.js';
 import { addHook } from '../../systems/hooks.js';
 import { climbVine, zipVine, vineAction } from '../../systems/vines.js';
 import { mango, ensureMangoCrew, mangoFetch } from '../../npcs/mango.js';
-import { wasabi } from '../../npcs/wasabi.js';
+import { wasabi, wasabiToBucket } from '../../npcs/wasabi.js';
 import { startBubble } from '../../cutscenes/bubble.js';
 import { completeTask } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
@@ -535,11 +535,7 @@ function giveFlower() {
     size: 1,
   });
   setTimeout(() => {
-    const key = addItem('key3', {
-      model: makeKey(),
-      pos: vec3(HIVE.x, HIVE.y + 0.6, HIVE.z),
-      name: 'key',
-    });
+    const key = addKeyItem();
     if (!player.carrying && game.state === 'play') carryItem(key); // if busy, the key just waits on the hive
     toast('Bzz bzz! The bees give Spartacus their shiny key!', 3400);
     completeTask('trade');
@@ -692,12 +688,54 @@ function joinCrew(g) {
   completeTask('wasabi');
 }
 
+/* mid-island saves (game/progress.js) */
+
+// the flower Mango dropped (it's an item from then on)
+function addFlowerItem(pos) {
+  addItem('flower', {
+    model: flowerMesh,
+    pos: vec3(pos.x, pos.y + 0.05, pos.z),
+    name: 'flower',
+    lift: 0.05,
+  });
+}
+const addKeyItem = () =>
+  addItem('key3', { model: makeKey(), pos: vec3(HIVE.x, HIVE.y + 0.6, HIVE.z), name: 'key' });
+
+// putting a save back: everything follows from the ticked tasks. The flower and the key are made
+// again here, and the items system puts them where they were (carried, dropped or used up).
+function loadState() {
+  const { done } = island;
+  if (done.flower) {
+    flowerCalled = true;
+    addFlowerItem(FLOWER);
+  }
+  if (done.trade) addKeyItem();
+  if (done.gate) {
+    GATE.open = 1;
+    GATE.col.top = -99;
+    scene.remove(GATE.lock);
+    for (const hinge of GATE.doors) hinge.rotation.y = hinge.userData.side * -1.6;
+    // the stream is already full; if Wasabi wasn't home yet, she sets off again from her spring
+    flowProgress = 1;
+    streamGeo.setDrawRange(0, streamGeo.index.count);
+    springWater.scale.setScalar(1);
+    springWater.position.y = 0.82;
+  }
+  if (done.wasabi) {
+    wasabiToBucket();
+    if (thirstyLabel) thirstyLabel.visible = false;
+  }
+}
+
 const island = {
   id: 3,
   center: CENTER_3,
   name: 'Mossy Paw Woods',
   zMax: -245,
   height,
+  savesProgress: true,
+  loadState,
   tasks: {
     title: 'Mossy Paw Woods',
     list: [
@@ -830,12 +868,7 @@ const island = {
     flowerCalled = true;
     toast('Mango heard you! Here he comes…', 2400);
     mangoFetch(FLOWER, flowerMesh, (pos) => {
-      addItem('flower', {
-        model: flowerMesh,
-        pos: vec3(pos.x, pos.y + 0.05, pos.z),
-        name: 'flower',
-        lift: 0.05,
-      });
+      addFlowerItem(pos);
       toast(`Mango dropped the flower! Grab it with ${actionKeyName()}.`, 3200);
       completeTask('flower');
     });
