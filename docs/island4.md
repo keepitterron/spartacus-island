@@ -17,3 +17,7 @@ Remade in Nov 2026 (the third round of the [levels plan](levels-plan.md)). The p
 | **Sunken Boat**    | A rowing boat on the sea floor, barrels and crates spilled out. |
 | **Coral Garden**   | Coral and mossy boulders.                                       |
 | **Starfish Flats** | Open sand with starfish and driftwood.                          |
+
+## Tuning notes
+
+- **Vent Canyon** (Nov 2026 play-through): the three push vents' bubbles overlap, so there's nowhere to wait between them. They used to stop in the wrong order (the far one first), which made the canyon impossible to cross down the middle. Now each vent stops 0.6 s after the one before it: a dash just after the first one stops gets through (about 0.7 s of every 3 s, walking or running), and the last vent stops short of the pillow's rock, so standing there to grab it is safe.

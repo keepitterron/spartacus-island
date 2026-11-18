@@ -355,8 +355,9 @@ function buildCanyon() {
   }
   // The vents' bubbles overlap, so there's nowhere to wait between them: each one stops 0.6 s
   // after the one before it, and a dash just after the first one stops rides the gap all the way
-  // (about 0.7 s of every 3 s works, walking or running).
-  [0.3, 0.55, 0.8].forEach((f, i) => {
+  // (about 0.7 s of every 3 s works, walking or running). The last one stops short of the pillow's
+  // rock, so Spartacus can stand there and grab it in peace.
+  [0.28, 0.51, 0.74].forEach((f, i) => {
     const q = canyonPoint(CANYON_LENGTH * f, 0);
     addVent(q.x, q.z, {
       kind: 'push',
