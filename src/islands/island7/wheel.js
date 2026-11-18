@@ -13,7 +13,7 @@ import { toast, hintOnce } from '../../core/ui.js';
 import { addBox, addCylinder } from '../../core/colliders.js';
 import { terrainHeight } from '../../world/terrain.js';
 import { player } from '../../player/player.js';
-import { startRide, endRide, jumpPressed } from '../../systems/rides.js';
+import { startRide, endRide, jumpPressed, cameraBehind } from '../../systems/rides.js';
 import { bulbMaterial } from './decor.js';
 
 const GONDOLAS = 8;
@@ -277,12 +277,15 @@ function rideGondola(wheel, { seatOf, i, deckTop }) {
       const before = player.pos.clone();
       player.pos.copy(seatOf(i));
       player.yaw = 0; // looking south, over the fair
+      // the camera swings round behind him, so pushing forward on the hop out heads for the deck
+      cameraBehind(player.yaw, dt);
       const vel = player.pos.clone().sub(before).divideScalar(Math.max(dt, 1e-3));
       if (player.pos.y > deckTop + 0.6)
         hintOnce('wheelTop', 'Jump out now to land on the Sky Deck!', 3200);
       if (!jumpPressed()) return;
-      // out of the tub towards the south (the Sky Deck is on that side), keeping the wheel's speed
-      endRide(vec3(vel.x, 8.5, 8));
+      // out of the tub towards the south (the Sky Deck is on that side), keeping the wheel's speed;
+      // 10 south lands him about 2 m onto the deck even with hands off the stick (air drag)
+      endRide(vec3(vel.x, 8.5, 10));
       sfx.jump();
     },
   };
