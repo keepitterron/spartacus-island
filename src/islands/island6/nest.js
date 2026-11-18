@@ -99,6 +99,8 @@ export function buildNest(toWorld, { island }) {
       ['leoTiny', 'Tip: a teeny Mini-Me dog is much harder to spot.', 3400],
     ];
     const [id, text, ms] = hints[Math.min(state.spottedCount, hints.length) - 1];
+    // no "a teeny dog is harder to spot" tip for a dog who's already teeny
+    if (id === 'leoTiny' && player.tiny) return;
     hintOnce(id, text, ms);
   }
 

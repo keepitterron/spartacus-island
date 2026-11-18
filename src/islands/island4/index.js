@@ -353,11 +353,14 @@ function buildCanyon() {
     const q = canyonPoint(CANYON_LENGTH + 2, side);
     rock(q.x, q.z, { radius: 1.1, height: 6.5, color: 0x8fa0b4 });
   }
+  // The vents' bubbles overlap, so there's nowhere to wait between them: each one stops 0.6 s
+  // after the one before it, and a dash just after the first one stops rides the gap all the way
+  // (about 0.7 s of every 3 s works, walking or running).
   [0.3, 0.55, 0.8].forEach((f, i) => {
     const q = canyonPoint(CANYON_LENGTH * f, 0);
     addVent(q.x, q.z, {
       kind: 'push',
-      offset: i * 1.0,
+      offset: 3 - i * 0.6, // kept positive: (T + offset) % period must not go below 0
       dir: vec3(-CANYON_DIR.x, 0, -CANYON_DIR.z),
     });
   });
