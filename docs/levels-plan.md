@@ -1,88 +1,98 @@
 # Plan: the island 1 treatment for islands 2–7
 
-**Status:** a proposal (Nov 2026), to agree with Claudio before starting. Open questions at the end.
+**Status:** agreed direction (Nov 2026). Decided with Claudio:
+
+- **We design, Zoë is surprised.** She doesn't want to design islands: she may give a direction (a friend, a place, a fruit) and plays what we make. Nothing waits for her.
+- **Every island moves to Blender.**
+- **iPhone only.** She plays on Claudio's iPhone (landscape, about 844 × 390 points), never on a tablet. Test at that size.
+- **Toys are good:** more of them, on more islands.
+- **Easy to find, still a puzzle** ([design-rules.md](design-rules.md)): a first pass over every island is done (Nov 2026: Wasabi's bubbles, the island 4 crabs, the last collectibles sparkle, hints that say where).
 
 ## What island 1 got
 
-Island 1 went through eight layers of work (Oct–Nov 2026, PRs 22–25 and the commits after):
-
-| #   | Layer                 | What it was                                                                                                 | Needs Zoë? | Shared code?                                                |
-| --- | --------------------- | ----------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| 1   | **Layout remake**     | Twice as wide, laid out in Blender from a map Claudio and Zoë marked up; grey-box made by `make_island1.py` | yes (map)  | pipeline yes, layout no                                     |
-| 2   | **Zoë's beats**       | Juf Anne, Chris, the amethyst crabs                                                                         | yes        | no                                                          |
-| 3   | **Places**            | Names, signposts, a title card the first time you walk in (`systems/places.js`)                             | names      | yes                                                         |
-| 4   | **Mid-island saves**  | Continue puts back tasks, bones, the island's own state                                                     | no         | system yes, each island's state no                          |
-| 5   | **Dressing**          | Grey boxes become invisible colliders with a look on top; ~70 Quaternius models round the places            | no         | `library.py` yes, `dress_island1.py` is island 1's          |
-| 6   | **Alive**             | Campfire, spring bubbles (`island1/ambience.js`); palms sway everywhere                                     | no         | palms yes, the rest island 1's                              |
-| 7   | **Phone performance** | Static scenery merged per patch, instanced palm crowns, `mergeParts` for characters                         | no         | merging yes, but islands 2–7 don't register their own props |
-| 8   | **Readable dialogue** | Messages queue; every character speaks in the speech box (`say`)                                            | no         | **done for every island**                                   |
+| #   | Layer                 | What it was                                                                                      | Shared code?                                                |
+| --- | --------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| 1   | **Layout remake**     | Twice as wide, laid out in Blender; grey-box made by `make_island1.py`                           | pipeline yes, layout no                                     |
+| 2   | **Characters**        | Juf Anne, Chris, the amethyst crabs                                                              | no                                                          |
+| 3   | **Places**            | Names, signposts, a title card the first time you walk in (`systems/places.js`)                  | yes                                                         |
+| 4   | **Mid-island saves**  | Continue puts back tasks, bones, the island's own state                                          | system yes, each island's state no                          |
+| 5   | **Dressing**          | Grey boxes become invisible colliders with a look on top; ~70 Quaternius models round the places | `library.py` yes, `dress_island1.py` is island 1's          |
+| 6   | **Alive**             | Campfire, spring bubbles; palms sway everywhere                                                  | palms and bubbles (`world/bubble-spot.js`) yes              |
+| 7   | **Phone performance** | Static scenery merged per patch, instanced palm crowns, `mergeParts` for characters              | merging yes, but islands 2–7 don't register their own props |
+| 8   | **Readable dialogue** | Messages queue; every character speaks in the speech box (`say`)                                 | **done for every island**                                   |
+| 9   | **Toys**              | Crates and barrels to bowl over (`systems/toys.js`, Rapier)                                      | yes                                                         |
 
 ## Where islands 2–7 stand
 
-Draw calls are at the spawn point, measured in headless Chrome (island 1 is 407 after its performance work, 1,670 before).
+Draw calls at the spawn point, headless Chrome (island 1: 407 after its performance work, 1,670 before).
 
-| #   | Island             | Code  | Layout                                          | Saves | Draw calls | Terrain                      |
-| --- | ------------------ | ----- | ----------------------------------------------- | ----- | ---------- | ---------------------------- |
-| 2   | Hook Rock Bay      | 319   | hand-built, small                               | no    | **480**    | land                         |
-| 3   | Mossy Paw Woods    | 823   | **placeholder**, waiting for Zoë's map          | no    | 389        | land, trees and vines        |
-| 4   | Bubbly Ocean       | 1,748 | **placeholder**, waiting for Zoë's map          | no    | **653**    | underwater                   |
-| 5   | Rainbow Reef       | 1,649 | designed ([island5.md](island5.md))             | yes   | 197        | five islets                  |
-| 6   | Cottoncrest Islets | 1,387 | designed ([island6.md](island6.md))             | yes   | 134        | clouds in the sky            |
-| 7   | Jamboree Island    | 3,294 | designed, a surprise ([island7.md](island7.md)) | yes   | 351        | funfair, rides built in code |
+| #   | Island             | Code  | Saves | Draw calls | Terrain                      | Move to Blender: the hard part                             |
+| --- | ------------------ | ----- | ----- | ---------- | ---------------------------- | ---------------------------------------------------------- |
+| 2   | Hook Rock Bay      | 319   | no    | **480**    | land                         | nothing: rocks, pillars, a mesa                            |
+| 3   | Mossy Paw Woods    | 823   | no    | 389        | land, trees and vines        | trees, vines and ziplines stay code, on markers            |
+| 4   | Bubbly Ocean       | 1,748 | no    | **653**    | underwater                   | the sea floor as ground 20 m down; the canyon and the lane |
+| 5   | Rainbow Reef       | 1,649 | yes   | 197        | five islets in a lagoon      | one ground for all five islets and the sandbar             |
+| 6   | Cottoncrest Islets | 1,387 | yes   | 134        | clouds in the sky            | no ground at all: clouds are platforms (colliders)         |
+| 7   | Jamboree Island    | 3,294 | yes   | 351        | funfair, rides built in code | rides stay code, on markers; the biggest job               |
 
-None of them registers its own props with `addStatic`. All of them still share the seeded `rand()` chain, so changing one island's scenery moves the trees on every island after it (island 1 escapes with `sharedSeedAfter`).
+## Single pass or one at a time, now
 
-## Single pass or one island at a time?
+With Zoë out of the critical path, the main reason for going one island at a time (waiting for her map) is gone. What's left in favour of rounds: each one is a PR that can be played and shipped, Zoë gets a new surprise every round, and a mistake stays on one island. In favour of a single pass: the tools are written once and the shared `rand()` chain disappears.
 
-Neither on its own. Split the work by whether it needs Zoë.
+**So: one pass, shipped in rounds.** Build the shared foundations first, then move the islands one after another without pausing, one PR each, every PR live on `main`. That's a single pass in planning (same tools, same rules, the islands in a row) and rounds in shipping.
 
-**What a single pass gains**
+## Phase A: foundations (no island changes how it plays)
 
-- Write the tools once: a data-driven grey-box and dressing script instead of one hand-written pair per island; one model library and palette, so the islands look like one game.
-- **The shared `rand()` chain goes away.** Once every island is a level with its own seed, "build order matters" and `sharedSeedAfter` can be deleted, and nobody has to check that the islands after a change are untouched.
-- Budgets get decided once for the whole game: the download (every `level.glb` is precached for offline play; island 1's is 2.9 MB and half of that is the ground mesh, so six more like it would add about 17 MB) and the draw calls on a phone.
-- Systems that every island needs (saves for islands 2–4, the ambience kit, placing places from markers) are cheaper to write once against six islands than to rework six times.
+1. **Phone performance.** Islands 2–7 register their own fixed props with `addStatic`; characters use `mergeParts`. Islands 4 and 2 first. It also makes the later Blender export simpler (static scenery is exactly what goes into the `.blend`).
+2. **Mid-island saves for islands 2–4**, so all seven islands save the same way before their layouts move.
+3. **Pipeline upgrades:**
+   - **A small ground.** Export the height grid as a 16-bit heightmap instead of a mesh. Today the ground is half of island 1's 2.9 MB file; seven levels at that rate would add about 17 MB to the offline download.
+   - **Places and signposts as markers**, not code positions (island 1's first, as the example).
+   - **A data-driven grey-box and dressing script** per island (a Python data file with grounds, boxes, markers and model groups), sharing island 1's helpers.
+   - **Levels without a ground** (island 6's clouds) and **under water** (island 4's sea floor).
+   - **Sailing into a level island** (island 1 has only ever been sailed out of).
+4. **The ambience kit** grows: `world/bubble-spot.js` is the first piece; then the campfire, fish, frogs, birds that land, as reusable pieces.
 
-**What a single pass costs**
+## Phase B: the islands, in order
 
-- Zoë can't design six islands at once, and the layers that make an island hers (the map, the beats, the names) are the ones that need her.
-- Nothing new to play for a long time, and a big change across every island at once is harder to play-test.
-- Island 7's rides are 3,300 lines tied to its code layout. Moving it is the biggest job and the least needed (it's new and designed).
+Each round: export the island's current layout into a `.blend` as it is (`height()` sampled into the ground, random palms and rocks into markers, the code-built things onto `spot:` markers), check it plays exactly the same, then rework it in Blender:
 
-**One island at a time** keeps Zoë in the loop and ships something every round, but re-solves the same tool problems each time and keeps the `rand()` chain until the last island moves.
+- **Layout:** bigger where it helps, each moment its own small place, with names and signposts
+- **Dressing:** looks over the grey boxes, models round the places
+- **Alive:** a few ambience pieces per island
+- **Toys:** a themed toy area (see below)
+- **Findable:** walk the island at iPhone size; anything to find is visible from where its hint fires
 
-## Recommendation: shared foundations once, then islands in rounds
+The order:
 
-### Phase A: one pass over all islands, no Zoë needed
+1. **Island 2, Hook Rock Bay.** Next in the story, the smallest and plainest: the new tools get tested on an easy one. Also the worst draw calls for its size.
+2. **Island 3, Mossy Paw Woods.** Land again; trees and vines stay code on markers.
+3. **Island 4, Bubbly Ocean.** The first underwater level.
+4. **Island 5, Rainbow Reef.** Five islets in one ground.
+5. **Island 6, Cottoncrest Islets.** The first level with no ground.
+6. **Island 7, Jamboree Island.** Last: the most code, the newest design.
 
-Doesn't change how anything plays, so it ships to `main` piece by piece.
+When every island has its own seed, delete `sharedSeedAfter` and the "build order matters" rule (CLAUDE.md, islands.md, levels.md).
 
-1. **Phone performance.** Register islands 2–7's own fixed props with `addStatic` and merge characters with `mergeParts`. Islands 4 and 2 first (worst draw calls). Smallest job, straight win.
-2. **Mid-island saves for islands 2–4** (`saveState`/`loadState`: the bridge, the chest, Mango, Eduardo's chase, restore-safe digs). Then all seven islands save the same way.
-3. **Pipeline upgrades** before the second Blender island:
-   - a smaller ground: export the height grid as a compact 16-bit heightmap instead of a mesh (the game bakes it into a grid anyway), so the ground stops being half of each download
-   - place names, signposts and campfire-like spots as markers, not code positions
-   - grey-box and dressing scripts driven by a data file per island, sharing island 1's helpers (stone looks, model over box, `check_markers`)
-   - the ambience kit: island 1's campfire and bubbles as reusable pieces, plus the next few (fish, frogs, birds landing)
-   - check sailing **into** a level island (island 1 has only ever been sailed out of)
-4. **Lift and shift (decision needed):** move every island into a `.blend` as it is now (sample its `height()` into a ground mesh, its random palms and rocks into markers, its code-built buildings and rides onto `spot:` markers), checking each plays the same. Afterwards the `rand()` chain is gone and any island can be edited in Blender. Worth it if most islands will be reworked; not if only 2–4 will be.
+## Toys on every island
 
-### Phase B: islands in rounds, with Zoë
+Rapier stays for toys only (Spartacus keeps `stepPlayer`). One themed toy area per island, built in its round:
 
-Each round is one island through layers 1–7, island 1's recipe: a map session with Zoë → grey-box → her beats → places and names → dressing → alive → play-test on her phone. One round per PR or two.
+- **2, Hook Rock Bay:** a pirate's stack of barrels and crates on the beach; buoys bobbing in the bay
+- **3, Mossy Paw Woods:** pine cones and acorns that roll downhill; a log stack
+- **4, Bubbly Ocean:** shells and sea urchins that drift and bounce slowly (low gravity, if Rapier's per-area gravity allows it, or heavy damping)
+- **5, Rainbow Reef:** beach balls and floats in the lagoon; crates in Crab Cove
+- **6, Cottoncrest Islets:** fluffy cloud puffs that bounce high
+- **7, Jamboree Island:** a coconut shy and skittles to bowl over (giant Spartacus bowling, an idea from island 7's notes)
 
-Suggested order:
+Later, once Zoë has played with them, puzzles built on toys (stack crates to reach a ledge, roll a ball onto a plate).
 
-1. **Island 2, Hook Rock Bay.** Next in the story, the smallest and the plainest, so the new tools get tested on an easy one.
-2. **Island 3, Mossy Paw Woods** and 3. **Island 4, Bubbly Ocean.** Their layouts are placeholders waiting for Zoë anyway, so they gain the most. Island 4 is the first underwater level: check the pipeline handles it (the sea floor as ground, coral and kelp as dressing).
-3. **Islands 5–7: dress and liven up, no remake** unless Zoë wants one. They're recent and designed; layers 3, 5 and 6 are what they lack. Island 7 waits for Zoë's answers to its questions anyway.
+## Budgets (iPhone)
 
-A round can start the moment Zoë has drawn the map; Phase A work fills the gaps in between.
+- **Download:** keep each `level.glb` at about 2 MB or less with the heightmap ground (models are stored once, however many times they're placed). The whole game under about 25 MB precached.
+- **Draw calls:** under about 400 at any spot.
+- **Test at 844 × 390** (an iPhone held sideways), with touch controls on.
 
-## Questions for Claudio
+## Still open
 
-1. **Remake or redress?** Islands 2–4 remade bigger from a Zoë map like island 1, and 5–7 only dressed and livened up: agreed?
-2. **Lift and shift** every island into Blender first (step A4), or only move the ones being remade?
-3. **Order:** start with Phase A step 1 (performance) and island 2's map session in parallel?
-4. **Download budget:** the game is about 8 MB precached now. What's acceptable on Zoë's phone: 15 MB? 25 MB?
-5. **The Rapier toys** on island 1 were a test: keep them and add some to other islands, or wait until Zoë has played with them?
+- **How much bigger?** Island 1 went from 60 to 130 m across. Islands 2–4 are the smallest and oldest and gain most from growing; 5–7 are already big, so they'd get dressing, places and toys rather than more space. A rule of thumb, to revisit after island 2.
