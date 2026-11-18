@@ -25,6 +25,7 @@ import { animateDog } from './player/dog.js';
 import { POWERS, updateFruits } from './systems/powers.js';
 import { updatePickups } from './systems/collect.js';
 import { collectDetails, updateDetails } from './world/detail.js';
+import { updateCampfires } from './world/campfire.js';
 import { updateDigSpots, updateDigging } from './systems/digs.js';
 import { updateFloaters, updatePlacing } from './systems/items.js';
 import { updateHooks, updateSwing, updateSwingLine } from './systems/hooks.js';
@@ -311,6 +312,7 @@ function updateWorld(dt) {
   currentIsland().update?.(dt);
   updateFloaters(dt);
   updateParticles(dt);
+  updateCampfires(dt, player.pos);
   updateWoof(dt);
 }
 

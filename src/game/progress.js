@@ -23,6 +23,7 @@ export function saveProgress() {
   writeSave({
     progress: {
       island: id,
+      layout: island.layout ?? 1,
       done: { ...island.done },
       count: island.collect?.count ?? 0,
       pickups: takenPickups(id),
@@ -40,6 +41,8 @@ export function saveProgress() {
 export function restoreProgress(island) {
   const saved = loadSave().progress;
   if (!island.savesProgress || saved?.island !== island.id) return;
+  // an island remade since the save (a new layout): its spots, positions and bones have moved
+  if ((saved.layout ?? 1) !== (island.layout ?? 1)) return;
   game.restoring = true;
   try {
     for (const id of Object.keys(island.done)) island.done[id] = !!saved.done?.[id];

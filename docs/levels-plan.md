@@ -66,7 +66,7 @@ Each round: export the island's current layout into a `.blend` as it is (`height
 
 The order:
 
-1. **Island 2, Hook Rock Bay.** Next in the story, the smallest and plainest: the new tools get tested on an easy one. Also the worst draw calls for its size.
+1. ✅ **Island 2, Hook Rock Bay** (done, [island2.md](island2.md)). Next in the story, the smallest and plainest: the new tools get tested on an easy one. Also the worst draw calls for its size.
 2. **Island 3, Mossy Paw Woods.** Land again; trees and vines stay code on markers.
 3. **Island 4, Bubbly Ocean.** The first underwater level.
 4. **Island 5, Rainbow Reef.** Five islets in one ground.

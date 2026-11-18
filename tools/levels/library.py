@@ -177,3 +177,55 @@ def place(name, x, z, *, into, yaw=0, y=None, collider=None, radius=None, sink=0
     obj.scale = scale if isinstance(scale, tuple) else (scale, scale, scale)
     into.objects.link(obj)
     return obj
+
+
+class Dresser:
+    """Dresses a level from data: imports the Library, places models in a Dressing collection,
+    warns about anything solid next to a marker, saves. dress_island1.py does this by hand; later
+    islands just list what goes where:
+
+        dresser = Dresser()
+        dresser.place("Barrel", 4, 30, collider="cyl")
+        dresser.group([("Crate", 2, 31, {"yaw": 20, "collider": "box"}), ...])
+        dresser.finish()
+    """
+
+    DRY = 0.3  # ground lower than this is the water's edge or water: no land models there
+    NEAR = 2  # m: a solid model this close to a marker gets a warning
+
+    def __init__(self):
+        self.library = replace_collection("Library")
+        self.dressing = replace_collection("Dressing")
+        self.solid = []  # (name, x, z) placed with colliders
+        for name, scale in MODELS.items():
+            import_model(name, scale, self.library)
+
+    def place(self, name, x, z, *, wet=False, **options):
+        if options.get("y") is None and not wet and ground_height(x, z) < self.DRY:
+            print(f"  skipping {name} at ({x}, {z}): in the water")
+            return None
+        obj = place(name, x, z, into=self.dressing, **options)
+        if options.get("collider"):
+            self.solid.append((name, x, z))
+        return obj
+
+    def group(self, items):
+        """[(model, x, z, {options}) or (model, x, z)], placed in order."""
+        for name, x, z, *options in items:
+            self.place(name, x, z, **(options[0] if options else {}))
+
+    def check_markers(self, ignore=()):
+        markers = [
+            o for o in bpy.data.objects if o.type == "EMPTY" and o.name.split(".")[0] not in ignore
+        ]
+        for name, x, z in self.solid:
+            for m in markers:
+                distance = math.hypot(m.location.x - x, -m.location.y - z)
+                if distance < self.NEAR:
+                    print(f"  WARNING {name} at ({x}, {z}) is {distance:.1f} m from {m.name}")
+
+    def finish(self, ignore=()):
+        self.check_markers(ignore)
+        bpy.context.view_layer.layer_collection.children["Library"].exclude = True
+        bpy.ops.wm.save_mainfile()
+        print(f"dressed {bpy.data.filepath}: {len(self.dressing.objects)} models")

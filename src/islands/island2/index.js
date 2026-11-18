@@ -1,74 +1,78 @@
 import * as THREE from 'three';
-import { distXZ, lerp, smoothstep, vec3 } from '../../core/util.js';
-import { scene, LOW_POWER } from '../../core/renderer.js';
+import { distXZ, vec3 } from '../../core/util.js';
+import { scene } from '../../core/renderer.js';
 import { material, mesh, canvasTexture, drawPaw } from '../../core/materials.js';
 import { sfx } from '../../core/audio.js';
 import { burst } from '../../core/fx.js';
 import { toast, hintOnce, actionKeyName } from '../../core/ui.js';
 import { say } from '../../game/talk.js';
 import { addCylinder } from '../../core/colliders.js';
-import { terrainHeight, buildGround } from '../../world/terrain.js';
+import { terrainHeight } from '../../world/terrain.js';
 import { CENTER_2, CENTER_3 } from '../../world/layout.js';
-import { palm, rock, rockTop, scatter, dock } from '../../world/props.js';
+import { makeLevel } from '../../world/level.js';
+import { scatter } from '../../world/props.js';
+import { addStatic } from '../../world/statics.js';
+import { addCampfire } from '../../world/campfire.js';
+import { addBubbleSpot } from '../../world/bubble-spot.js';
 import { makeTin, makeBone } from '../../models/items.js';
 import { player } from '../../player/player.js';
 import { addItem, carryItem, useUpCarried } from '../../systems/items.js';
-import { addPickup, pickupText } from '../../systems/collect.js';
-import { addFruit } from '../../systems/powers.js';
+import { pickupText } from '../../systems/collect.js';
 import { addDig } from '../../systems/digs.js';
 import { addHook, swingOption } from '../../systems/hooks.js';
+import { addToyArea, addToy } from '../../systems/toys.js';
+import { visitPlaces, seenPlaces, restorePlaces } from '../../systems/places.js';
 import { mango, placeMango, mangoHop, mangoToShip, ensureMangoCrew } from '../../npcs/mango.js';
 import { startSail } from '../../cutscenes/sail.js';
 import { completeTask } from '../../game/tasks.js';
 import { enterIsland } from '../../game/flow.js';
 import { hintTooHigh } from '../../game/interact.js';
+import levelUrl from './level.glb?url';
+import heightsUrl from './heights.bin?url';
 
 // Island 2, Hook Rock Bay: Stretchy fruit + golden hooks. Mango the parrot is stuck (too hungry
-// to fly) on the tallest pillar in the lagoon; his snack is buried on a mesa only Boing-Boing reaches.
+// to fly) on the tallest pillar in the lagoon; his snack is buried on Cookie Mesa, which only a
+// Boing-Boing jump reaches. Laid out in Blender (levels/island2.blend, made by
+// tools/levels/make_island2.py, dressed by dress_island2.py; see docs/island2.md): six places,
+// six bones. This code builds the swing pads, hooks, Mango's nest, the X and the camp's fire at
+// the level's `spot:` markers.
 
-const LAGOON = { x: CENTER_2.x + 4, z: CENTER_2.z - 5 };
-const MESA = { x: CENTER_2.x - 12, z: CENTER_2.z + 7 }; // only reachable with a Boing-Boing jump
-const toWorld = (x, z) => ({ x: CENTER_2.x + x, z: CENTER_2.z + z }); // island-local -> world
+const level = makeLevel(levelUrl, { center: CENTER_2, heightsUrl });
 
-// distance from the island centre to the shoreline at `angle`, wobbly so it isn't a circle
-function shoreRadius(angle) {
-  return 22 + Math.sin(angle * 4) * 1.5 + Math.sin(angle * 2 + 0.5) * 1.2;
-}
-// terrain: gentle bumps, a deep lagoon, a flat beach ring, then dropping into the sea
-function height(x, z) {
-  const localX = x - CENTER_2.x,
-    localZ = z - CENTER_2.z,
-    r = Math.hypot(localX, localZ),
-    shore = shoreRadius(Math.atan2(localZ, localX));
-  let h = 1.1 + 0.3 * Math.sin(x * 0.4) * Math.cos(z * 0.33) + 0.15 * Math.sin(x * 0.9 - z * 0.5);
-  const lagoonDist = Math.hypot(x - LAGOON.x, z - LAGOON.z);
-  if (lagoonDist < 11) h = -2;
-  else if (lagoonDist < 13) h = lerp(-2, h, smoothstep(11, 13, lagoonDist));
-  h = lerp(h, 0.35, smoothstep(shore - 5, shore - 2, r));
-  return lerp(h, -4, smoothstep(shore, shore + 2.5, r));
-}
-
-// Positions filled in by build(); each spot is {x, z, y} with y the standing height on top.
-// The swing route across the lagoon: westPad -> firstPillar -> secondPillar -> mangoPillar -> eastPad,
-// with a branch firstPillar -> sidePillar for a bone.
+// filled in by build() from the level's spots; each is {x, z, y} with y the standing height
 const spots = {};
+// the swing route across the lagoon: west pad -> first pillar -> second pillar -> Mango's pillar ->
+// east pad, with a branch first pillar -> side pillar for a bone; and the practice swing in
+// Stretchy Grove
+const HOOKS = [
+  ['westPad', 'firstPillar'],
+  ['firstPillar', 'secondPillar'],
+  ['secondPillar', 'mangoPillar'],
+  ['mangoPillar', 'eastPad'],
+  ['firstPillar', 'sidePillar'],
+  ['practicePad', 'practiceRock'],
+];
+
+// from the ship at the dock round the east of the bay, north to Mossy Paw Woods
+const SHIP = { x: 5.6, z: CENTER_2.z + 58 }; // spot:ship in the level (island 1's voyage ends here)
 const sailPath = new THREE.CatmullRomCurve3([
-  vec3(5.6, 0, CENTER_2.z + 26.5),
-  vec3(20, 0, CENTER_2.z + 37),
-  vec3(42, 0, CENTER_2.z),
-  vec3(40, 0, -240),
+  vec3(SHIP.x, 0, SHIP.z),
+  vec3(30, 0, CENTER_2.z + 66),
+  vec3(62, 0, CENTER_2.z + 10),
+  vec3(58, 0, -245),
   vec3(24, 0, -288),
   vec3(5.6, 0, CENTER_3.z + 32),
 ]);
 
 // a wooden launch platform with a painted paw on top; returns its standing spot
-function addSwingPad(x, z) {
+function addSwingPad({ x, z }) {
   const groundY = terrainHeight(x, z);
   const base = mesh(new THREE.CylinderGeometry(1.3, 1.4, 0.3, 12), material(0xc48a54), {
     receiveShadow: true,
   });
   base.position.set(x, groundY + 0.15, z);
   scene.add(base);
+  addStatic(base);
   const pawTexture = canvasTexture(128, 128, (c, w, h) => {
     c.fillStyle = '#c48a54';
     c.fillRect(0, 0, w, h);
@@ -86,71 +90,68 @@ function addSwingPad(x, z) {
   return { x, z, y: groundY + 0.3 };
 }
 
-// a rock pillar standing in the lagoon, offset from its centre
-function addPillar(dx, dz, { radius, top }) {
-  const x = LAGOON.x + dx,
-    z = LAGOON.z + dz;
-  const y = rockTop(x, z, { radius, top, color: 0x9aa6b8 });
-  return { x, z, y };
-}
+// a spot marker as {x, z, y}, y the surface under it (a pillar's top, the mesa…)
+const standingSpot = (name) => {
+  const spot = level.spots[name];
+  return { x: spot.x, z: spot.z, y: spot.ground };
+};
 
 function build() {
-  buildGround(CENTER_2.x, CENTER_2.z, { size: 64, segments: LOW_POWER ? 90 : 140 });
-  const palmSpots = [
-    [-16, 4],
-    [-4, 15],
-    [10, 12],
-    [14, 7],
-    [-10, -14],
-    [-18, -3],
-    [12, 15],
-    [-14, 12],
-    [6, -17],
-    [-8, 6],
-  ];
-  for (const [x, z] of palmSpots) {
-    const pos = toWorld(x, z);
-    palm(pos.x, pos.z);
-  }
-  // no bushes/flowers in the lagoon, on the mesa, or on the path to the dock
-  scatter(CENTER_2.x, CENTER_2.z, {
-    radius: 16,
-    allowed: (x, z) =>
-      Math.hypot(x - LAGOON.x, z - LAGOON.z) > 14 &&
-      Math.hypot(x - MESA.x, z - MESA.z) > 5 &&
-      !(Math.abs(x - CENTER_2.x) < 3 && z > CENTER_2.z + 12),
-    bushes: 16,
-    flowers: 90,
-  });
-  dock(CENTER_2.x, { zFrom: CENTER_2.z + 16.5, zTo: CENTER_2.z + 27.5 });
-  island.spawn = vec3(CENTER_2.x, 0, CENTER_2.z + 13);
-  island.spawn.y = terrainHeight(island.spawn.x, island.spawn.z);
-  spots.dockZ = CENTER_2.z + 20; // past this on the dock, Mango leaves the hat for the ship
-  spots.westPad = addSwingPad(LAGOON.x - 13, LAGOON.z);
-  spots.firstPillar = addPillar(-6, 0, { radius: 1.4, top: 3.2 });
-  spots.secondPillar = addPillar(-1, -7, { radius: 1.3, top: 5.2 });
-  spots.mangoPillar = addPillar(6, -3, { radius: 1.8, top: 11 });
-  spots.eastPad = addSwingPad(LAGOON.x + 13, LAGOON.z + 2);
-  spots.sidePillar = addPillar(4, 6, { radius: 1.05, top: 6.6 });
-  spots.mesa = {
-    x: MESA.x,
-    z: MESA.z,
-    y: rock(MESA.x, MESA.z, { radius: 3.4, height: 4.4, color: 0xc9a27a }),
-  };
+  level.build(island);
+  spots.firstPillar = standingSpot('first pillar');
+  spots.secondPillar = standingSpot('second pillar');
+  spots.mangoPillar = standingSpot('mango pillar');
+  spots.sidePillar = standingSpot('side pillar');
+  spots.practiceRock = standingSpot('practice rock');
+  spots.mesa = standingSpot('mesa');
+  spots.snack = standingSpot('snack');
+  spots.lagoon = level.spots.lagoon;
+  spots.dockEnd = level.spots['dock end'];
+  spots.westPad = addSwingPad(level.spots['west pad']);
+  spots.eastPad = addSwingPad(level.spots['east pad']);
+  spots.practicePad = addSwingPad(level.spots['practice pad']);
   const { mangoPillar } = spots;
   const nest = mesh(new THREE.TorusGeometry(0.6, 0.22, 6, 12), material(0x9c6436));
   nest.rotation.x = Math.PI / 2;
   nest.position.set(mangoPillar.x, mangoPillar.y + 0.15, mangoPillar.z);
   scene.add(nest);
+  addStatic(nest);
   placeMango(mangoPillar, spots.secondPillar, 2);
-  addHook(spots.westPad, spots.firstPillar);
-  addHook(spots.firstPillar, spots.secondPillar);
-  addHook(spots.secondPillar, mangoPillar);
-  addHook(mangoPillar, spots.eastPad);
-  addHook(spots.firstPillar, spots.sidePillar);
-  addPickup(spots.secondPillar.x, spots.secondPillar.z, { y: spots.secondPillar.y, island: 2 });
-  addPickup(spots.sidePillar.x, spots.sidePillar.z, { y: spots.sidePillar.y, island: 2 });
-  addPickup(spots.mesa.x + 1.6, spots.mesa.z + 0.6, { y: spots.mesa.y, island: 2 });
+  for (const [from, to] of HOOKS) addHook(spots[from], spots[to]);
+  const camp = level.spots.camp;
+  addCampfire({ x: camp.x, y: camp.ground, z: camp.z });
+  // the cove's rock pools bubble a little
+  spots.pools = level
+    .all('spot')
+    .filter((spot) => spot.arg === 'pool')
+    .map((spot) => addBubbleSpot({ x: spot.x, y: 0, z: spot.z }, { size: 0.8, every: 1.2 }));
+  buildToys();
+  // bushes and flowers: not in the lagoon, on the mesa or the path to the dock (last: rand())
+  const { lagoon, mesa } = spots;
+  scatter(CENTER_2.x, CENTER_2.z, {
+    radius: 38,
+    allowed: (x, z) =>
+      Math.hypot(x - lagoon.x, z - lagoon.z) > 14 &&
+      Math.hypot(x - mesa.x, z - mesa.z) > 6 &&
+      !(Math.abs(x - CENTER_2.x) < 3 && z > CENTER_2.z + 30),
+    bushes: 24,
+    flowers: 150,
+  });
+}
+
+// Toys to bowl over (systems/toys.js): a stack of barrels and crates beside the camp
+function buildToys() {
+  const camp = level.spots.camp;
+  const x = camp.x + 5,
+    z = camp.z + 4;
+  addToyArea(x, z, { size: 16 });
+  const ground = terrainHeight(x, z);
+  for (const [i, dx] of [-0.9, 0, 0.9].entries())
+    addToy('barrel', { x: x + dx, z, y: ground, size: 0.85, color: 0x9a6a3e, yaw: i });
+  for (const dx of [-0.45, 0.45])
+    addToy('crate', { x: x + dx, z, y: ground + 0.9, size: 0.75, color: '#d09a5e' });
+  addToy('barrel', { x, z, y: ground + 1.7, size: 0.7, color: 0xf2545b });
+  addToy('bucket', { x: x - 2.2, z: z + 1, size: 0.4, color: 0x2fa4c7 });
 }
 
 // Mango's cracker tin: dug up on the mesa and carried straight away
@@ -162,36 +163,14 @@ function digUpSnack(dig) {
     lift: 0.15,
   });
   carryItem(tin);
-  toast('Mango’s cracker tin! Take it to the tall rock.', 3400);
+  toast('Mango’s cracker tin! Take it to the tall rock in the lagoon.', 3400);
   completeTask('snack');
 }
 
+// the fruit bushes and the buried bone are level markers (no rand() here)
 function buildLate() {
-  const boingBush = toWorld(-6, 11);
-  addFruit(boingBush.x, boingBush.z, {
-    type: 'boing',
-    y: terrainHeight(boingBush.x, boingBush.z),
-    bush: true,
-  });
-  const stretchBush = toWorld(-12, -1);
-  addFruit(stretchBush.x, stretchBush.z, {
-    type: 'stretch',
-    y: terrainHeight(stretchBush.x, stretchBush.z),
-    bush: true,
-  });
-  addDig(spots.mesa.x - 0.5, spots.mesa.z - 0.5, {
-    reward: digUpSnack,
-    marked: true,
-    y: spots.mesa.y,
-  });
-  const boneDig = toWorld(-15, -9);
-  addDig(boneDig.x, boneDig.z, {
-    holdsPickup: true,
-    reward: (dig) => {
-      addPickup(dig.x, dig.z, { y: dig.y, island: 2, pop: 0.6 });
-      toast('A buried bone!', 1800);
-    },
-  });
+  level.buildLate(island);
+  addDig(spots.snack.x, spots.snack.z, { reward: digUpSnack, marked: true, y: spots.snack.y });
 }
 
 function feedMango() {
@@ -210,20 +189,34 @@ function feedMango() {
   completeTask('feed');
 }
 
-// putting a mid-island save back: Mango follows from the ticked tasks (the cracker tin is an item,
-// put back by the items system after its dig is redone)
-function loadState() {
+/* mid-island saves (game/progress.js) */
+
+const saveState = () => ({ places: seenPlaces(2) });
+
+// Mango follows from the ticked tasks (the cracker tin is an item, put back by the items system
+// after its dig is redone)
+function loadState(state) {
+  restorePlaces(2, state.places);
   if (island.done.crew) ensureMangoCrew();
   else if (island.done.feed) mangoHop();
 }
+
+const onDockEnd = (p) =>
+  p.z > spots.dockEnd.z && Math.abs(p.x - spots.dockEnd.x) < 1.6 && p.y > 0.5;
 
 const island = {
   id: 2,
   center: CENTER_2,
   name: 'Hook Rock Bay',
   zMax: -85,
-  height,
+  level, // main.js loads it before anything is built
+  height: level.height,
+  // the old hand-built island left the shared random sequence here; the islands after it carry
+  // on from it, so their scenery doesn't move (see main.js)
+  sharedSeedAfter: -542749440,
+  layout: 2, // the Blender remake: saves from the old layout don't put Spartacus back mid-island
   savesProgress: true,
+  saveState,
   loadState,
   tasks: {
     title: 'Hook Rock Bay',
@@ -235,30 +228,14 @@ const island = {
       { id: 'crew', ic: '⛵', t: () => 'Bring Mango to the ship' },
     ],
   },
+  // total: counted from the level's bones and digs
   collect: {
-    total: 4,
+    total: 0,
     count: 0,
     taskId: 'bones2',
     name: 'Bone',
     all: 'All the bones! Good boy, Spartacus!',
     model: makeBone,
-  },
-  // beach balls and ambient critters (systems/balls.js, systems/critters.js), island-local
-  balls: [
-    [3, 9],
-    [-6, 12],
-  ],
-  critters: {
-    birds: [
-      [-14, 16],
-      [16, -12],
-      [12, 17],
-    ],
-    butterflies: [
-      [-4, 6],
-      [8, 12],
-      [-18, -6],
-    ],
   },
   // a skippy pirate jig (core/music.js)
   music: {
@@ -268,7 +245,7 @@ const island = {
     melody: [5, null, 4, 3, 4, null, 2, null, 3, 4, 5, null, 4, 3, 2, null],
     bass: [-5, null, -2, null, -5, null, -2, null, -4, null, -1, null, -3, null, -2, null],
   },
-  intro: [[3400, 'Mango the parrot is stuck on the tallest rock!', 3400]],
+  intro: [[3400, 'Mango the parrot is stuck on the tallest rock in the lagoon!', 3400]],
   win: {
     title: 'New crew mate!',
     text: 'Mango the parrot joined Spartacus’s crew! Next stop: a mysterious forest island.',
@@ -278,18 +255,22 @@ const island = {
   sailPath,
   exit: {
     label: 'Sail',
-    at: (p) => p.z > CENTER_2.z + 22 && Math.abs(p.x - CENTER_2.x) < 1.6 && p.y > 0.5,
+    at: (p) => p.z > spots.dockEnd.z + 3 && Math.abs(p.x - spots.dockEnd.x) < 1.6 && p.y > 0.5,
     run: () => startSail(sailPath, () => enterIsland(3, true)),
   },
   build,
   buildLate,
+  update(dt) {
+    for (const pool of spots.pools) pool.update(dt, player.pos);
+  },
   interact(p) {
-    const { mesa, westPad, eastPad, mangoPillar } = spots;
+    const { mesa, westPad, eastPad, practicePad, mangoPillar } = spots;
+    visitPlaces(p);
     hintTooHigh(
-      distXZ(p, mesa.x, mesa.z) < 5.5,
-      'Something’s buried up on that flat rock… A Boing-Boing fruit grows nearby!',
+      distXZ(p, mesa.x, mesa.z) < 6.5,
+      'Something’s buried up on Cookie Mesa… A Boing-Boing fruit grows nearby!',
     );
-    const nearPad = distXZ(p, westPad.x, westPad.z) < 3 || distXZ(p, eastPad.x, eastPad.z) < 3;
+    const nearPad = [westPad, eastPad, practicePad].some((pad) => distXZ(p, pad.x, pad.z) < 3);
     if (!player.canStretch && nearPad)
       hintOnce('hook', 'Golden hooks! Spartacus needs a Stretchy fruit to swing.', 3400);
     if (player.canStretch && swingOption())
@@ -301,16 +282,11 @@ const island = {
     )
       hintOnce(
         'mango',
-        'Mango is too hungry to fly. His snack is buried on the big flat rock!',
+        'Mango is too hungry to fly. His snack is buried on Cookie Mesa, under the red flag!',
         3600,
       );
     // walking onto the dock with Mango on the hat: he flies up to the crow's nest
-    if (
-      mango.state === 'riding' &&
-      p.z > spots.dockZ &&
-      Math.abs(p.x - CENTER_2.x) < 1.6 &&
-      p.y > 0.5
-    ) {
+    if (mango.state === 'riding' && onDockEnd(p)) {
       mangoToShip(() => completeTask('crew'));
       toast('Mango flies up to the crow’s nest!', 3000);
     }
@@ -330,7 +306,7 @@ const island = {
     if (mango.state !== 'hungry' || distXZ(p, spots.mangoPillar.x, spots.mangoPillar.z) >= 8)
       return;
     sfx.parrot();
-    say('Mango', 'Snack? Snack? Buried on the big flat rock!', { auto: true });
+    say('Mango', 'Snack? Snack? Buried on Cookie Mesa, by the red flag!', { auto: true });
   },
 };
 export default island;

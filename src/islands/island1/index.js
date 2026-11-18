@@ -42,7 +42,8 @@ import {
   amethystCrabsState,
   restoreAmethystCrabs,
 } from './amethyst.js';
-import { addCampfire, addSpringBubbles, updateAmbience } from './ambience.js';
+import { addSpringBubbles, updateAmbience } from './ambience.js';
+import { addCampfire } from '../../world/campfire.js';
 import levelUrl from './level.glb?url';
 import heightsUrl from './heights.bin?url';
 
@@ -86,9 +87,9 @@ const sailPath = new THREE.CatmullRomCurve3([
   vec3(62, 0, 74),
   vec3(88, 0, 20),
   vec3(86, 0, -50),
-  vec3(56, 0, -108),
-  vec3(22, 0, -130),
-  vec3(5.6, 0, CENTER_2.z + 26.5),
+  vec3(62, 0, -92),
+  vec3(26, 0, -104),
+  vec3(5.6, 0, CENTER_2.z + 58), // island 2's spot:ship
 ]);
 
 // the bell hangs from a gallows on the lighthouse deck; returns the swinging bell group
