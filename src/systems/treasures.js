@@ -1,15 +1,24 @@
-// Treasures Spartacus keeps: bonus finds (island 1's amethyst, …) that aren't tasks, just things to
+// Treasures Spartacus keeps: bonus finds (island 1's amethyst, island 8's Sun Medal and photo…) that aren't tasks, just things to
 // be proud of. Once found, a treasure goes on display on the ship's deck and stays there, saved,
 // for the rest of the game; starting over clears them (game/flow.js).
 import { vec3 } from '../core/util.js';
-import { loadSave, writeSave } from '../core/save.js';
+import { loadSave, loadPhoto, writeSave } from '../core/save.js';
 import { ship } from '../world/ship.js';
-import { makeAmethyst } from '../models/items.js';
+import { makeAmethyst, makePhotoFrame, makeSunMedal } from '../models/items.js';
 
 // treasure id -> model; add new treasures here
-const TREASURES = { amethyst: makeAmethyst };
+const TREASURES = {
+  amethyst: makeAmethyst,
+  sunMedal: makeSunMedal,
+  classPhoto: () => makePhotoFrame(loadPhoto()), // island 8's photo, the real picture
+};
 // where they stand on deck (ship-local, by the rail), in the order they're found
-const SLOTS = [vec3(-0.75, 1.38, 1.5), vec3(-0.75, 1.38, 0.8), vec3(0.75, 1.38, 0.6)];
+const SLOTS = [
+  vec3(-0.75, 1.38, 1.5),
+  vec3(-0.75, 1.38, 0.8),
+  vec3(0.75, 1.38, 0.6),
+  vec3(0.75, 1.38, -0.3),
+];
 const shown = {}; // id -> model on deck
 
 const keptIds = () => loadSave().treasures ?? [];

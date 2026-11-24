@@ -337,3 +337,70 @@ export function makeAmethyst() {
   }
   return g;
 }
+
+// island 8's class photo in a white polaroid frame on a little stand (a treasure on deck);
+// url: the picture (a data URL), or nothing for a sunny blank
+export function makePhotoFrame(url) {
+  const g = new THREE.Group();
+  const frame = mesh(new THREE.BoxGeometry(0.56, 0.5, 0.04), material(0xfffaf0));
+  frame.position.y = 0.42;
+  frame.rotation.x = -0.25;
+  g.add(frame);
+  const picture = new THREE.MeshBasicMaterial({ color: url ? 0xffffff : 0xffe08a });
+  if (url)
+    new THREE.TextureLoader().load(url, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      picture.map = texture;
+      picture.needsUpdate = true;
+    });
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.34), picture);
+  face.position.set(0, 0.04, 0.025);
+  frame.add(face);
+  const stand = mesh(new THREE.BoxGeometry(0.06, 0.4, 0.04), material(0xc48a54));
+  stand.position.set(0, 0.2, -0.12);
+  stand.rotation.x = 0.4;
+  g.add(stand);
+  return g;
+}
+
+// the Sun Dog's thank-you (island 8): a gold sun medal on a little stone stand
+export function makeSunMedal() {
+  const g = new THREE.Group();
+  const stand = mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.12, 8), material(0xc9ae82));
+  stand.position.y = 0.06;
+  g.add(stand);
+  const gold = material(0xf2b84b, {
+    metalness: 0.45,
+    roughness: 0.35,
+    emissive: 0xffa030,
+    emissiveIntensity: 0.25,
+  });
+  const disc = mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16), gold);
+  disc.rotation.x = Math.PI / 2;
+  disc.position.y = 0.36;
+  g.add(disc);
+  for (let i = 0; i < 8; i++) {
+    const ray = mesh(new THREE.ConeGeometry(0.05, 0.12, 4), gold);
+    const angle = (i / 8) * Math.PI * 2;
+    ray.position.set(Math.cos(angle) * 0.26, 0.36 + Math.sin(angle) * 0.26, 0);
+    ray.rotation.z = angle - Math.PI / 2;
+    g.add(ray);
+  }
+  return g;
+}
+
+// a wax crayon (island 8's class dropped them all over the temple): a paper sleeve and a tip
+export function makeCrayon(color) {
+  const g = new THREE.Group();
+  const wax = material(color);
+  const body = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.55, 8), wax);
+  g.add(body);
+  const sleeve = mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.32, 8), material(0xfffaf0));
+  sleeve.position.y = -0.03;
+  g.add(sleeve);
+  const tip = mesh(new THREE.ConeGeometry(0.1, 0.2, 8), wax);
+  tip.position.y = 0.37;
+  g.add(tip);
+  g.rotation.z = 0.5; // leaning, so it reads as a crayon from above too
+  return g;
+}

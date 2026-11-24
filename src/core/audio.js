@@ -280,4 +280,59 @@ export const sfx = {
     noise(0.03, { freq: 2400, volume: 0.14 });
     tone(190, { to: 150, duration: 0.04, type: 'triangle', volume: 0.06 });
   },
+  /* the temple (island 8) */
+  // Cleo the corgi: a small, high double yip
+  yip() {
+    for (const delay of [0, 0.13]) {
+      tone(820, { to: 520, duration: 0.09, type: 'sawtooth', volume: 0.06, delay });
+      tone(620, { to: 400, duration: 0.1, type: 'sine', volume: 0.12, delay });
+    }
+  },
+  // a woof bouncing round the Echo Hall: softer and softer copies
+  echo() {
+    for (const [i, delay] of [0.55, 1.05, 1.5].entries()) {
+      const volume = 0.12 / (i + 1);
+      tone(230, { to: 120, duration: 0.2, type: 'triangle', volume, delay });
+      tone(120, { to: 75, duration: 0.24, type: 'sine', volume: volume * 1.4, delay });
+    }
+  },
+  // heavy stone moving: a door sinking, a chest rising
+  rumble() {
+    noise(1.6, { freq: 140, volume: 0.45 });
+    tone(55, { to: 40, duration: 1.5, type: 'sine', volume: 0.25 });
+  },
+  // a stone block sliding one square
+  scrape() {
+    noise(0.35, { freq: 380, volume: 0.35 });
+    tone(90, { to: 70, duration: 0.3, type: 'triangle', volume: 0.08 });
+  },
+  // a paw plate clicking down
+  click() {
+    tone(420, { to: 300, duration: 0.06, type: 'square', volume: 0.06 });
+    noise(0.05, { freq: 1800, volume: 0.12 });
+  },
+  // a crystal switch: a glassy chord
+  crystal() {
+    for (const [i, hz] of [1047, 1319, 1568, 2093].entries())
+      tone(hz, { to: hz, duration: 0.9 - i * 0.12, type: 'sine', volume: 0.07, delay: i * 0.04 });
+  },
+  // a chest opening: da-da-da-DAAA
+  fanfare() {
+    for (const [i, hz] of [523, 659, 784].entries())
+      tone(hz, { to: hz, duration: 0.14, type: 'triangle', volume: 0.12, delay: i * 0.13 });
+    tone(1047, { to: 1047, duration: 0.9, type: 'triangle', volume: 0.14, delay: 0.42 });
+    tone(784, { to: 784, duration: 0.9, type: 'sine', volume: 0.08, delay: 0.42 });
+  },
+  // a giant stone dog's sneeze: a breath in, then AH-CHOO
+  sneeze() {
+    tone(300, { to: 600, duration: 0.5, type: 'sine', volume: 0.06 });
+    noise(0.5, { freq: 900, volume: 0.6, delay: 0.55 });
+    tone(160, { to: 60, duration: 0.4, type: 'sawtooth', volume: 0.1, delay: 0.55 });
+  },
+  // a camera: click-whirr
+  shutter() {
+    noise(0.04, { freq: 3000, volume: 0.2 });
+    noise(0.05, { freq: 1500, volume: 0.15, delay: 0.08 });
+    tone(900, { to: 1200, duration: 0.25, type: 'sine', volume: 0.03, delay: 0.15 });
+  },
 };

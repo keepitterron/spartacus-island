@@ -4,7 +4,7 @@ import { game, currentIsland } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { saveProgress } from './progress.js';
 
-// Each island has tasks:{title, list:[{id, ic, t:()=>text, power?}]} and a matching
+// Each island has tasks:{title, list:[{id, ic, t:()=>text, power?, hidden?()}], more?} and a matching
 // done:{id:bool}. Task ids are unique across the whole game, so completeTask(id) finds its island.
 export const allTasksDone = (island) => Object.values(island.done).every(Boolean);
 export function initTasks(island) {
@@ -17,7 +17,10 @@ export function renderTasks(popId) {
   const island = currentIsland(),
     tasks = island.tasks;
   $('#listTitle').textContent = tasks.title;
-  $('#tasks').innerHTML = tasks.list.map((task) => taskHtml(task, { island, popId })).join('');
+  // a task can stay hidden until it's given (island 8's missions); one line says more are coming
+  const shown = tasks.list.filter((task) => !task.hidden?.());
+  const more = shown.length < tasks.list.length ? `<li class="task more">${tasks.more}</li>` : '';
+  $('#tasks').innerHTML = shown.map((task) => taskHtml(task, { island, popId })).join('') + more;
   $('#count').textContent =
     `${Object.values(island.done).filter(Boolean).length}/${tasks.list.length}`;
 }

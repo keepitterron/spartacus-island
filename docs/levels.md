@@ -2,7 +2,7 @@
 
 An island can be laid out in [Blender](https://www.blender.org/) (free) instead of in code. You sculpt the ground, place scenery and drop markers (empties) where things go, then export a `.glb` that the game loads. The island's code then only holds what's special about it: its story, tasks and puzzles.
 
-Island 1 is the example ([island1.md](island1.md)): a story island moved from code to Blender, with `tools/levels/make_island1.py` building its grey-box, `tools/levels/dress_island1.py` dressing it and `tools/levels/helpers.py` holding the shared Blender helpers for new level scripts. (Island 8, a big test island for the pipeline, was removed in Nov 2026; it's in git history before then.)
+Island 1 is the example ([island1.md](island1.md)): a story island moved from code to Blender, with `tools/levels/make_island1.py` building its grey-box, `tools/levels/dress_island1.py` dressing it and `tools/levels/helpers.py` holding the shared Blender helpers for new level scripts. Island 8 ([island8.md](island8.md)) is the example of a whole building in a level: `make_island8.py` makes walls (a visible box and a tall invisible collider), floors and a `spot:` for every moving part.
 
 **Random scenery:** every island builds with its own random sequence (seeded with its id, see `main.js`), so editing one level never moves another island's trees and flowers.
 
