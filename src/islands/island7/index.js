@@ -8,7 +8,7 @@ import { say } from '../../game/talk.js';
 import { addBox, addCylinder } from '../../core/colliders.js';
 import { terrainHeight } from '../../world/terrain.js';
 import { makeLevel } from '../../world/level.js';
-import { CENTER_7 } from '../../world/layout.js';
+import { CENTER_7, CENTER_8 } from '../../world/layout.js';
 import { palm, scatter, dock } from '../../world/props.js';
 import { addSea } from '../../world/ocean.js';
 import { ship, shipState, shipBubble } from '../../world/ship.js';
@@ -24,7 +24,8 @@ import { unicornAboard, colourStripe } from '../../npcs/unicorn.js';
 import { ensureEduardoCrew } from '../island4/eduardo.js';
 import { BANDS } from '../island5/finale.js';
 import { completeTask } from '../../game/tasks.js';
-import { showEnd } from '../../game/flow.js';
+import { enterIsland, nextIsland, showEnd } from '../../game/flow.js';
+import { startSail } from '../../cutscenes/sail.js';
 import {
   toWorld,
   DOCK,
@@ -630,10 +631,25 @@ function pound(p) {
 
 const onDockEnd = (p) =>
   p.z > CENTER_7.z + DOCK.zTo - 5 && Math.abs(p.x - CENTER_7.x - DOCK.x) < 1.6 && p.y > 0.5;
-const sailOn = () =>
+// round the fair's east side, wide of Bullseye Rock, and north to the temple island's dock
+const sailPath = new THREE.CatmullRomCurve3([
+  vec3(CENTER_7.x + SHIP_SPOT[0], 0, CENTER_7.z + SHIP_SPOT[1]),
+  vec3(CENTER_7.x + 45, 0, CENTER_7.z + 72),
+  vec3(CENTER_7.x + 108, 0, CENTER_7.z + 30),
+  vec3(CENTER_7.x + 110, 0, CENTER_7.z - 70),
+  vec3(CENTER_8.x + 80, 0, CENTER_8.z + 160),
+  vec3(CENTER_8.x + 40, 0, CENTER_8.z + 112),
+  vec3(CENTER_8.x + 13, 0, CENTER_8.z + 97), // island 8's spot:shipSpot
+]);
+function sailOn() {
+  if (nextIsland()) {
+    startSail(sailPath, () => enterIsland(8, true));
+    return;
+  }
   showEnd(
     'The Fuzzles had the best Jamboree ever, and the fireworks wrote a name across the sky! Where does the ship sail next? Make up the story!',
   );
+}
 
 // tasks, tickets and the power are saved for you; the wheel isn't, and the rockets are put
 // back from their tasks
@@ -718,8 +734,9 @@ const island = {
     title: 'What a Jamboree!',
     text: 'Every rocket flew, every ticket is found, and the Fuzzles are still cheering. The fireworks even knew your name!',
     tip: 'Keep exploring: every ride is still open, and there are fireworks every night.',
-    go: 'What happens next? ✨',
+    go: 'Set sail! ⛵',
   },
+  sailPath,
   exit: { label: 'Sail', at: onDockEnd, run: sailOn },
   build,
   buildLate,

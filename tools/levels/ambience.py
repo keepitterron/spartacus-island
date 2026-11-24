@@ -37,6 +37,11 @@ AMBIENCE = {
         "leaps": [(10, 66), (-12, 66)],  # off the dock
         "perch": ["sign:The Plaza"],
     },
+    8: {
+        "frogs": [(-25.5, 64), (-40, 58.5)],  # round the Jungle Pond
+        "leaps": [(15, 99), (0, 101)],  # either side of the dock
+        "perch": ["sign:Base Camp"],
+    },
 }
 
 

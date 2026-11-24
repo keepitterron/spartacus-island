@@ -38,3 +38,19 @@ export function continueIsland(maxIsland) {
   if (match) return clamp(Number(match[1]), 1, maxIsland);
   return clamp(loadSave().island || 1, 1, maxIsland);
 }
+
+// Island 8's class photo, a JPEG data URL, kept next to the save (it's too big to rewrite into it
+// every few seconds). Shown on the ship's deck (systems/treasures.js).
+const PHOTO_KEY = 'spartacus-photo';
+export function savePhoto(url) {
+  try {
+    localStorage.setItem(PHOTO_KEY, url);
+  } catch (e) {}
+}
+export function loadPhoto() {
+  try {
+    return localStorage.getItem(PHOTO_KEY);
+  } catch (e) {
+    return null;
+  }
+}

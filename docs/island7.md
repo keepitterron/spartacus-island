@@ -1,10 +1,10 @@
 # Island 7: Jamboree Island (the funfair)
 
-Built and playable from the rainbow slide down to "To be continued…". **A surprise for Zoë:** Claudio asked for a level bigger and sillier than the others, with much more to play with, so this one was designed without her (now the way every island is made). Names and choices she might want to change are listed in **For Zoë** at the end.
+Built and playable from the rainbow slide down to the voyage on to island 8 (Sail at the dock, or the win panel's button). **A surprise for Zoë:** Claudio asked for a level bigger and sillier than the others, with much more to play with, so this one was designed without her (now the way every island is made). Names and choices she might want to change are listed in **For Zoë** at the end.
 
 ## The story in one breath
 
-The ship slides down a rainbow from the sky island and lands beside a funfair run by the **Fuzzles**, tiny fluffy folk in party hats. Tonight is their fireworks show, but the cannon went off by mistake and blew the **five show rockets** all over the fair. Pip, the ringmaster in the top hat, asks Spartacus to find them. Each rocket waits at the end of a ride. With all five back on the stand, at night, Spartacus pushes the fuse box and the show goes up: a golden paw print, a heart, and then her name, **ZOË**, across the sky. _To be continued…_
+The ship slides down a rainbow from the sky island and lands beside a funfair run by the **Fuzzles**, tiny fluffy folk in party hats. Tonight is their fireworks show, but the cannon went off by mistake and blew the **five show rockets** all over the fair. Pip, the ringmaster in the top hat, asks Spartacus to find them. Each rocket waits at the end of a ride. With all five back on the stand, at night, Spartacus pushes the fuse box and the show goes up: a golden paw print, a heart, and then her name, **ZOË**, across the sky. Then the ship sails on to the temple island ([island8.md](island8.md)).
 
 It fits the rules: nobody is a villain (the cannon just misfired), nothing can hurt Spartacus, the friend from the last island helps (Leo finds golden tickets), and a fall or a miss costs seconds.
 

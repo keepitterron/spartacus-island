@@ -172,6 +172,10 @@ body * {
 .task.pop {
   animation: pop 0.5s ease;
 }
+.task.more {
+  color: var(--muted);
+  font-style: italic;
+}
 @keyframes pop {
   0% {
     transform: scale(1);
@@ -389,6 +393,43 @@ body.touch #prompt {
     0;
 }
 
+/* island 8's class photo (islands/island8/photo.js) */
+#flash {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+#flash.show {
+  opacity: 1;
+  transition: none;
+}
+.polaroid {
+  margin: 0 auto 16px;
+  padding: 10px 10px 4px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(43, 58, 85, 0.35);
+  transform: rotate(-2deg);
+  max-width: 100%;
+}
+.polaroid img {
+  display: block;
+  width: 100%;
+  max-height: 46vh;
+  object-fit: cover;
+}
+.polaroid figcaption {
+  padding: 8px 0 4px;
+  font-weight: 600;
+  color: #2b3a55;
+}
+a.cta {
+  text-decoration: none;
+  display: inline-block;
+}
 #fade {
   position: fixed;
   inset: 0;

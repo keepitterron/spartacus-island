@@ -113,12 +113,32 @@ function makeBucket(size, color) {
   g.add(handle);
   return g;
 }
+// a clay pot with a fat belly and a gold band (island 8's temple), to roll and bowl over
+function makePot(size, color) {
+  const profile = [
+    [0.22, -0.5],
+    [0.4, -0.3],
+    [0.44, 0],
+    [0.36, 0.3],
+    [0.22, 0.42],
+    [0.26, 0.5],
+  ].map(([radius, y]) => new THREE.Vector2(radius * size, y * size));
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.LatheGeometry(profile, 10), material(color)));
+  const band = mesh(
+    new THREE.CylinderGeometry(size * 0.445, size * 0.445, size * 0.08, 10),
+    material(0xf2b84b),
+  );
+  g.add(band);
+  return mergeParts(g);
+}
 const MODELS = {
   crate: makeCrate,
   barrel: makeBarrel,
   bucket: makeBucket,
   shell: makeShell,
   urchin: makeUrchin,
+  pot: makePot,
 };
 
 /* setting up */
@@ -131,7 +151,7 @@ export function addToyArea(x, z, { size = 24, underwater = false } = {}) {
   else loadPhysics();
 }
 
-// A toy at (x, z): kind crate | barrel | bucket | shell | urchin, size (m), color; y is its bottom
+// A toy at (x, z): kind crate | barrel | bucket | shell | urchin | pot, size (m), color; y is its bottom
 // (the ground by default), yaw its turn. It belongs to the island's nearest toy area. Sleeping until something bumps it, so a stack stays neat till then.
 export function addToy(
   kind,

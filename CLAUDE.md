@@ -9,7 +9,7 @@ Vite + plain ES modules + three.js 0.160.0 (+ Rapier, only for physics toys), de
 - **[docs/design-rules.md](docs/design-rules.md) before changing gameplay.** No conflict, failing costs seconds never progress, one power at a time, every new thing gets a hint and is easy to spot, surprises for Zoë (she steers, we design), Spartacus never changes (no dress-up). Its feedback log lists what she has already said no to.
 - [docs/architecture.md](docs/architecture.md): folders, boot order, state machine, the frame.
 - [docs/islands.md](docs/islands.md): the island interface and how to add a level.
-- [docs/levels.md](docs/levels.md): laying out islands in Blender (`levels/*.blend` → `.glb`): ground, colliders, markers. Island 1 is the example. Island designs: [island1.md](docs/island1.md) (the bigger remake), [island2.md](docs/island2.md), [island3.md](docs/island3.md), [island4.md](docs/island4.md), [island5.md](docs/island5.md), [island6.md](docs/island6.md), [island7.md](docs/island7.md).
+- [docs/levels.md](docs/levels.md): laying out islands in Blender (`levels/*.blend` → `.glb`): ground, colliders, markers. Island 1 is the example. Island designs: [island1.md](docs/island1.md) (the bigger remake), [island2.md](docs/island2.md), [island3.md](docs/island3.md), [island4.md](docs/island4.md), [island5.md](docs/island5.md), [island6.md](docs/island6.md), [island7.md](docs/island7.md), [island8.md](docs/island8.md).
 - [docs/systems.md](docs/systems.md): items, pickups, digs, powers, vines, hooks, hat, NPCs, cutscenes.
 - [docs/code-style.md](docs/code-style.md): naming, parameters, comments, modern JS. **Follow it for every change.**
 - [docs/testing.md](docs/testing.md): debug console (`window.__g`) and the play-test checklist.

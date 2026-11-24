@@ -11,3 +11,5 @@ export const CENTER_5 = { x: 0, z: -1100 }; // Rainbow Reef: a ring of islets, f
 export const CENTER_6 = { x: 0, z: -1550 };
 // the funfair: back down on the sea, far past the sky island so its cloud sea is lost in the fog
 export const CENTER_7 = { x: 0, z: -2000 }; // Jamboree Island
+// the temple island: back on the sea past the funfair, far enough that the fog hides it
+export const CENTER_8 = { x: 0, z: -2450 }; // Sunpaw Temple

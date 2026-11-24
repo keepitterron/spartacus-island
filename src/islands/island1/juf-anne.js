@@ -6,6 +6,7 @@
 //      by she thanks him with a bone (one of the six) and the class sits down for a lesson (Zoë).
 // When the to-do list is done she and the little ones wave him goodbye from the dock (Zoë).
 // What she says is a conversation (game/talk.js): one line at a time, at the reader's pace.
+// The squirrel, chalkboard and pink tower models are shared with her school trip (island 8).
 import * as THREE from 'three';
 import { distXZ, lerp, lerpAngle, vec3 } from '../../core/util.js';
 import { scene } from '../../core/renderer.js';
@@ -69,7 +70,7 @@ const anne = {
 
 // a squirrel: round body, cream tummy, big curled tail; `glasses` for the teacher.
 // Returns {g, paw}: paw is the right arm's shoulder pivot, for waving and putting a paw up.
-function makeSquirrel({ size = 1, glasses = false } = {}) {
+export function makeSquirrel({ size = 1, glasses = false } = {}) {
   const g = new THREE.Group();
   const fur = material(0xc9733a),
     cream = material(0xffe2b8),
@@ -136,7 +137,7 @@ function makeSquirrel({ size = 1, glasses = false } = {}) {
 }
 
 // the Montessori pink tower: ten pink cubes, biggest at the bottom
-function makePinkTower() {
+export function makePinkTower() {
   const g = new THREE.Group();
   let y = 0;
   for (let i = 10; i >= 1; i--) {
@@ -151,7 +152,7 @@ function makePinkTower() {
 }
 
 // a chalkboard on an easel: the lesson's sums and a bone (drawn once the font has loaded)
-function makeChalkboard() {
+export function makeChalkboard() {
   const g = new THREE.Group();
   const wood = material(0x8a5a32);
   for (const side of [-1, 1]) {
